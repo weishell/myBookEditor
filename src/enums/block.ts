@@ -8,6 +8,6 @@ export const BlockElementType = {
   LIST_ITEM: 'list-item',
   NUMBERED_LIST: 'numbered-list',
   BULLETED_LIST: 'bulleted-list',
-} as const
+} as const;
 
-export type BlockElementType = typeof BlockElementType[keyof typeof BlockElementType]
+export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

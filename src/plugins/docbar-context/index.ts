@@ -1,1 +1,1 @@
-export * from './DocBarContext'
+export * from './DocBarContext';

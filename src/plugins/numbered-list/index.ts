@@ -1,1 +1,1 @@
-export * from './NumberedList'
+export * from './NumberedList';

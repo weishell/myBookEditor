@@ -1,1 +1,1 @@
-export * from './DocBar'
+export * from './DocBar';

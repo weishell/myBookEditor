@@ -1,1 +1,1 @@
-export * from './HeadingTwo'
+export * from './HeadingTwo';

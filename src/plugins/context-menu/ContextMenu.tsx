@@ -1,48 +1,48 @@
-import { useEffect, useRef, useCallback } from 'react'
-import { useMenu } from '@/plugins/menu-context'
+import { useEffect, useRef, useCallback } from 'react';
+import { useMenu } from '@/plugins/menu-context';
 
 export const ContextMenu = () => {
-  const { visible, position, closeMenu, setHoveringMenu } = useMenu()
-  const menuRef = useRef<HTMLDivElement>(null)
+  const { visible, position, closeMenu, setHoveringMenu } = useMenu();
+  const menuRef = useRef<HTMLDivElement>(null);
 
   const adjustPosition = useCallback(() => {
-    if (!menuRef.current) return
+    if (!menuRef.current) return;
 
-    const menu = menuRef.current
-    const rect = menu.getBoundingClientRect()
-    const windowHeight = window.innerHeight
-    const maxHeight = windowHeight - 40
+    const menu = menuRef.current;
+    const rect = menu.getBoundingClientRect();
+    const windowHeight = window.innerHeight;
+    const maxHeight = windowHeight - 40;
 
     if (rect.height > maxHeight) {
-      menu.style.maxHeight = `${maxHeight}px`
-      menu.style.overflowY = 'auto'
+      menu.style.maxHeight = `${maxHeight}px`;
+      menu.style.overflowY = 'auto';
     } else {
-      menu.style.maxHeight = 'none'
-      menu.style.overflowY = 'visible'
+      menu.style.maxHeight = 'none';
+      menu.style.overflowY = 'visible';
     }
 
     if (rect.bottom > windowHeight) {
-      const newTop = windowHeight - rect.height - 20
+      const newTop = windowHeight - rect.height - 20;
       if (newTop >= 0) {
-        menu.style.top = `${newTop}px`
+        menu.style.top = `${newTop}px`;
       }
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
     if (visible) {
       requestAnimationFrame(() => {
-        adjustPosition()
-      })
+        adjustPosition();
+      });
     }
-  }, [visible, position, adjustPosition])
+  }, [visible, position, adjustPosition]);
 
   const handleMenuClick = (action: string) => {
-    console.log('Menu action:', action)
-    closeMenu()
-  }
+    console.log('Menu action:', action);
+    closeMenu();
+  };
 
-  if (!visible) return null
+  if (!visible) return null;
 
   return (
     <>
@@ -455,5 +455,5 @@ export const ContextMenu = () => {
         </button>
       </div>
     </>
-  )
-}
+  );
+};

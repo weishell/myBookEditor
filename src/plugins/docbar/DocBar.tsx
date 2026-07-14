@@ -1,111 +1,114 @@
-import { useState, useCallback, useEffect, useRef } from 'react'
-import { useDocBar } from '@/plugins/docbar-context'
-import { useMenu } from '@/plugins/menu-context'
-import { useSelection } from '@/plugins/selection-context'
-import { BlockElementType } from '@/enums'
+import { useState, useCallback, useEffect, useRef } from 'react';
+import { useDocBar } from '@/plugins/docbar-context';
+import { useMenu } from '@/plugins/menu-context';
+import { useSelection } from '@/plugins/selection-context';
+import { BlockElementType } from '@/enums';
 
 const getElementIcon = (type: BlockElementType): string => {
   switch (type) {
     case BlockElementType.HEADING_ONE:
     case BlockElementType.HEADING_TWO:
     case BlockElementType.HEADING_THREE:
-      return 'H'
+      return 'H';
     case BlockElementType.BLOCKQUOTE:
-      return '"'
+      return '"';
     case BlockElementType.CODE_BLOCK:
-      return '&lt;/&gt;'
+      return '&lt;/&gt;';
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST:
     case BlockElementType.LIST_ITEM:
-      return '☰'
+      return '☰';
     default:
-      return 'T'
+      return 'T';
   }
-}
+};
 
 const getElementColor = (type: BlockElementType): string => {
   switch (type) {
     case BlockElementType.HEADING_ONE:
     case BlockElementType.HEADING_TWO:
     case BlockElementType.HEADING_THREE:
-      return '#1890ff'
+      return '#1890ff';
     case BlockElementType.BLOCKQUOTE:
-      return '#faad14'
+      return '#faad14';
     case BlockElementType.CODE_BLOCK:
-      return '#722ed1'
+      return '#722ed1';
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST:
     case BlockElementType.LIST_ITEM:
-      return '#52c41a'
+      return '#52c41a';
     default:
-      return '#999'
+      return '#999';
   }
-}
+};
 
 export const DocBar = () => {
-  const { activeElement } = useDocBar()
-  const { openMenu, closeMenu, hoveringMenu } = useMenu()
-  const { hasSelection } = useSelection()
-  const [iconHovered, setIconHovered] = useState(false)
-  const timerRef = useRef<number | null>(null)
-  const lastElementRef = useRef<typeof activeElement>(null)
+  const { activeElement } = useDocBar();
+  const { openMenu, closeMenu, hoveringMenu } = useMenu();
+  const { hasSelection } = useSelection();
+  const [iconHovered, setIconHovered] = useState(false);
+  const timerRef = useRef<number | null>(null);
+  const lastElementRef = useRef<typeof activeElement>(null);
 
   useEffect(() => {
     return () => {
       if (timerRef.current) {
-        clearTimeout(timerRef.current)
+        clearTimeout(timerRef.current);
       }
-    }
-  }, [])
+    };
+  }, []);
 
   useEffect(() => {
     if (hasSelection) {
-      setIconHovered(false)
-      closeMenu()
+      setIconHovered(false);
+      closeMenu();
     }
-  }, [hasSelection, closeMenu])
+  }, [hasSelection, closeMenu]);
 
   useEffect(() => {
     if (activeElement) {
-      lastElementRef.current = activeElement
+      lastElementRef.current = activeElement;
     }
-  }, [activeElement])
+  }, [activeElement]);
 
   useEffect(() => {
     if (hoveringMenu) {
-      return
+      return;
     }
     if (!activeElement && !iconHovered) {
       timerRef.current = window.setTimeout(() => {
-        closeMenu()
-      }, 100)
+        closeMenu();
+      }, 100);
     }
-  }, [activeElement, iconHovered, hoveringMenu, closeMenu])
+  }, [activeElement, iconHovered, hoveringMenu, closeMenu]);
 
-  const handleIconMouseEnter = useCallback((e: React.MouseEvent) => {
-    if (timerRef.current) {
-      clearTimeout(timerRef.current)
-    }
-    setIconHovered(true)
-    const rect = e.currentTarget.getBoundingClientRect()
-    openMenu(lastElementRef.current?.id || '', rect.left + rect.width + 8, rect.top)
-  }, [openMenu])
+  const handleIconMouseEnter = useCallback(
+    (e: React.MouseEvent) => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+      setIconHovered(true);
+      const rect = e.currentTarget.getBoundingClientRect();
+      openMenu(lastElementRef.current?.id || '', rect.left + rect.width + 8, rect.top);
+    },
+    [openMenu],
+  );
 
   const handleIconMouseLeave = useCallback(() => {
-    setIconHovered(false)
+    setIconHovered(false);
     if (!hoveringMenu) {
       timerRef.current = window.setTimeout(() => {
-        closeMenu()
-      }, 200)
+        closeMenu();
+      }, 200);
     }
-  }, [hoveringMenu, closeMenu])
+  }, [hoveringMenu, closeMenu]);
 
-  const shouldShow = (activeElement || iconHovered || hoveringMenu) && !hasSelection
+  const shouldShow = (activeElement || iconHovered || hoveringMenu) && !hasSelection;
 
-  const currentElement = activeElement || lastElementRef.current
+  const currentElement = activeElement || lastElementRef.current;
 
   if (!shouldShow || !currentElement) {
-    return null
+    return null;
   }
 
   return (
@@ -163,5 +166,5 @@ export const DocBar = () => {
         ⋮⋮
       </div>
     </div>
-  )
-}
+  );
+};
