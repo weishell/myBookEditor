@@ -8,6 +8,7 @@ import {
   type RenderLeafProps,
 } from 'slate-react';
 import { withHistory } from 'slate-history';
+import { v4 as uuidv4 } from 'uuid';
 import {
   HeadingOne,
   HeadingTwo,
@@ -31,12 +32,12 @@ import FloatBar from '@/components/FloatBar';
 const initialValue: Descendant[] = [
   {
     type: BlockElementType.HEADING_ONE,
-    plugin_id: 'heading-one-1',
+    id: uuidv4(),
     children: [{ text: '欢迎使用文档编辑器' }],
   },
   {
     type: BlockElementType.PARAGRAPH,
-    plugin_id: 'paragraph-1',
+    id: uuidv4(),
     style: { lineHeight: '1.8' },
     attrs: {
       customData: 'intro-content',
@@ -49,12 +50,12 @@ const initialValue: Descendant[] = [
   },
   {
     type: BlockElementType.HEADING_TWO,
-    plugin_id: 'heading-two-1',
+    id: uuidv4(),
     children: [{ text: '主要功能' }],
   },
   {
     type: BlockElementType.PARAGRAPH,
-    plugin_id: 'paragraph-2',
+    id: uuidv4(),
     children: [
       {
         text: '支持多种标题级别、粗体斜体下划线格式化、有序列表和无序列表、代码块和行内代码、引用块等功能。',
@@ -63,12 +64,12 @@ const initialValue: Descendant[] = [
   },
   {
     type: BlockElementType.HEADING_TWO,
-    plugin_id: 'heading-two-2',
+    id: uuidv4(),
     children: [{ text: '引用示例' }],
   },
   {
     type: BlockElementType.BLOCKQUOTE,
-    plugin_id: 'blockquote-1',
+    id: uuidv4(),
     attrs: {
       cite: 'https://example.com',
     },
@@ -76,12 +77,12 @@ const initialValue: Descendant[] = [
   },
   {
     type: BlockElementType.HEADING_TWO,
-    plugin_id: 'heading-two-3',
+    id: uuidv4(),
     children: [{ text: '代码示例' }],
   },
   {
     type: BlockElementType.CODE_BLOCK,
-    plugin_id: 'code-block-1',
+    id: uuidv4(),
     attrs: {
       language: 'javascript',
     },
@@ -89,12 +90,12 @@ const initialValue: Descendant[] = [
   },
   {
     type: BlockElementType.HEADING_THREE,
-    plugin_id: 'heading-three-1',
+    id: uuidv4(),
     children: [{ text: '小标题示例' }],
   },
   {
     type: BlockElementType.PARAGRAPH,
-    plugin_id: 'paragraph-3',
+    id: uuidv4(),
     children: [
       { text: '你可以使用工具栏中的按钮来格式化文本。选中文字后点击相应的格式按钮即可应用样式。' },
     ],
@@ -102,27 +103,27 @@ const initialValue: Descendant[] = [
 ];
 
 const renderElement = ({ element, attributes, children }: RenderElementProps) => {
-  const el = element as { type?: BlockElementType; plugin_id?: string; children: unknown[] };
+  const el = element as { type?: BlockElementType; id?: string; children: unknown[] };
 
   switch (el.type) {
     case BlockElementType.HEADING_ONE:
-      return <HeadingOne attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <HeadingOne attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.HEADING_TWO:
-      return <HeadingTwo attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <HeadingTwo attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.HEADING_THREE:
-      return <HeadingThree attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <HeadingThree attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.BLOCKQUOTE:
-      return <Blockquote attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <Blockquote attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.CODE_BLOCK:
-      return <CodeBlock attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <CodeBlock attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.LIST_ITEM:
-      return <ListItem attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <ListItem attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.NUMBERED_LIST:
-      return <NumberedList attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <NumberedList attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.BULLETED_LIST:
-      return <BulletedList attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <BulletedList attributes={attributes} children={children} pluginId={el.id} />;
     default:
-      return <Paragraph attributes={attributes} children={children} pluginId={el.plugin_id} />;
+      return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
   }
 };
 

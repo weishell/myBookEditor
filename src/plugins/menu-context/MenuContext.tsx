@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useCallback, useRef } from 'react';
+import { createContext, useContext, useState, useCallback, useRef, useEffect } from 'react';
 import type { ReactNode } from 'react';
 
 interface MenuContextType {
@@ -23,6 +23,11 @@ export const MenuProvider = ({ children }: { children: ReactNode }) => {
   const [hoveringMenu, setHoveringMenu] = useState(false);
   const [activeDocbarId, setActiveDocbarId] = useState<string | null>(null);
   const timerRef = useRef<number | null>(null);
+  const hoveringMenuRef = useRef(false);
+
+  useEffect(() => {
+    hoveringMenuRef.current = hoveringMenu;
+  }, [hoveringMenu]);
 
   const openMenu = useCallback((id: string, x: number, y: number) => {
     if (timerRef.current) {
@@ -34,10 +39,15 @@ export const MenuProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const closeMenu = useCallback(() => {
+    if (timerRef.current) {
+      clearTimeout(timerRef.current);
+    }
     timerRef.current = window.setTimeout(() => {
-      setVisible(false);
-      setTargetId(null);
-    }, 0);
+      if (!hoveringMenuRef.current) {
+        setVisible(false);
+        setTargetId(null);
+      }
+    }, 200);
   }, []);
 
   const forceCloseMenu = useCallback(() => {

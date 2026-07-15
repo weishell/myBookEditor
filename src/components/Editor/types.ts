@@ -10,8 +10,8 @@ export interface CustomElementAttrs {
 }
 
 export interface CustomElement extends BaseElement {
-  type?: BlockElementType;
-  plugin_id?: string;
+  type: BlockElementType;
+  id: string;
   style?: Record<string, unknown>;
   attrs?: CustomElementAttrs;
   children: CustomText[];

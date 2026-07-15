@@ -71,17 +71,6 @@ export const DocBar = () => {
     }
   }, [activeElement]);
 
-  useEffect(() => {
-    if (hoveringMenu) {
-      return;
-    }
-    if (!activeElement && !iconHovered) {
-      timerRef.current = window.setTimeout(() => {
-        closeMenu();
-      }, 100);
-    }
-  }, [activeElement, iconHovered, hoveringMenu, closeMenu]);
-
   const handleIconMouseEnter = useCallback(
     (e: React.MouseEvent) => {
       if (timerRef.current) {
@@ -96,12 +85,20 @@ export const DocBar = () => {
 
   const handleIconMouseLeave = useCallback(() => {
     setIconHovered(false);
-    if (!hoveringMenu) {
+  }, []);
+
+  useEffect(() => {
+    if (!activeElement && !iconHovered && !hoveringMenu) {
       timerRef.current = window.setTimeout(() => {
         closeMenu();
       }, 200);
     }
-  }, [hoveringMenu, closeMenu]);
+    return () => {
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+      }
+    };
+  }, [activeElement, iconHovered, hoveringMenu, closeMenu]);
 
   const shouldShow = (activeElement || iconHovered || hoveringMenu) && !hasSelection;
 
