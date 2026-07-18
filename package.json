@@ -12,7 +12,9 @@
   },
   "dependencies": {
     "@types/node": "^26.1.1",
+    "@types/prismjs": "^1.26.6",
     "antd": "^6.5.0",
+    "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-router-dom": "^7.18.1",

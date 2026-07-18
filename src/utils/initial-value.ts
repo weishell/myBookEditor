@@ -58,8 +58,12 @@ export const initialValue: Descendant[] = [
     id: uuidv4(),
     attrs: {
       language: 'javascript',
+      wrap: true,
+      height: 150,
     },
-    children: [{ text: 'console.log("Hello, World!");' }],
+    children: [
+      { text: 'console.log("Hello, World!");\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);' },
+    ],
   },
   {
     type: BlockElementType.HEADING_THREE,

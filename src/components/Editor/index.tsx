@@ -18,7 +18,6 @@ import {
   ListItem,
   NumberedList,
   BulletedList,
-  Leaf,
   MenuProvider,
   ContextMenu,
   SelectionProvider,
@@ -28,6 +27,7 @@ import {
 import { BlockElementType } from '@/enums';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
+import { codeDecorate, CODE_TOKEN_COLORS } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
 
 const renderElement = ({ element, attributes, children }: RenderElementProps) => {
@@ -56,12 +56,41 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
 };
 
 const renderLeaf = (props: RenderLeafProps) => {
-  return <Leaf {...props} />;
+  const { attributes, children, leaf } = props;
+
+  let color: string | undefined;
+  for (const tokenType of Object.keys(CODE_TOKEN_COLORS)) {
+    const type = tokenType.replace('token ', '');
+    if (leaf[type as keyof typeof leaf]) {
+      color = CODE_TOKEN_COLORS[tokenType];
+      break;
+    }
+  }
+
+  if (color) {
+    return (
+      <span {...attributes} style={{ color }}>
+        {children}
+      </span>
+    );
+  }
+
+  return (
+    <span {...attributes} style={{ color: '#333' }}>
+      {children}
+    </span>
+  );
 };
 
 export default function Editor() {
   const editor = useMemo(() => withHistory(withReact(createEditor())), []);
-  const handleKeyDown = useCallback(createKeyboardHandler(editor), [editor]);
+  const keyboardHandler = useMemo(() => createKeyboardHandler(editor), [editor]);
+  const handleKeyDown = useCallback(
+    (e: React.KeyboardEvent) => {
+      keyboardHandler(e);
+    },
+    [keyboardHandler],
+  );
 
   return (
     <Slate editor={editor} initialValue={initialValue}>
@@ -90,6 +119,7 @@ export default function Editor() {
                   minHeight: '500px',
                   outline: 'none',
                 }}
+                decorate={codeDecorate}
                 onKeyDown={handleKeyDown}
               />
             </div>
