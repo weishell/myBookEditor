@@ -16,4 +16,3 @@ export * from './selection-context';
 export * from './context-menu';
 export * from './docbar-context';
 export * from './docbar';
-export * from './with-editor';

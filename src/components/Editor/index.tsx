@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useCallback } from 'react';
 import { createEditor } from 'slate';
 import {
   Slate,
@@ -24,10 +24,10 @@ import {
   SelectionProvider,
   DocBarProvider,
   DocBar,
-  withEditor,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 import { initialValue } from '@/utils/initial-value';
+import { createKeyboardHandler } from '@/events/keyboard';
 import FloatBar from '@/components/FloatBar';
 
 const renderElement = ({ element, attributes, children }: RenderElementProps) => {
@@ -60,7 +60,8 @@ const renderLeaf = (props: RenderLeafProps) => {
 };
 
 export default function Editor() {
-  const editor = useMemo(() => withEditor(withHistory(withReact(createEditor()))), []);
+  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  const handleKeyDown = useCallback(createKeyboardHandler(editor), [editor]);
 
   return (
     <Slate editor={editor} initialValue={initialValue}>
@@ -89,12 +90,7 @@ export default function Editor() {
                   minHeight: '500px',
                   outline: 'none',
                 }}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                    editor.insertBreak();
-                  }
-                }}
+                onKeyDown={handleKeyDown}
               />
             </div>
           </DocBarProvider>
