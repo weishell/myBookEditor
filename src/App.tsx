@@ -1,10 +1,15 @@
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Editor from '@/components/Editor';
+import NotFound from '@/pages/NotFound';
 
 function App() {
   return (
-    <div style={{ minHeight: '100vh', backgroundColor: '#f5f5f5', padding: '40px 20px' }}>
-      <Editor />
-    </div>
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Editor />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
