@@ -134,6 +134,8 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         }}
       >
         <div
+          contentEditable={false}
+          suppressContentEditableWarning={true}
           style={{
             display: 'flex',
             alignItems: 'center',
@@ -145,6 +147,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             opacity: isHovered || showLanguageMenu || showWrapMenu ? 1 : 0,
             pointerEvents: isHovered || showLanguageMenu || showWrapMenu ? 'auto' : 'none',
             transition: 'opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
+            userSelect: 'none',
           }}
         >
           <div
@@ -311,6 +314,8 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         </div>
 
         <div
+          contentEditable={false}
+          suppressContentEditableWarning={true}
           style={{
             height: '6px',
             backgroundColor: '#f9fafb',
@@ -322,6 +327,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             opacity: isHovered ? 1 : 0,
             pointerEvents: isHovered ? 'auto' : 'none',
             transition: 'opacity 0.2s ease',
+            userSelect: 'none',
           }}
           onMouseDown={handleDragStart}
         >

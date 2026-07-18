@@ -28,6 +28,8 @@ export const CodeLine = ({ attributes, children, element }: CodeLineProps) => {
     >
       <span
         className="code-line-num"
+        contentEditable={false}
+        suppressContentEditableWarning={true}
         style={{
           flexShrink: 0,
           width: 40,
@@ -41,6 +43,7 @@ export const CodeLine = ({ attributes, children, element }: CodeLineProps) => {
           lineHeight: '18px',
           textAlign: 'right',
           userSelect: 'none',
+          pointerEvents: 'none',
         }}
       >
         {lineNumber}
