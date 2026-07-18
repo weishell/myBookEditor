@@ -30,17 +30,19 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
   const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
   const attrs = element?.attrs || {};
   const language = attrs.language || 'javascript';
   const wrap = attrs.wrap !== undefined ? attrs.wrap : true;
 
-  const codeText =
-    (element as any)?.children?.map((child: { text?: string }) => child.text || '').join('') || '';
-
-  const lines = codeText.split('\n');
+  const codeText = ((element as any)?.children || [])
+    .map((child: any) => {
+      if (child.type === BlockElementType.CODE_LINE) {
+        return (child.children || []).map((c: { text?: string }) => c.text || '').join('');
+      }
+      return child.text || '';
+    })
+    .join('\n');
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -75,21 +77,6 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
 
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  useEffect(() => {
-    const handleScroll = () => {
-      if (scrollContainerRef.current && lineNumbersRef.current) {
-        lineNumbersRef.current.scrollTop = scrollContainerRef.current.scrollTop;
-        lineNumbersRef.current.scrollLeft = scrollContainerRef.current.scrollLeft;
-      }
-    };
-
-    const container = scrollContainerRef.current;
-    if (container) {
-      container.addEventListener('scroll', handleScroll);
-      return () => container.removeEventListener('scroll', handleScroll);
-    }
   }, []);
 
   const handleDragStart = useCallback((e: React.MouseEvent) => {
@@ -302,64 +289,24 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         <div
           style={{
             height: height - 32,
-            display: 'flex',
+            overflow: 'auto',
           }}
         >
           <div
-            ref={lineNumbersRef}
+            {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
             style={{
-              backgroundColor: '#f3f4f6',
-              borderRight: '1px solid #e5e7eb',
-              textAlign: 'right',
-              userSelect: 'none',
-              width: '32px',
-              flexShrink: 0,
               padding: '8px 0',
-              overflow: 'hidden',
+              backgroundColor: '#f9fafb',
+              outline: 'none',
+              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+              fontSize: '12px',
+              lineHeight: '18px',
+              color: '#374151',
+              whiteSpace: wrap ? 'pre-wrap' : 'pre',
+              wordBreak: wrap ? 'break-all' : 'normal',
             }}
           >
-            {lines.map((_: string, i: number) => (
-              <div
-                key={i}
-                style={{
-                  padding: '0 6px',
-                  fontSize: '12px',
-                  lineHeight: '18px',
-                  color: '#9ca3af',
-                  fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {i + 1}
-              </div>
-            ))}
-          </div>
-
-          <div
-            ref={scrollContainerRef}
-            style={{
-              flex: 1,
-              overflow: 'auto',
-            }}
-          >
-            <pre
-              {...(attributes as React.HTMLAttributes<HTMLPreElement>)}
-              style={{
-                margin: 0,
-                padding: '8px 12px',
-                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-                fontSize: '12px',
-                lineHeight: '18px',
-                color: '#374151',
-                backgroundColor: '#f9fafb',
-                outline: 'none',
-                whiteSpace: wrap ? 'pre-wrap' : 'pre',
-                wordBreak: wrap ? 'break-all' : 'normal',
-                minWidth: '100%',
-              }}
-            >
-              <code>{children}</code>
-            </pre>
+            {children}
           </div>
         </div>
 

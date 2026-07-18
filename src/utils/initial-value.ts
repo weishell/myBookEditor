@@ -2,6 +2,15 @@ import type { Descendant } from 'slate';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 
+const codeBlockId = uuidv4();
+const codeText = 'console.log("Hello, World!");\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);';
+const codeLines = codeText.split('\n').map((text, i) => ({
+  type: BlockElementType.CODE_LINE,
+  id: `${codeBlockId}-line-${i}`,
+  attrs: { lineNumber: i + 1 },
+  children: [{ text }, { text: '\u200B' }],
+}));
+
 export const initialValue: Descendant[] = [
   {
     type: BlockElementType.HEADING_ONE,
@@ -55,15 +64,13 @@ export const initialValue: Descendant[] = [
   },
   {
     type: BlockElementType.CODE_BLOCK,
-    id: uuidv4(),
+    id: codeBlockId,
     attrs: {
       language: 'javascript',
       wrap: true,
       height: 150,
     },
-    children: [
-      { text: 'console.log("Hello, World!");\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);' },
-    ],
+    children: codeLines as any,
   },
   {
     type: BlockElementType.HEADING_THREE,

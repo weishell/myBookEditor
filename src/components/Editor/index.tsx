@@ -1,5 +1,5 @@
-import { useMemo, useCallback } from 'react';
-import { createEditor } from 'slate';
+import { useMemo, useCallback, useEffect } from 'react';
+import { createEditor, Editor as SlateEditor } from 'slate';
 import {
   Slate,
   Editable,
@@ -15,6 +15,8 @@ import {
   Paragraph,
   Blockquote,
   CodeBlock,
+  CodeLine,
+  withCodeBlock,
   ListItem,
   NumberedList,
   BulletedList,
@@ -46,6 +48,8 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
       return (
         <CodeBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
       );
+    case BlockElementType.CODE_LINE:
+      return <CodeLine attributes={attributes} children={children} pluginId={el.id} element={el} />;
     case BlockElementType.LIST_ITEM:
       return <ListItem attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.NUMBERED_LIST:
@@ -85,7 +89,12 @@ const renderLeaf = (props: RenderLeafProps) => {
 };
 
 export default function Editor() {
-  const editor = useMemo(() => withHistory(withReact(createEditor())), []);
+  const editor = useMemo(() => withCodeBlock(withHistory(withReact(createEditor()))), []);
+
+  useEffect(() => {
+    // 强制 normalize，将 code-block 的文本节点转换为 code-line 元素
+    SlateEditor.normalize(editor, { force: true });
+  }, [editor]);
   const keyboardHandler = useMemo(() => createKeyboardHandler(editor), [editor]);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {

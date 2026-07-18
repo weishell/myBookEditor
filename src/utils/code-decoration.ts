@@ -105,18 +105,34 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
   const prismLanguage = Prism.languages[language] || Prism.languages.javascript;
 
   let text = '';
+  const lineLengths: number[] = [];
+
   (codeBlock.children || []).forEach((child: any) => {
-    if (child.text) text += child.text;
+    if (child.type === BlockElementType.CODE_LINE) {
+      const lineText = (child.children || []).map((c: { text?: string }) => c.text || '').join('');
+      lineLengths.push(lineText.length);
+      text += lineText;
+    } else if (child.text) {
+      text += child.text;
+    }
   });
 
   if (!text) return decorations;
 
   const tokens = Prism.tokenize(text, prismLanguage);
-  let offset = 0;
+  let currentLineIndex = 0;
+  let currentLineOffset = 0;
 
   const traverseTokens = (token: Prism.Token | string) => {
     if (typeof token === 'string') {
-      offset += token.length;
+      const length = token.length;
+      for (let i = 0; i < length; i++) {
+        if (currentLineOffset >= lineLengths[currentLineIndex]) {
+          currentLineIndex++;
+          currentLineOffset = 0;
+        }
+        currentLineOffset++;
+      }
       return;
     }
 
@@ -124,14 +140,33 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
     const tokenType = token.type as string;
 
     if (SHOULD_COLOR_TOKEN.has(tokenType)) {
+      const startLineIndex = currentLineIndex;
+      const startLineOffset = currentLineOffset;
+      let tempLineIndex = currentLineIndex;
+      let tempLineOffset = currentLineOffset;
+
+      for (let i = 0; i < length; i++) {
+        if (tempLineOffset >= lineLengths[tempLineIndex]) {
+          tempLineIndex++;
+          tempLineOffset = 0;
+        }
+        tempLineOffset++;
+      }
+
       decorations.push({
-        anchor: { path: [...path, 0], offset },
-        focus: { path: [...path, 0], offset: offset + length },
+        anchor: { path: [...path, startLineIndex, 0], offset: startLineOffset },
+        focus: { path: [...path, tempLineIndex, 0], offset: tempLineOffset },
         [tokenType]: true,
       });
     }
 
-    offset += length;
+    for (let i = 0; i < length; i++) {
+      if (currentLineOffset >= lineLengths[currentLineIndex]) {
+        currentLineIndex++;
+        currentLineOffset = 0;
+      }
+      currentLineOffset++;
+    }
 
     if (token.content && Array.isArray(token.content)) {
       token.content.forEach(traverseTokens);

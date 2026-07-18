@@ -5,6 +5,7 @@ export const BlockElementType = {
   HEADING_THREE: 'heading-three',
   BLOCKQUOTE: 'blockquote',
   CODE_BLOCK: 'code-block',
+  CODE_LINE: 'code-line',
   LIST_ITEM: 'list-item',
   NUMBERED_LIST: 'numbered-list',
   BULLETED_LIST: 'bulleted-list',
