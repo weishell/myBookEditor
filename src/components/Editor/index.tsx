@@ -43,7 +43,9 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
     case BlockElementType.BLOCKQUOTE:
       return <Blockquote attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.CODE_BLOCK:
-      return <CodeBlock attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <CodeBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.LIST_ITEM:
       return <ListItem attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.NUMBERED_LIST:

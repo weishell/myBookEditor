@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
+import { Transforms } from 'slate';
+import { useSlate } from 'slate-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { SUPPORTED_LANGUAGES, getLanguageName } from '@/utils/code-highlighter';
@@ -15,39 +17,30 @@ interface ElementProps {
   pluginId?: string;
   element?: {
     attrs?: CodeBlockAttrs;
+    children?: unknown[];
   };
 }
 
 export const CodeBlock = ({ attributes, children, pluginId, element }: ElementProps) => {
+  const editor = useSlate();
   const [height, setHeight] = useState<number>(element?.attrs?.height || 150);
   const [isDragging, setIsDragging] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showWrapMenu, setShowWrapMenu] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const lineNumbersRef = useRef<HTMLDivElement>(null);
 
   const attrs = element?.attrs || {};
   const language = attrs.language || 'javascript';
   const wrap = attrs.wrap !== undefined ? attrs.wrap : true;
 
-  let codeText = '';
-  const childrenArray = React.Children.toArray(children);
-  childrenArray.forEach((child) => {
-    if (typeof child === 'string') {
-      codeText += child;
-    } else if (typeof child === 'object' && child !== null && 'props' in child) {
-      const childProps = (child as any).props;
-      if (typeof childProps.children === 'string') {
-        codeText += childProps.children;
-      } else if (Array.isArray(childProps.children)) {
-        childProps.children.forEach((c: any) => {
-          if (typeof c === 'string') codeText += c;
-        });
-      }
-    }
-  });
+  const codeText =
+    (element as any)?.children?.map((child: { text?: string }) => child.text || '').join('') || '';
 
-  const lineCount = Math.max(codeText.split('\n').length, 1);
+  const lines = codeText.split('\n');
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -84,18 +77,49 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleScroll = () => {
+      if (scrollContainerRef.current && lineNumbersRef.current) {
+        lineNumbersRef.current.scrollTop = scrollContainerRef.current.scrollTop;
+        lineNumbersRef.current.scrollLeft = scrollContainerRef.current.scrollLeft;
+      }
+    };
+
+    const container = scrollContainerRef.current;
+    if (container) {
+      container.addEventListener('scroll', handleScroll);
+      return () => container.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
   }, []);
 
-  const handleLanguageChange = useCallback(() => {
-    setShowLanguageMenu(false);
-  }, []);
+  const handleLanguageChange = useCallback(
+    (newLanguage: string) => {
+      Transforms.setNodes(
+        editor,
+        { attrs: { ...attrs, language: newLanguage } },
+        { match: (n: any) => n.type === BlockElementType.CODE_BLOCK },
+      );
+      setShowLanguageMenu(false);
+    },
+    [editor, attrs],
+  );
 
-  const handleWrapToggle = useCallback(() => {
-    setShowWrapMenu(false);
-  }, []);
+  const handleWrapToggle = useCallback(
+    (newWrap: boolean) => {
+      Transforms.setNodes(
+        editor,
+        { attrs: { ...attrs, wrap: newWrap } },
+        { match: (n: any) => n.type === BlockElementType.CODE_BLOCK },
+      );
+      setShowWrapMenu(false);
+    },
+    [editor, attrs],
+  );
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(codeText);
@@ -111,9 +135,15 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
           margin: '12px 0',
           borderRadius: '6px',
           border: '1px solid #e5e7eb',
-          backgroundColor: '#ffffff',
+          backgroundColor: '#f9fafb',
           overflow: 'hidden',
           boxShadow: 'none',
+        }}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => {
+          setIsHovered(false);
+          setShowLanguageMenu(false);
+          setShowWrapMenu(false);
         }}
       >
         <div
@@ -122,8 +152,12 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '4px 12px',
-            backgroundColor: '#f9fafb',
-            borderBottom: '1px solid #e5e7eb',
+            backgroundColor: isHovered || showLanguageMenu || showWrapMenu ? '#f9fafb' : '#ffffff',
+            borderBottom:
+              isHovered || showLanguageMenu || showWrapMenu ? '1px solid #e5e7eb' : 'none',
+            opacity: isHovered || showLanguageMenu || showWrapMenu ? 1 : 0,
+            pointerEvents: isHovered || showLanguageMenu || showWrapMenu ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
           }}
         >
           <div
@@ -184,7 +218,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
                       color: lang.id === language ? '#1890ff' : '#374151',
                       backgroundColor: lang.id === language ? '#f0f5ff' : 'transparent',
                     }}
-                    onClick={handleLanguageChange}
+                    onClick={() => handleLanguageChange(lang.id)}
                   >
                     {lang.name}
                   </div>
@@ -204,7 +238,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
               }}
               onClick={() => setShowWrapMenu(!showWrapMenu)}
             >
-              自动换行
+              {wrap ? '取消自动换行' : '自动换行'}
             </div>
 
             {showWrapMenu && (
@@ -229,7 +263,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
                     color: wrap ? '#1890ff' : '#374151',
                     backgroundColor: wrap ? '#f0f5ff' : 'transparent',
                   }}
-                  onClick={handleWrapToggle}
+                  onClick={() => handleWrapToggle(true)}
                 >
                   开启
                 </div>
@@ -241,7 +275,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
                     color: !wrap ? '#1890ff' : '#374151',
                     backgroundColor: !wrap ? '#f0f5ff' : 'transparent',
                   }}
-                  onClick={handleWrapToggle}
+                  onClick={() => handleWrapToggle(false)}
                 >
                   关闭
                 </div>
@@ -267,25 +301,24 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
 
         <div
           style={{
-            display: 'flex',
             height: height - 32,
-            overflow: 'auto',
+            display: 'flex',
           }}
         >
           <div
+            ref={lineNumbersRef}
             style={{
-              display: 'flex',
-              flexDirection: 'column',
-              padding: '8px 0',
-              backgroundColor: '#fafafa',
+              backgroundColor: '#f3f4f6',
               borderRight: '1px solid #e5e7eb',
               textAlign: 'right',
               userSelect: 'none',
-              minWidth: '32px',
+              width: '32px',
               flexShrink: 0,
+              padding: '8px 0',
+              overflow: 'hidden',
             }}
           >
-            {Array.from({ length: lineCount }, (_, i) => (
+            {lines.map((_: string, i: number) => (
               <div
                 key={i}
                 style={{
@@ -294,6 +327,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
                   lineHeight: '18px',
                   color: '#9ca3af',
                   fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                  whiteSpace: 'nowrap',
                 }}
               >
                 {i + 1}
@@ -301,25 +335,32 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             ))}
           </div>
 
-          <pre
-            {...(attributes as React.HTMLAttributes<HTMLPreElement>)}
+          <div
+            ref={scrollContainerRef}
             style={{
-              margin: 0,
-              padding: '8px 12px',
               flex: 1,
-              overflowX: wrap ? 'hidden' : 'auto',
-              whiteSpace: wrap ? 'pre-wrap' : 'pre',
-              wordBreak: wrap ? 'break-all' : 'normal',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-              fontSize: '12px',
-              lineHeight: '18px',
-              color: '#374151',
-              backgroundColor: 'transparent',
-              outline: 'none',
+              overflow: 'auto',
             }}
           >
-            <code>{children}</code>
-          </pre>
+            <pre
+              {...(attributes as React.HTMLAttributes<HTMLPreElement>)}
+              style={{
+                margin: 0,
+                padding: '8px 12px',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+                fontSize: '12px',
+                lineHeight: '18px',
+                color: '#374151',
+                backgroundColor: '#f9fafb',
+                outline: 'none',
+                whiteSpace: wrap ? 'pre-wrap' : 'pre',
+                wordBreak: wrap ? 'break-all' : 'normal',
+                minWidth: '100%',
+              }}
+            >
+              <code>{children}</code>
+            </pre>
+          </div>
         </div>
 
         <div
@@ -331,6 +372,9 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             alignItems: 'center',
             justifyContent: 'center',
             borderTop: '1px solid #e5e7eb',
+            opacity: isHovered ? 1 : 0,
+            pointerEvents: isHovered ? 'auto' : 'none',
+            transition: 'opacity 0.2s ease',
           }}
           onMouseDown={handleDragStart}
         >
