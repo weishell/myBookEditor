@@ -64,22 +64,29 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
 const renderLeaf = (props: RenderLeafProps) => {
   const { attributes, children, leaf } = props;
 
-  let color: string | undefined;
+  let codeColor: string | undefined;
   for (const tokenType of Object.keys(CODE_TOKEN_COLORS)) {
     const type = tokenType.replace('token ', '');
     if (leaf[type as keyof typeof leaf]) {
-      color = CODE_TOKEN_COLORS[tokenType];
+      codeColor = CODE_TOKEN_COLORS[tokenType];
       break;
     }
   }
 
   const style: React.CSSProperties = {};
-  if (color) {
-    style.color = color;
+  // 用户手动设置的颜色优先级高于代码高亮
+  if ((leaf as any).color) {
+    style.color = (leaf as any).color;
+  } else if (codeColor) {
+    style.color = codeColor;
   } else {
     style.color = '#333';
   }
-  // 兼容用户在代码块内手动应用的格式
+  // 高亮背景色
+  if ((leaf as any).highlight) {
+    style.backgroundColor = (leaf as any).highlight;
+  }
+  // 其他格式
   if ((leaf as any).bold) style.fontWeight = 'bold';
   if ((leaf as any).italic) style.fontStyle = 'italic';
   if ((leaf as any).underline) style.textDecoration = 'underline';
