@@ -73,16 +73,20 @@ const renderLeaf = (props: RenderLeafProps) => {
     }
   }
 
+  const style: React.CSSProperties = {};
   if (color) {
-    return (
-      <span {...attributes} style={{ color }}>
-        {children}
-      </span>
-    );
+    style.color = color;
+  } else {
+    style.color = '#333';
   }
+  // 兼容用户在代码块内手动应用的格式
+  if ((leaf as any).bold) style.fontWeight = 'bold';
+  if ((leaf as any).italic) style.fontStyle = 'italic';
+  if ((leaf as any).underline) style.textDecoration = 'underline';
+  if ((leaf as any).strikethrough) style.textDecoration = 'line-through';
 
   return (
-    <span {...attributes} style={{ color: '#333' }}>
+    <span {...attributes} style={style}>
       {children}
     </span>
   );

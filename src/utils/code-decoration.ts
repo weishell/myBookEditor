@@ -88,6 +88,12 @@ interface CodeBlockElement {
   };
 }
 
+interface TextNodeInfo {
+  path: number[];
+  text: string;
+  start: number;
+}
+
 export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
   const decorations: Range[] = [];
 
@@ -104,35 +110,37 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
   const language = codeBlock.attrs?.language || 'javascript';
   const prismLanguage = Prism.languages[language] || Prism.languages.javascript;
 
-  let text = '';
-  const lineLengths: number[] = [];
+  // 收集所有文本节点信息：路径、文本、在整行合并文本中的起始位置
+  const textNodes: TextNodeInfo[] = [];
+  let globalOffset = 0;
 
-  (codeBlock.children || []).forEach((child: any) => {
-    if (child.type === BlockElementType.CODE_LINE) {
-      const lineText = (child.children || []).map((c: { text?: string }) => c.text || '').join('');
-      lineLengths.push(lineText.length);
-      text += lineText;
-    } else if (child.text) {
-      text += child.text;
+  (codeBlock.children || []).forEach((lineNode: any, lineIndex: number) => {
+    if (lineNode.type === BlockElementType.CODE_LINE) {
+      (lineNode.children || []).forEach((textNode: any, textIndex: number) => {
+        const text = textNode.text || '';
+        if (text.length > 0) {
+          textNodes.push({
+            path: [...path, lineIndex, textIndex],
+            text,
+            start: globalOffset,
+          });
+          globalOffset += text.length;
+        }
+      });
     }
   });
 
-  if (!text) return decorations;
+  if (textNodes.length === 0) return decorations;
 
-  const tokens = Prism.tokenize(text, prismLanguage);
-  let currentLineIndex = 0;
-  let currentLineOffset = 0;
+  const fullText = textNodes.map((n) => n.text).join('');
+  if (!fullText) return decorations;
+
+  const tokens = Prism.tokenize(fullText, prismLanguage);
+  let offset = 0;
 
   const traverseTokens = (token: Prism.Token | string) => {
     if (typeof token === 'string') {
-      const length = token.length;
-      for (let i = 0; i < length; i++) {
-        if (currentLineOffset >= lineLengths[currentLineIndex]) {
-          currentLineIndex++;
-          currentLineOffset = 0;
-        }
-        currentLineOffset++;
-      }
+      offset += token.length;
       return;
     }
 
@@ -140,33 +148,30 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
     const tokenType = token.type as string;
 
     if (SHOULD_COLOR_TOKEN.has(tokenType)) {
-      const startLineIndex = currentLineIndex;
-      const startLineOffset = currentLineOffset;
-      let tempLineIndex = currentLineIndex;
-      let tempLineOffset = currentLineOffset;
+      const start = offset;
+      const end = offset + length;
 
-      for (let i = 0; i < length; i++) {
-        if (tempLineOffset >= lineLengths[tempLineIndex]) {
-          tempLineIndex++;
-          tempLineOffset = 0;
+      // 为 token 跨越的每个文本节点分别创建 decoration
+      for (const textNode of textNodes) {
+        const nodeStart = textNode.start;
+        const nodeEnd = textNode.start + textNode.text.length;
+
+        if (nodeEnd <= start || nodeStart >= end) continue;
+
+        const localStart = Math.max(0, start - nodeStart);
+        const localEnd = Math.min(textNode.text.length, end - nodeStart);
+
+        if (localEnd > localStart) {
+          decorations.push({
+            anchor: { path: textNode.path, offset: localStart },
+            focus: { path: textNode.path, offset: localEnd },
+            [tokenType]: true,
+          });
         }
-        tempLineOffset++;
       }
-
-      decorations.push({
-        anchor: { path: [...path, startLineIndex, 0], offset: startLineOffset },
-        focus: { path: [...path, tempLineIndex, 0], offset: tempLineOffset },
-        [tokenType]: true,
-      });
     }
 
-    for (let i = 0; i < length; i++) {
-      if (currentLineOffset >= lineLengths[currentLineIndex]) {
-        currentLineIndex++;
-        currentLineOffset = 0;
-      }
-      currentLineOffset++;
-    }
+    offset += length;
 
     if (token.content && Array.isArray(token.content)) {
       token.content.forEach(traverseTokens);
