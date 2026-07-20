@@ -25,6 +25,7 @@ import {
   SelectionProvider,
   DocBarProvider,
   DocBar,
+  Image,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 import { initialValue } from '@/utils/initial-value';
@@ -33,7 +34,7 @@ import { codeDecorate, CODE_TOKEN_COLORS } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
 
 const renderElement = ({ element, attributes, children }: RenderElementProps) => {
-  const el = element as { type?: BlockElementType; id?: string; children: unknown[] };
+  const el = element as { type?: BlockElementType; id?: string; children: unknown[]; attrs?: any };
 
   switch (el.type) {
     case BlockElementType.HEADING_ONE:
@@ -56,6 +57,10 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
       return <NumberedList attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.BULLETED_LIST:
       return <BulletedList attributes={attributes} children={children} pluginId={el.id} />;
+    case BlockElementType.IMAGE_BLOCK:
+      return (
+        <Image attributes={attributes} pluginId={el.id || ''} element={el as { attrs: any }} />
+      );
     default:
       return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
   }
@@ -124,9 +129,9 @@ export default function Editor() {
             <DocBar />
             <div
               style={{
-                maxWidth: '800px',
+                maxWidth: '900px',
                 margin: '0 auto',
-                padding: '40px 48px 40px 72px',
+                padding: '40px 50px',
                 border: '1px solid #e8e8e8',
                 borderRadius: '8px',
                 backgroundColor: '#fff',

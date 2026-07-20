@@ -9,6 +9,7 @@ export const BlockElementType = {
   LIST_ITEM: 'list-item',
   NUMBERED_LIST: 'numbered-list',
   BULLETED_LIST: 'bulleted-list',
+  IMAGE_BLOCK: 'image-block',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

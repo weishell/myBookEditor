@@ -47,6 +47,27 @@ export const initialValue: Descendant[] = [
   {
     type: BlockElementType.HEADING_TWO,
     id: uuidv4(),
+    children: [{ text: '图片示例' }],
+  },
+  {
+    type: BlockElementType.IMAGE_BLOCK,
+    id: uuidv4(),
+    attrs: {
+      url: 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&h=675&fit=crop',
+      width: 800,
+      height: 450,
+      align: 'center',
+    },
+    children: [{ text: '' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [{ text: '这是一张示例图片，支持拖拽调整尺寸和对齐功能。' }],
+  },
+  {
+    type: BlockElementType.HEADING_TWO,
+    id: uuidv4(),
     children: [{ text: '引用示例' }],
   },
   {

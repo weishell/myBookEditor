@@ -1,0 +1,541 @@
+import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { Transforms } from 'slate';
+import { useSlate } from 'slate-react';
+import { ElementWrapper } from '../element-wrapper/ElementWrapper';
+import { BlockElementType } from '@/enums';
+import ResizeHandle from '../resize-handle/ResizeHandle';
+import { v4 as uuidv4 } from 'uuid';
+
+interface ImageAttrs {
+  url: string;
+  width?: number;
+  height?: number;
+  align?: 'left' | 'center' | 'right';
+}
+
+interface ImageProps {
+  attributes: any;
+  pluginId: string;
+  element: { attrs: ImageAttrs };
+}
+
+const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
+  const editor = useSlate();
+  const { attrs } = element;
+  const [showToolbar, setShowToolbar] = useState(false);
+  const [isSelected, setIsSelected] = useState(false);
+  const [bounds, setBounds] = useState<DOMRect | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const hideTimerRef = useRef<number | null>(null);
+  const attrsRef = useRef(attrs);
+
+  attrsRef.current = attrs;
+
+  const ASPECT_RATIO = attrs.width && attrs.height ? attrs.width / attrs.height : 16 / 9;
+  const DISPLAY_WIDTH = attrs.width || 800;
+
+  const updateBounds = useCallback(() => {
+    if (containerRef.current) {
+      setBounds(containerRef.current.getBoundingClientRect());
+    }
+  }, []);
+
+  useEffect(() => {
+    updateBounds();
+    window.addEventListener('resize', updateBounds);
+    window.addEventListener('scroll', updateBounds, true);
+    return () => {
+      window.removeEventListener('resize', updateBounds);
+      window.removeEventListener('scroll', updateBounds, true);
+    };
+  }, [updateBounds]);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      const observer = new ResizeObserver(() => {
+        updateBounds();
+      });
+      observer.observe(containerRef.current);
+      return () => observer.disconnect();
+    }
+  }, [updateBounds]);
+
+  const handleResize = useCallback(
+    (newWidth: number, newHeight: number) => {
+      if (!editor || !editor.children) return;
+
+      for (let i = 0; i < editor.children.length; i++) {
+        const child = editor.children[i] as any;
+        if (
+          child.type === BlockElementType.IMAGE_BLOCK &&
+          child.attrs?.url === attrsRef.current.url
+        ) {
+          Transforms.setNodes(
+            editor,
+            {
+              attrs: {
+                ...attrsRef.current,
+                width: newWidth,
+                height: newHeight,
+              },
+            } as any,
+            { at: [i] },
+          );
+          return;
+        }
+      }
+    },
+    [editor],
+  );
+
+  const handleClick = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    setIsSelected((prev) => !prev);
+  }, []);
+
+  const showToolbarHandler = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setShowToolbar(true);
+  }, []);
+
+  const hideToolbarHandler = useCallback(() => {
+    hideTimerRef.current = window.setTimeout(() => {
+      setShowToolbar(false);
+      setIsSelected(false);
+      hideTimerRef.current = null;
+    }, 300);
+  }, []);
+
+  const handleAlign = useCallback(
+    (align: 'left' | 'center' | 'right') => {
+      if (!editor || !editor.children) return;
+
+      for (let i = 0; i < editor.children.length; i++) {
+        const child = editor.children[i] as any;
+        if (
+          child.type === BlockElementType.IMAGE_BLOCK &&
+          child.attrs?.url === attrsRef.current.url
+        ) {
+          Transforms.setNodes(editor, { attrs: { ...attrsRef.current, align } } as any, {
+            at: [i],
+          });
+          return;
+        }
+      }
+    },
+    [editor],
+  );
+
+  const handleRemove = useCallback(() => {
+    if (!editor || !editor.children) return;
+
+    for (let i = 0; i < editor.children.length; i++) {
+      const child = editor.children[i] as any;
+      if (
+        child.type === BlockElementType.IMAGE_BLOCK &&
+        child.attrs?.url === attrsRef.current.url
+      ) {
+        Transforms.removeNodes(editor, { at: [i] });
+        return;
+      }
+    }
+  }, [editor]);
+
+  const getAlignStyle = () => {
+    switch (attrs.align) {
+      case 'left':
+        return { justifyContent: 'flex-start' };
+      case 'right':
+        return { justifyContent: 'flex-end' };
+      default:
+        return { justifyContent: 'center' };
+    }
+  };
+
+  return (
+    <ElementWrapper type={BlockElementType.IMAGE_BLOCK} pluginId={pluginId}>
+      <div
+        ref={wrapperRef}
+        style={{
+          margin: '8px 0',
+          display: 'flex',
+          ...getAlignStyle(),
+          userSelect: 'none',
+          width: '100%',
+        }}
+        onMouseEnter={showToolbarHandler}
+        onMouseLeave={hideToolbarHandler}
+      >
+        {(showToolbar || isSelected) && (
+          <div
+            ref={toolbarRef}
+            style={{
+              position: 'absolute',
+              top: '-48px',
+              left: '50%',
+              transform: 'translateX(-50%)',
+              display: 'flex',
+              gap: '0',
+              backgroundColor: '#fff',
+              borderRadius: '8px',
+              padding: '2px',
+              zIndex: 10000,
+              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
+              border: '1px solid #e8e8e8',
+              whiteSpace: 'nowrap',
+            }}
+            onMouseEnter={showToolbarHandler}
+            onMouseLeave={hideToolbarHandler}
+          >
+            <button
+              onClick={() => handleAlign('left')}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: attrs.align === 'left' ? '#f0f0f0' : 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  attrs.align === 'left' ? '#f0f0f0' : 'transparent')
+              }
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="15" y1="3" x2="6" y2="3"></line>
+                <line x1="19" y1="21" x2="6" y2="21"></line>
+                <path d="M4 9h10"></path>
+                <path d="M4 15h14"></path>
+              </svg>
+            </button>
+            <button
+              onClick={() => handleAlign('center')}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: attrs.align === 'center' ? '#f0f0f0' : 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  attrs.align === 'center' ? '#f0f0f0' : 'transparent')
+              }
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="3" x2="6" y2="3"></line>
+                <line x1="21" y1="21" x2="3" y2="21"></line>
+                <path d="M9 9h6"></path>
+                <path d="M8 15h8"></path>
+              </svg>
+            </button>
+            <button
+              onClick={() => handleAlign('right')}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: attrs.align === 'right' ? '#f0f0f0' : 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) =>
+                (e.currentTarget.style.backgroundColor =
+                  attrs.align === 'right' ? '#f0f0f0' : 'transparent')
+              }
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="9" y1="3" x2="18" y2="3"></line>
+                <line x1="3" y1="21" x2="18" y2="21"></line>
+                <path d="M14 9h6"></path>
+                <path d="M10 15h6"></path>
+              </svg>
+            </button>
+            <div
+              style={{
+                width: '1px',
+                height: '20px',
+                backgroundColor: '#e8e8e8',
+                margin: '4px 2px',
+              }}
+            />
+            <button
+              onClick={() =>
+                handleResize(
+                  (attrs.width || 800) * 0.25,
+                  ((attrs.width || 800) * 0.25) / ASPECT_RATIO,
+                )
+              }
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                color: '#666',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              S
+            </button>
+            <button
+              onClick={() =>
+                handleResize(
+                  (attrs.width || 800) * 0.5,
+                  ((attrs.width || 800) * 0.5) / ASPECT_RATIO,
+                )
+              }
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                color: '#666',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              M
+            </button>
+            <button
+              onClick={() =>
+                handleResize(
+                  (attrs.width || 800) * 0.75,
+                  ((attrs.width || 800) * 0.75) / ASPECT_RATIO,
+                )
+              }
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                color: '#666',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              L
+            </button>
+            <button
+              onClick={() => handleResize(attrs.width || 800, (attrs.width || 800) / ASPECT_RATIO)}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '11px',
+                color: '#666',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              原
+            </button>
+            <div
+              style={{
+                width: '1px',
+                height: '20px',
+                backgroundColor: '#e8e8e8',
+                margin: '4px 2px',
+              }}
+            />
+            <button
+              onClick={() => {
+                if (!editor || !editor.children) return;
+                for (let i = 0; i < editor.children.length; i++) {
+                  const child = editor.children[i] as any;
+                  if (
+                    child.type === BlockElementType.IMAGE_BLOCK &&
+                    child.attrs?.url === attrsRef.current.url
+                  ) {
+                    Transforms.insertNodes(
+                      editor,
+                      {
+                        type: BlockElementType.IMAGE_BLOCK,
+                        id: uuidv4(),
+                        attrs: { ...attrsRef.current },
+                        children: [{ text: '' }],
+                      } as any,
+                      { at: [i + 1] },
+                    );
+                    return;
+                  }
+                }
+              }}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
+                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
+              </svg>
+            </button>
+            <button
+              onClick={handleRemove}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+              </svg>
+            </button>
+          </div>
+        )}
+
+        <div
+          {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
+          ref={containerRef}
+          className="image-container"
+          style={{
+            position: 'relative',
+            width: DISPLAY_WIDTH,
+            maxWidth: '90%',
+            aspectRatio: ASPECT_RATIO,
+            overflow: 'hidden',
+            borderRadius: '4px',
+            boxShadow: isSelected ? '0 0 0 2px #1890ff' : 'none',
+            cursor: 'grab',
+          }}
+          contentEditable={false}
+          suppressContentEditableWarning={true}
+          onClick={handleClick}
+        >
+          <img
+            src={attrs.url}
+            alt=""
+            style={{
+              display: 'block',
+              width: '100%',
+              height: '100%',
+              objectFit: 'contain',
+            }}
+            draggable={false}
+            onLoad={updateBounds}
+          />
+        </div>
+
+        {(isSelected || showToolbar) && bounds && (
+          <ResizeHandle
+            bounds={bounds}
+            onResize={handleResize}
+            aspectRatio={ASPECT_RATIO}
+            initialWidth={bounds.width}
+            initialHeight={bounds.height}
+          />
+        )}
+      </div>
+    </ElementWrapper>
+  );
+};
+
+export default Image;
