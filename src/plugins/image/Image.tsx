@@ -4,6 +4,7 @@ import { useSlate } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
+import ImageCropper from './ImageCropper';
 import { v4 as uuidv4 } from 'uuid';
 
 interface ImageAttrs {
@@ -11,6 +12,10 @@ interface ImageAttrs {
   width?: number;
   height?: number;
   align?: 'left' | 'center' | 'right';
+  offsetLeft?: number;
+  offsetTop?: number;
+  offsetWidth?: number;
+  offsetHeight?: number;
 }
 
 interface ImageProps {
@@ -25,6 +30,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
   const [showToolbar, setShowToolbar] = useState(false);
   const [isSelected, setIsSelected] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
+  const [isCropping, setIsCropping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -33,8 +39,15 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
 
   attrsRef.current = attrs;
 
-  const ASPECT_RATIO = attrs.width && attrs.height ? attrs.width / attrs.height : 16 / 9;
-  const DISPLAY_WIDTH = attrs.width || 800;
+  const hasCrop = attrs.offsetWidth && attrs.offsetHeight;
+  const CROP_WIDTH = attrs.offsetWidth || attrs.width || 800;
+  const CROP_HEIGHT = attrs.offsetHeight || attrs.height || 450;
+  const ASPECT_RATIO = hasCrop
+    ? CROP_WIDTH / CROP_HEIGHT
+    : attrs.width && attrs.height
+      ? attrs.width / attrs.height
+      : 16 / 9;
+  const DISPLAY_WIDTH = CROP_WIDTH;
 
   const updateBounds = useCallback(() => {
     if (containerRef.current) {
@@ -62,8 +75,54 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
     }
   }, [updateBounds]);
 
+  useEffect(() => {
+    requestAnimationFrame(() => {
+      updateBounds();
+    });
+  }, [
+    attrs.align,
+    attrs.offsetLeft,
+    attrs.offsetTop,
+    attrs.offsetWidth,
+    attrs.offsetHeight,
+    updateBounds,
+  ]);
+
   const handleResize = useCallback(
     (newWidth: number, newHeight: number) => {
+      if (!editor || !editor.children) return;
+
+      for (let i = 0; i < editor.children.length; i++) {
+        const child = editor.children[i] as any;
+        if (
+          child.type === BlockElementType.IMAGE_BLOCK &&
+          child.attrs?.url === attrsRef.current.url
+        ) {
+          const currentAttrs = attrsRef.current;
+          Transforms.setNodes(
+            editor,
+            {
+              attrs: {
+                ...currentAttrs,
+                width: newWidth,
+                height: newHeight,
+              },
+            } as any,
+            { at: [i] },
+          );
+          return;
+        }
+      }
+    },
+    [editor],
+  );
+
+  const handleOpenCrop = useCallback(() => {
+    setIsCropping(true);
+  }, []);
+
+  const handleCrop = useCallback(
+    (offsetLeft: number, offsetTop: number, offsetWidth: number, offsetHeight: number) => {
       if (!editor || !editor.children) return;
 
       for (let i = 0; i < editor.children.length; i++) {
@@ -77,18 +136,25 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
             {
               attrs: {
                 ...attrsRef.current,
-                width: newWidth,
-                height: newHeight,
+                offsetLeft,
+                offsetTop,
+                offsetWidth,
+                offsetHeight,
               },
             } as any,
             { at: [i] },
           );
-          return;
+          break;
         }
       }
+      setIsCropping(false);
     },
     [editor],
   );
+
+  const handleCancelCrop = useCallback(() => {
+    setIsCropping(false);
+  }, []);
 
   const handleClick = useCallback((e: React.MouseEvent) => {
     e.stopPropagation();
@@ -167,6 +233,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           ...getAlignStyle(),
           userSelect: 'none',
           width: '100%',
+          position: 'relative',
         }}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
@@ -306,12 +373,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
               }}
             />
             <button
-              onClick={() =>
-                handleResize(
-                  (attrs.width || 800) * 0.25,
-                  ((attrs.width || 800) * 0.25) / ASPECT_RATIO,
-                )
-              }
+              onClick={() => handleResize(CROP_WIDTH * 0.25, CROP_HEIGHT * 0.25)}
               style={{
                 width: '28px',
                 height: '28px',
@@ -331,12 +393,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
               S
             </button>
             <button
-              onClick={() =>
-                handleResize(
-                  (attrs.width || 800) * 0.5,
-                  ((attrs.width || 800) * 0.5) / ASPECT_RATIO,
-                )
-              }
+              onClick={() => handleResize(CROP_WIDTH * 0.5, CROP_HEIGHT * 0.5)}
               style={{
                 width: '28px',
                 height: '28px',
@@ -356,12 +413,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
               M
             </button>
             <button
-              onClick={() =>
-                handleResize(
-                  (attrs.width || 800) * 0.75,
-                  ((attrs.width || 800) * 0.75) / ASPECT_RATIO,
-                )
-              }
+              onClick={() => handleResize(CROP_WIDTH * 0.75, CROP_HEIGHT * 0.75)}
               style={{
                 width: '28px',
                 height: '28px',
@@ -381,7 +433,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
               L
             </button>
             <button
-              onClick={() => handleResize(attrs.width || 800, (attrs.width || 800) / ASPECT_RATIO)}
+              onClick={() => handleResize(attrs.width || 800, attrs.height || 450)}
               style={{
                 width: '28px',
                 height: '28px',
@@ -408,6 +460,37 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
                 margin: '4px 2px',
               }}
             />
+            <button
+              onClick={handleOpenCrop}
+              style={{
+                width: '28px',
+                height: '28px',
+                border: 'none',
+                background: 'transparent',
+                borderRadius: '4px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#666"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                <polyline points="7 10 12 15 17 10"></polyline>
+                <line x1="12" y1="15" x2="12" y2="3"></line>
+              </svg>
+            </button>
             <button
               onClick={() => {
                 if (!editor || !editor.children) return;
@@ -499,7 +582,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           style={{
             position: 'relative',
             width: DISPLAY_WIDTH,
-            maxWidth: '90%',
+            maxWidth: hasCrop ? 'none' : '90%',
             aspectRatio: ASPECT_RATIO,
             overflow: 'hidden',
             borderRadius: '4px',
@@ -515,16 +598,27 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
             alt=""
             style={{
               display: 'block',
-              width: '100%',
-              height: '100%',
-              objectFit: 'contain',
+              ...(hasCrop
+                ? {
+                    position: 'absolute' as const,
+                    left: -(attrs.offsetLeft || 0),
+                    top: -(attrs.offsetTop || 0),
+                    width: attrs.width,
+                    height: attrs.height,
+                    objectFit: 'none' as const,
+                  }
+                : {
+                    width: '100%',
+                    height: '100%',
+                    objectFit: 'contain' as const,
+                  }),
             }}
             draggable={false}
             onLoad={updateBounds}
           />
         </div>
 
-        {(isSelected || showToolbar) && bounds && (
+        {(isSelected || showToolbar) && bounds && !hasCrop && (
           <ResizeHandle
             bounds={bounds}
             onResize={handleResize}
@@ -534,6 +628,20 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           />
         )}
       </div>
+
+      {isCropping && (
+        <ImageCropper
+          imageUrl={attrs.url}
+          imageWidth={attrs.width || 800}
+          imageHeight={attrs.height || 450}
+          offsetLeft={attrs.offsetLeft}
+          offsetTop={attrs.offsetTop}
+          offsetWidth={attrs.offsetWidth}
+          offsetHeight={attrs.offsetHeight}
+          onCrop={handleCrop}
+          onCancel={handleCancelCrop}
+        />
+      )}
     </ElementWrapper>
   );
 };
