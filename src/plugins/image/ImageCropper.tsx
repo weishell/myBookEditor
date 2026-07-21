@@ -1,4 +1,7 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
+import ReactCrop from 'react-image-crop';
+import type { Crop, PixelCrop } from 'react-image-crop';
+import 'react-image-crop/dist/ReactCrop.css';
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -28,147 +31,61 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
   onCrop,
   onCancel,
 }) => {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [crop, setCrop] = useState<Crop>({
+    unit: '%',
+    x: 0,
+    y: 0,
+    width: 100,
+    height: 100,
+  });
+  const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
+  const imgRef = useRef<HTMLImageElement>(null);
   const hasExistingCrop = offsetWidth && offsetHeight;
 
-  const [cropArea, setCropArea] = useState({
-    left: hasExistingCrop
-      ? offsetLeft || 0
-      : Math.max(0, (imageWidth - Math.min(imageWidth, 600)) / 2),
-    top: hasExistingCrop
-      ? offsetTop || 0
-      : Math.max(0, (imageHeight - Math.min(imageHeight, 400)) / 2),
-    width: hasExistingCrop ? offsetWidth : Math.min(imageWidth, 600),
-    height: hasExistingCrop ? offsetHeight : Math.min(imageHeight, 400),
-  });
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragType, setDragType] = useState<'move' | 'nw' | 'ne' | 'sw' | 'se' | null>(null);
-  const dragStartRef = useRef({ x: 0, y: 0, left: 0, top: 0, width: 0, height: 0 });
-
-  const MIN_SIZE = 50;
-
-  const handleMouseDown = useCallback(
-    (e: React.MouseEvent, type: 'move' | 'nw' | 'ne' | 'sw' | 'se') => {
-      e.preventDefault();
-      e.stopPropagation();
-      setIsDragging(true);
-      setDragType(type);
-      dragStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
-        left: cropArea.left,
-        top: cropArea.top,
-        width: cropArea.width,
-        height: cropArea.height,
-      };
-    },
-    [cropArea],
-  );
-
-  const handleMouseMove = useCallback(
-    (e: MouseEvent) => {
-      if (!isDragging || !dragType) return;
-
-      const deltaX = e.clientX - dragStartRef.current.x;
-      const deltaY = e.clientY - dragStartRef.current.y;
-      const { left, top, width, height } = dragStartRef.current;
-
-      let newLeft = left;
-      let newTop = top;
-      let newWidth = width;
-      let newHeight = height;
-
-      switch (dragType) {
-        case 'move':
-          newLeft = Math.max(0, Math.min(imageWidth - width, left + deltaX));
-          newTop = Math.max(0, Math.min(imageHeight - height, top + deltaY));
-          break;
-        case 'nw':
-          newLeft = Math.min(left + deltaX, imageWidth - MIN_SIZE);
-          newTop = Math.min(top + deltaY, imageHeight - MIN_SIZE);
-          newWidth = Math.max(MIN_SIZE, width - deltaX);
-          newHeight = Math.max(MIN_SIZE, height - deltaY);
-          if (newLeft < 0) {
-            newWidth += newLeft;
-            newLeft = 0;
-          }
-          if (newTop < 0) {
-            newHeight += newTop;
-            newTop = 0;
-          }
-          newWidth = Math.min(newWidth, imageWidth - newLeft);
-          newHeight = Math.min(newHeight, imageHeight - newTop);
-          break;
-        case 'ne':
-          newTop = Math.min(top + deltaY, imageHeight - MIN_SIZE);
-          newWidth = Math.max(MIN_SIZE, width + deltaX);
-          newHeight = Math.max(MIN_SIZE, height - deltaY);
-          if (newTop < 0) {
-            newHeight += newTop;
-            newTop = 0;
-          }
-          newWidth = Math.min(newWidth, imageWidth - left);
-          newHeight = Math.min(newHeight, imageHeight - newTop);
-          break;
-        case 'sw':
-          newLeft = Math.min(left + deltaX, imageWidth - MIN_SIZE);
-          newWidth = Math.max(MIN_SIZE, width - deltaX);
-          newHeight = Math.max(MIN_SIZE, height + deltaY);
-          if (newLeft < 0) {
-            newWidth += newLeft;
-            newLeft = 0;
-          }
-          newWidth = Math.min(newWidth, imageWidth - newLeft);
-          newHeight = Math.min(newHeight, imageHeight - top);
-          break;
-        case 'se':
-          newWidth = Math.max(MIN_SIZE, width + deltaX);
-          newHeight = Math.max(MIN_SIZE, height + deltaY);
-          newWidth = Math.min(newWidth, imageWidth - left);
-          newHeight = Math.min(newHeight, imageHeight - top);
-          break;
-        default:
-          break;
-      }
-
-      setCropArea({
-        left: newLeft,
-        top: newTop,
-        width: newWidth,
-        height: newHeight,
+  useEffect(() => {
+    if (hasExistingCrop && offsetWidth && offsetHeight) {
+      setCrop({
+        unit: '%',
+        x: ((offsetLeft || 0) / imageWidth) * 100,
+        y: ((offsetTop || 0) / imageHeight) * 100,
+        width: (offsetWidth / imageWidth) * 100,
+        height: (offsetHeight / imageHeight) * 100,
       });
-    },
-    [isDragging, dragType, imageWidth, imageHeight],
-  );
-
-  const handleMouseUp = useCallback(() => {
-    setIsDragging(false);
-    setDragType(null);
+    }
   }, []);
 
-  useEffect(() => {
-    if (isDragging) {
-      window.addEventListener('mousemove', handleMouseMove);
-      window.addEventListener('mouseup', handleMouseUp);
-      return () => {
-        window.removeEventListener('mousemove', handleMouseMove);
-        window.removeEventListener('mouseup', handleMouseUp);
-      };
-    }
-  }, [isDragging, handleMouseMove, handleMouseUp]);
+  const onImageLoad = useCallback(() => {}, []);
+
+  const onCropComplete = useCallback((_crop: PixelCrop) => {
+    setCompletedCrop(_crop);
+  }, []);
+
+  const onCropChange = useCallback((c: Crop) => {
+    setCrop(c);
+  }, []);
 
   const handleConfirm = useCallback(() => {
-    onCrop(cropArea.left, cropArea.top, cropArea.width, cropArea.height);
-  }, [cropArea, onCrop]);
+    if (completedCrop && imgRef.current) {
+      const scaleX = imageWidth / imgRef.current.width;
+      const scaleY = imageHeight / imgRef.current.height;
+      onCrop(
+        completedCrop.x * scaleX,
+        completedCrop.y * scaleY,
+        completedCrop.width * scaleX,
+        completedCrop.height * scaleY,
+      );
+    }
+  }, [completedCrop, onCrop, imageWidth, imageHeight]);
 
   const handleReset = useCallback(() => {
-    setCropArea({
-      left: Math.max(0, (imageWidth - Math.min(imageWidth, 600)) / 2),
-      top: Math.max(0, (imageHeight - Math.min(imageHeight, 400)) / 2),
-      width: Math.min(imageWidth, 600),
-      height: Math.min(imageHeight, 400),
+    setCrop({
+      unit: '%',
+      x: 0,
+      y: 0,
+      width: 100,
+      height: 100,
     });
-  }, [imageWidth, imageHeight]);
+  }, []);
 
   const handleClear = useCallback(() => {
     onCrop(0, 0, imageWidth, imageHeight);
@@ -176,7 +93,6 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 
   return (
     <div
-      ref={containerRef}
       style={{
         position: 'fixed',
         top: 0,
@@ -191,7 +107,7 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
         cursor: 'default',
       }}
       onClick={(e) => {
-        if (e.target === containerRef.current) {
+        if (e.target === e.currentTarget) {
           onCancel();
         }
       }}
@@ -222,109 +138,37 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
         <div
           style={{
             position: 'relative',
-            overflow: 'hidden',
             border: '1px solid #e8e8e8',
             borderRadius: '4px',
             backgroundColor: '#f5f5f5',
             maxWidth: '800px',
             maxHeight: '600px',
+            marginBottom: '12px',
           }}
         >
-          <img
-            src={imageUrl}
-            alt=""
+          <ReactCrop
+            crop={crop}
+            onChange={onCropChange}
+            onComplete={onCropComplete}
             style={{
-              display: 'block',
-              maxWidth: '100%',
+              maxWidth: '800px',
               maxHeight: '600px',
-              objectFit: 'fill',
             }}
-            draggable={false}
-          />
-
-          <div
-            style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-              backgroundColor: 'rgba(0,0,0,0.5)',
-              pointerEvents: 'none',
-            }}
-          />
-
-          <div
-            style={{
-              position: 'absolute',
-              left: `${(cropArea.left / imageWidth) * 100}%`,
-              top: `${(cropArea.top / imageHeight) * 100}%`,
-              width: `${(cropArea.width / imageWidth) * 100}%`,
-              height: `${(cropArea.height / imageHeight) * 100}%`,
-              backgroundColor: 'transparent',
-              border: '2px dashed #1890ff',
-              cursor: 'move',
-              pointerEvents: 'auto',
-            }}
-            onMouseDown={(e) => handleMouseDown(e, 'move')}
           >
-            <div
+            <img
+              ref={imgRef}
+              src={imageUrl}
+              alt=""
               style={{
-                position: 'absolute',
-                top: '-2px',
-                left: '-2px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#fff',
-                border: '2px solid #1890ff',
-                borderRadius: '50%',
-                cursor: 'nw-resize',
+                display: 'block',
+                maxWidth: '100%',
+                maxHeight: '600px',
+                objectFit: 'contain',
               }}
-              onMouseDown={(e) => handleMouseDown(e, 'nw')}
+              draggable={false}
+              onLoad={onImageLoad}
             />
-            <div
-              style={{
-                position: 'absolute',
-                top: '-2px',
-                right: '-2px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#fff',
-                border: '2px solid #1890ff',
-                borderRadius: '50%',
-                cursor: 'ne-resize',
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'ne')}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-2px',
-                left: '-2px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#fff',
-                border: '2px solid #1890ff',
-                borderRadius: '50%',
-                cursor: 'sw-resize',
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'sw')}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                bottom: '-2px',
-                right: '-2px',
-                width: '10px',
-                height: '10px',
-                backgroundColor: '#fff',
-                border: '2px solid #1890ff',
-                borderRadius: '50%',
-                cursor: 'se-resize',
-              }}
-              onMouseDown={(e) => handleMouseDown(e, 'se')}
-            />
-          </div>
+          </ReactCrop>
         </div>
 
         <div
@@ -332,7 +176,6 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
             display: 'flex',
             justifyContent: 'flex-end',
             gap: '8px',
-            marginTop: '12px',
           }}
         >
           <button
