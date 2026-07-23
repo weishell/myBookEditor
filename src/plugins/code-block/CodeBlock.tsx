@@ -1,9 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Transforms } from 'slate';
 import { useSlate } from 'slate-react';
+import { Select } from 'antd';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
-import { SUPPORTED_LANGUAGES, getLanguageName } from '@/utils/code-highlighter';
+import { SUPPORTED_LANGUAGES } from '@/utils/code-highlighter';
 
 interface CodeBlockAttrs {
   language?: string;
@@ -25,15 +26,13 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
   const editor = useSlate();
   const [height, setHeight] = useState<number>(element?.attrs?.height || 150);
   const [isDragging, setIsDragging] = useState(false);
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false);
-  const [showWrapMenu, setShowWrapMenu] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [showCopySuccess, setShowCopySuccess] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
 
   const attrs = element?.attrs || {};
-  const language = attrs.language || 'javascript';
-  const wrap = attrs.wrap !== undefined ? attrs.wrap : true;
+  const [localLanguage, setLocalLanguage] = useState<string>(attrs.language || 'javascript');
+  const [localWrap, setLocalWrap] = useState<boolean>(attrs.wrap !== undefined ? attrs.wrap : true);
 
   const codeText = ((element as any)?.children || [])
     .map((child: any) => {
@@ -67,50 +66,43 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
     };
   }, [isDragging]);
 
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
-        setShowLanguageMenu(false);
-        setShowWrapMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
   const handleDragStart = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
     setIsDragging(true);
   }, []);
 
-  const handleLanguageChange = useCallback(
-    (newLanguage: string) => {
-      Transforms.setNodes(
-        editor,
-        { attrs: { ...attrs, language: newLanguage } },
-        { match: (n: any) => n.type === BlockElementType.CODE_BLOCK },
-      );
-      setShowLanguageMenu(false);
-    },
-    [editor, attrs],
-  );
+  const handleLanguageChange = (newLanguage: string) => {
+    setLocalLanguage(newLanguage);
+    Transforms.setNodes(editor, { attrs: { ...attrs, language: newLanguage } } as any, {
+      match: (n: any) => n === element,
+    });
+  };
 
-  const handleWrapToggle = useCallback(
-    (newWrap: boolean) => {
-      Transforms.setNodes(
-        editor,
-        { attrs: { ...attrs, wrap: newWrap } },
-        { match: (n: any) => n.type === BlockElementType.CODE_BLOCK },
-      );
-      setShowWrapMenu(false);
-    },
-    [editor, attrs],
-  );
+  const handleWrapChange = (value: string) => {
+    const newWrap = value === 'on';
+    setLocalWrap(newWrap);
+    Transforms.setNodes(editor, { attrs: { ...attrs, wrap: newWrap } } as any, {
+      match: (n: any) => n === element,
+    });
+  };
 
   const handleCopy = useCallback(() => {
     navigator.clipboard.writeText(codeText);
+    setShowCopySuccess(true);
+    setTimeout(() => setShowCopySuccess(false), 3000);
   }, [codeText]);
+
+  const languageOptions = SUPPORTED_LANGUAGES.map((lang) => ({
+    value: lang.id,
+    label: lang.name,
+  }));
+
+  const wrapOptions = [
+    { value: 'on', label: '自动换行' },
+    { value: 'off', label: '取消换行' },
+  ];
+
+  const isToolbarVisible = isHovered;
 
   return (
     <ElementWrapper type={BlockElementType.CODE_BLOCK} pluginId={pluginId}>
@@ -125,13 +117,10 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
           backgroundColor: '#f9fafb',
           overflow: 'hidden',
           boxShadow: 'none',
+          maxWidth: '100%',
         }}
         onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => {
-          setIsHovered(false);
-          setShowLanguageMenu(false);
-          setShowWrapMenu(false);
-        }}
+        onMouseLeave={() => setIsHovered(false)}
       >
         <div
           contentEditable={false}
@@ -141,158 +130,65 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
             alignItems: 'center',
             justifyContent: 'space-between',
             padding: '4px 12px',
-            backgroundColor: isHovered || showLanguageMenu || showWrapMenu ? '#f9fafb' : '#ffffff',
-            borderBottom:
-              isHovered || showLanguageMenu || showWrapMenu ? '1px solid #e5e7eb' : 'none',
-            opacity: isHovered || showLanguageMenu || showWrapMenu ? 1 : 0,
-            pointerEvents: isHovered || showLanguageMenu || showWrapMenu ? 'auto' : 'none',
+            backgroundColor: isToolbarVisible ? '#f9fafb' : '#ffffff',
+            borderBottom: isToolbarVisible ? '1px solid #e5e7eb' : 'none',
+            opacity: isToolbarVisible ? 1 : 0,
+            pointerEvents: isToolbarVisible ? 'auto' : 'none',
             transition: 'opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
             userSelect: 'none',
           }}
         >
-          <div
-            ref={menuRef}
-            style={{ position: 'relative', display: 'flex', alignItems: 'center', gap: '8px' }}
-          >
-            <div
-              style={{
-                cursor: 'pointer',
-                color: '#4b5563',
-                fontSize: '12px',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                backgroundColor: '#ffffff',
-                border: '1px solid #e5e7eb',
-              }}
-              onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-            >
-              {getLanguageName(language)}
-            </div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Select
+              value={localLanguage}
+              onChange={handleLanguageChange}
+              options={languageOptions}
+              style={{ width: 120 }}
+              size="small"
+              placeholder="选择语言"
+              popupMatchSelectWidth={false}
+              dropdownStyle={{ minWidth: 160 }}
+              showSearch
+              optionFilterProp="label"
+              filterOption={(input, option) =>
+                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+              }
+            />
 
-            {showLanguageMenu && (
-              <div
-                style={{
-                  position: 'fixed',
-                  marginTop: '4px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '8px',
-                  boxShadow:
-                    '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                  maxHeight: '240px',
-                  overflowY: 'auto',
-                  zIndex: 1000,
-                  minWidth: '160px',
-                  border: '1px solid #e5e7eb',
-                }}
-              >
-                <input
-                  type="text"
-                  placeholder="搜索"
-                  style={{
-                    width: '100%',
-                    padding: '8px 12px',
-                    border: 'none',
-                    borderBottom: '1px solid #f3f4f6',
-                    outline: 'none',
-                    fontSize: '13px',
-                    boxSizing: 'border-box',
-                  }}
-                />
-                {SUPPORTED_LANGUAGES.map((lang) => (
-                  <div
-                    key={lang.id}
-                    style={{
-                      padding: '6px 12px',
-                      cursor: 'pointer',
-                      fontSize: '13px',
-                      color: lang.id === language ? '#1890ff' : '#374151',
-                      backgroundColor: lang.id === language ? '#f0f5ff' : 'transparent',
-                    }}
-                    onClick={() => handleLanguageChange(lang.id)}
-                  >
-                    {lang.name}
-                  </div>
-                ))}
-              </div>
-            )}
-
-            <div
-              style={{
-                cursor: 'pointer',
-                color: wrap ? '#1890ff' : '#6b7280',
-                fontSize: '12px',
-                padding: '2px 6px',
-                borderRadius: '3px',
-                backgroundColor: '#ffffff',
-                border: '1px solid #e5e7eb',
-              }}
-              onClick={() => setShowWrapMenu(!showWrapMenu)}
-            >
-              {wrap ? '取消自动换行' : '自动换行'}
-            </div>
-
-            {showWrapMenu && (
-              <div
-                style={{
-                  position: 'fixed',
-                  marginTop: '4px',
-                  backgroundColor: '#ffffff',
-                  borderRadius: '8px',
-                  boxShadow:
-                    '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1)',
-                  zIndex: 1000,
-                  minWidth: '90px',
-                  border: '1px solid #e5e7eb',
-                }}
-              >
-                <div
-                  style={{
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    color: wrap ? '#1890ff' : '#374151',
-                    backgroundColor: wrap ? '#f0f5ff' : 'transparent',
-                  }}
-                  onClick={() => handleWrapToggle(true)}
-                >
-                  开启
-                </div>
-                <div
-                  style={{
-                    padding: '6px 12px',
-                    cursor: 'pointer',
-                    fontSize: '13px',
-                    color: !wrap ? '#1890ff' : '#374151',
-                    backgroundColor: !wrap ? '#f0f5ff' : 'transparent',
-                  }}
-                  onClick={() => handleWrapToggle(false)}
-                >
-                  关闭
-                </div>
-              </div>
-            )}
+            <Select
+              value={localWrap ? 'on' : 'off'}
+              onChange={handleWrapChange}
+              options={wrapOptions}
+              style={{ width: 90 }}
+              size="small"
+              popupMatchSelectWidth={false}
+            />
           </div>
 
           <div
             style={{
               cursor: 'pointer',
-              color: '#6b7280',
+              color: showCopySuccess ? '#52c41a' : '#6b7280',
               fontSize: '12px',
               padding: '2px 6px',
               borderRadius: '3px',
               backgroundColor: '#ffffff',
               border: '1px solid #e5e7eb',
             }}
-            onClick={handleCopy}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCopy();
+            }}
           >
-            复制
+            {showCopySuccess ? '已复制' : '复制'}
           </div>
         </div>
 
         <div
           style={{
             height: height - 32,
-            overflow: 'auto',
+            overflowY: 'auto',
+            overflowX: 'hidden',
           }}
         >
           <div
@@ -305,8 +201,10 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
               fontSize: '12px',
               lineHeight: '18px',
               color: '#374151',
-              whiteSpace: wrap ? 'pre-wrap' : 'pre',
-              wordBreak: wrap ? 'break-all' : 'normal',
+              whiteSpace: localWrap ? 'pre-wrap' : 'pre',
+              wordBreak: localWrap ? 'break-all' : 'normal',
+              overflowX: 'hidden',
+              width: '100%',
             }}
           >
             {children}
