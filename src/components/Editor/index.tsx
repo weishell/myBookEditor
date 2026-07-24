@@ -16,7 +16,6 @@ import {
   Blockquote,
   CodeBlock,
   CodeLine,
-  withCodeBlock,
   ListItem,
   NumberedList,
   BulletedList,
@@ -27,8 +26,8 @@ import {
   DocBar,
   Image,
   Divider,
-  withMarkdownShortcuts,
 } from '@/plugins';
+import { withCodeBlock, withMarkdownShortcuts } from '@/editor-extensions';
 import { BlockElementType } from '@/enums';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
