@@ -26,6 +26,8 @@ import {
   DocBarProvider,
   DocBar,
   Image,
+  Divider,
+  withMarkdownShortcuts,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 import { initialValue } from '@/utils/initial-value';
@@ -61,6 +63,8 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
       return (
         <Image attributes={attributes} pluginId={el.id || ''} element={el as { attrs: any }} />
       );
+    case BlockElementType.DIVIDER:
+      return <Divider attributes={attributes} pluginId={el.id} />;
     default:
       return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
   }
@@ -105,7 +109,10 @@ const renderLeaf = (props: RenderLeafProps) => {
 };
 
 export default function Editor() {
-  const editor = useMemo(() => withCodeBlock(withHistory(withReact(createEditor()))), []);
+  const editor = useMemo(
+    () => withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+    [],
+  );
 
   useEffect(() => {
     // 强制 normalize，将 code-block 的文本节点转换为 code-line 元素

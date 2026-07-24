@@ -1,0 +1,1 @@
+export { withMarkdownShortcuts } from './withMarkdownShortcuts';
