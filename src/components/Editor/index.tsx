@@ -40,11 +40,17 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
 
   switch (el.type) {
     case BlockElementType.HEADING_ONE:
-      return <HeadingOne attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <HeadingOne attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.HEADING_TWO:
-      return <HeadingTwo attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <HeadingTwo attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.HEADING_THREE:
-      return <HeadingThree attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <HeadingThree attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.BLOCKQUOTE:
       return <Blockquote attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.CODE_BLOCK:
