@@ -6,24 +6,38 @@ import type { TableRowAttrs } from './table-operations';
 interface TableRowProps extends RenderElementProps {
   pluginId?: string;
   element: CustomElement;
+  rowIndex?: number;
   onInsertRow?: (at?: number) => void;
   onDeleteRow?: () => void;
   onSetBackgroundColor?: (color: string) => void;
 }
 
-export const TableRow: React.FC<TableRowProps> = ({ attributes, children, element }) => {
+export const TableRow: React.FC<TableRowProps> = ({
+  attributes,
+  children,
+  element,
+  rowIndex = 0,
+}) => {
   const attrs = element.attrs as TableRowAttrs;
   const { bgColor } = attrs || {};
+
+  // 给每个 TableCell 传入 colIndex
+  const renderChildren = () => {
+    return React.Children.map(children, (child, colIndex) => {
+      if (React.isValidElement(child)) {
+        return React.cloneElement(child as React.ReactElement<{ colIndex?: number }>, { colIndex });
+      }
+      return child;
+    });
+  };
 
   return (
     <tr
       {...attributes}
-      data-plugin-id={element.id}
-      data-block-type={element.type}
-      data-block-attrs={element.attrs ? JSON.stringify(element.attrs) : undefined}
+      data-row-index={rowIndex}
       style={{ backgroundColor: bgColor || 'transparent' }}
     >
-      {children}
+      {renderChildren()}
     </tr>
   );
 };

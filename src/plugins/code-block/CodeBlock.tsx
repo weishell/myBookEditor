@@ -147,7 +147,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
               size="small"
               placeholder="选择语言"
               popupMatchSelectWidth={false}
-              dropdownStyle={{ minWidth: 160 }}
+              styles={{ popup: { root: { minWidth: 160 } } }}
               showSearch
               optionFilterProp="label"
               filterOption={(input, option) =>

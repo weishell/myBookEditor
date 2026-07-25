@@ -12,55 +12,39 @@ export const withMarkdownShortcuts = (editor: Editor) => {
       return;
     }
 
-    console.log('markdown-shortcuts: insertText called with space');
-
     const { selection } = editor;
     if (!selection || !Range.isCollapsed(selection)) {
-      console.log('markdown-shortcuts: selection not collapsed');
       insertText(text);
       return;
     }
 
     const { anchor } = selection;
-    console.log('markdown-shortcuts: anchor path:', anchor.path);
 
-    // 获取当前块级元素 - 使用 editor.nodes() 方法
-    const blocks = Array.from(
-      (editor as any).nodes({
-        match: (n: any) => SlateElement.isElement(n) && SlateEditor.isBlock(editor, n),
-        at: anchor.path,
-      }),
-    );
+    // 使用 Editor.above 获取离选区最近的块级祖先
+    // 在表格单元格内时，这会返回单元格内的段落，而不是表格本身
+    const result = SlateEditor.above(editor, {
+      match: (n: any) => SlateElement.isElement(n) && SlateEditor.isBlock(editor, n),
+      at: anchor.path,
+    });
 
-    console.log('markdown-shortcuts: blocks found:', blocks.length);
-
-    if (!blocks || blocks.length === 0) {
-      console.log('markdown-shortcuts: no block found');
+    if (!result) {
       insertText(text);
       return;
     }
 
-    const block = blocks[0] as [any, number[]];
-    const node = block[0];
-    const blockPath = block[1];
-    console.log('markdown-shortcuts: node:', JSON.stringify(node));
-    console.log('markdown-shortcuts: blockPath:', blockPath);
-
-    // 检测块类型
+    const [node, blockPath] = result as [any, number[]];
     const blockType = (node as any)?.type;
-    console.log('markdown-shortcuts: blockType:', blockType);
 
     // 只处理段落块（包括没有type字段的默认段落）
-    const isParagraph = blockType === BlockElementType.PARAGRAPH || blockType === undefined;
+    const isParagraph =
+      blockType === BlockElementType.PARAGRAPH || blockType === undefined || blockType === null;
     if (!isParagraph) {
-      console.log('markdown-shortcuts: not a paragraph');
       insertText(text);
       return;
     }
 
     // 获取块内的完整文本内容
     const blockText = SlateEditor.string(editor, blockPath);
-    console.log('markdown-shortcuts: blockText:', JSON.stringify(blockText));
 
     // 获取光标在块内的偏移位置
     const depth = blockPath.length;
@@ -74,17 +58,13 @@ export const withMarkdownShortcuts = (editor: Editor) => {
       }
     }
     cursorInBlockOffset += anchor.offset;
-    console.log('markdown-shortcuts: cursorInBlockOffset:', cursorInBlockOffset);
 
     // 空格之前的内容
     const beforeSpace = blockText.slice(0, cursorInBlockOffset);
-    console.log('markdown-shortcuts: beforeSpace:', JSON.stringify(beforeSpace));
 
     // 检测标题语法：# ~ ######### (H1-H9)
     if (/^#{1,9}$/.test(beforeSpace)) {
       const level = beforeSpace.length;
-
-      console.log('markdown-shortcuts: heading match, level:', level);
 
       // 先删除 # 符号
       Transforms.delete(editor, {
@@ -104,8 +84,6 @@ export const withMarkdownShortcuts = (editor: Editor) => {
 
     // 检测分割线语法：---
     if (/^---$/.test(beforeSpace)) {
-      console.log('markdown-shortcuts: divider match');
-
       // 删除 '---' 文本内容
       Transforms.delete(editor, {
         at: {
@@ -128,7 +106,6 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     const todoMatch = beforeSpace.match(/^-\s*\[([ x])\]\s*$/);
     if (todoMatch) {
       const isChecked = todoMatch[1] === 'x';
-      console.log('markdown-shortcuts: todo match, checked:', isChecked);
 
       // 删除语法文本
       Transforms.delete(editor, {

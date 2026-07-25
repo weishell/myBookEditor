@@ -3,8 +3,9 @@ import { Table } from './Table';
 import { TableRow } from './TableRow';
 import { TableCell } from './TableCell';
 import { withTable } from './withTable';
+import { TableContextMenu } from './TableContextMenu';
 
-export { Table, TableRow, TableCell, withTable };
+export { Table, TableRow, TableCell, withTable, TableContextMenu };
 
 export const tablePlugin = {
   name: 'table',

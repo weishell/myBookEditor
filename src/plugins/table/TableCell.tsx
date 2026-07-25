@@ -6,6 +6,7 @@ import type { TableCellAttrs } from './table-operations';
 interface TableCellProps extends RenderElementProps {
   pluginId?: string;
   element: CustomElement;
+  colIndex?: number;
   onInsertRow?: (at?: number) => void;
   onInsertColumn?: (at?: number) => void;
   onDeleteRow?: () => void;
@@ -16,7 +17,12 @@ interface TableCellProps extends RenderElementProps {
   onToggleLazyLoad?: () => void;
 }
 
-export const TableCell: React.FC<TableCellProps> = ({ attributes, children, element }) => {
+export const TableCell: React.FC<TableCellProps> = ({
+  attributes,
+  children,
+  element,
+  colIndex = 0,
+}) => {
   const attrs = element.attrs as TableCellAttrs;
   const { colspan = 1, rowspan = 1, bgColor, width } = attrs || {};
 
@@ -25,9 +31,7 @@ export const TableCell: React.FC<TableCellProps> = ({ attributes, children, elem
       {...attributes}
       colSpan={colspan}
       rowSpan={rowspan}
-      data-plugin-id={element.id}
-      data-block-type={element.type}
-      data-block-attrs={element.attrs ? JSON.stringify(element.attrs) : undefined}
+      data-col-index={colIndex}
       style={{
         border: '1px solid #d9d9d9',
         padding: '8px 12px',

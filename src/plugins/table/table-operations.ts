@@ -1,4 +1,5 @@
 import { Editor, Transforms, Element as SlateElement } from 'slate';
+import type { Descendant } from 'slate';
 import type { CustomElement, CustomElementAttrs } from '@/components/Editor/types';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
@@ -54,20 +55,47 @@ export const insertTable = (editor: Editor, rows: number = 3, cols: number = 3) 
   Transforms.insertNodes(editor, table);
 };
 
+// 通过遍历文档树查找表格节点
+const findTableInDocument = (
+  nodes: Descendant[],
+  path: number[],
+): [CustomElement, number[]] | null => {
+  for (let i = 0; i < nodes.length; i++) {
+    const node = nodes[i];
+    if (SlateElement.isElement(node)) {
+      const currentPath = [...path, i];
+      if ((node as CustomElement).type === BlockElementType.TABLE) {
+        return [node as CustomElement, currentPath];
+      }
+      if (node.children && node.children.length > 0) {
+        const found = findTableInDocument(node.children, currentPath);
+        if (found) return found;
+      }
+    }
+  }
+  return null;
+};
+
 export const insertRow = (editor: Editor, at?: number) => {
-  const { selection } = editor;
-  if (!selection) return;
+  // 方法1：通过文档树遍历查找表格
+  const foundTable = findTableInDocument(editor.children, []);
 
-  const nodes: NodeEntry[] = Array.from(
-    (editor as any).nodes({
-      match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
-    }),
-  );
-  const tableNode = nodes[0];
+  if (!foundTable) {
+    // 方法2：回退到使用 nodes() 查找
+    const nodes: NodeEntry[] = Array.from(
+      (editor as any).nodes({
+        match: (n: unknown) =>
+          SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+      }),
+    );
+    if (nodes.length === 0) return;
+    return insertRowInternal(editor, nodes[0], at);
+  }
 
-  if (!tableNode) return;
+  return insertRowInternal(editor, foundTable, at);
+};
 
+const insertRowInternal = (editor: Editor, tableNode: [CustomElement, number[]], at?: number) => {
   const [tableElement, tablePath] = tableNode;
   const rowCount = tableElement.children.length;
   const firstRow = tableElement.children[0] as CustomElement;
@@ -82,20 +110,30 @@ export const insertRow = (editor: Editor, at?: number) => {
 };
 
 export const insertColumn = (editor: Editor, at?: number) => {
-  const { selection } = editor;
-  if (!selection) return;
+  // 方法1：通过文档树遍历查找表格
+  const foundTable = findTableInDocument(editor.children, []);
 
-  const nodes: NodeEntry[] = Array.from(
-    (editor as any).nodes({
-      match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
-    }),
-  );
-  const tableNode = nodes[0];
+  if (!foundTable) {
+    // 方法2：回退到使用 nodes() 查找
+    const nodes: NodeEntry[] = Array.from(
+      (editor as any).nodes({
+        match: (n: unknown) =>
+          SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+      }),
+    );
+    if (nodes.length === 0) return;
+    return insertColumnInternal(editor, nodes[0], at);
+  }
 
-  if (!tableNode) return;
+  return insertColumnInternal(editor, foundTable, at);
+};
 
-  const [tableElement] = tableNode;
+const insertColumnInternal = (
+  editor: Editor,
+  tableNode: [CustomElement, number[]],
+  at?: number,
+) => {
+  const [tableElement, tablePath] = tableNode;
 
   tableElement.children.forEach((row, rowIndex) => {
     const rowElement = row as CustomElement;
@@ -103,15 +141,12 @@ export const insertColumn = (editor: Editor, at?: number) => {
     const insertIndex = at !== undefined ? Math.min(at, cellCount) : cellCount;
 
     Transforms.insertNodes(editor, createTableCell(), {
-      at: [0, rowIndex, insertIndex],
+      at: [...tablePath, rowIndex, insertIndex],
     });
   });
 };
 
 export const deleteRow = (editor: Editor) => {
-  const { selection } = editor;
-  if (!selection) return;
-
   const rowNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
@@ -142,9 +177,6 @@ export const deleteRow = (editor: Editor) => {
 };
 
 export const deleteColumn = (editor: Editor) => {
-  const { selection } = editor;
-  if (!selection) return;
-
   const cellNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
@@ -175,7 +207,7 @@ export const deleteColumn = (editor: Editor) => {
     Transforms.removeNodes(editor, { at: tablePath });
   } else {
     tableElement.children.forEach((_, rowIndex) => {
-      Transforms.removeNodes(editor, { at: [0, rowIndex, colIndex] });
+      Transforms.removeNodes(editor, { at: [...tablePath, rowIndex, colIndex] });
     });
   }
 };
