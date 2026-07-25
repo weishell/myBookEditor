@@ -7,7 +7,7 @@ export const BlockElementType = {
   LIST_ITEM: 'list-item',
   NUMBERED_LIST: 'numbered-list',
   BULLETED_LIST: 'bulleted-list',
-  TODO_ITEM: 'todo-item',
+  TODO_LIST: 'todo-list',
   IMAGE_BLOCK: 'image-block',
   DIVIDER: 'divider',
 } as const;

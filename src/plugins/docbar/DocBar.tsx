@@ -70,6 +70,19 @@ const NumberedListIcon = ({ color, size = 14 }: SvgIconProps) => (
   </svg>
 );
 
+const TodoListIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect x="7" y="7" width="10" height="10" rx="2" stroke={color} strokeWidth="2" fill={color} />
+    <path
+      d="M8 12l2 2 4-4"
+      stroke="white"
+      strokeWidth="2"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 const DragIcon = ({ color = '#999', size = 12 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <line x1="9" y1="18" x2="15" y2="18" />
@@ -100,6 +113,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any): IconConfig => {
       return { component: NumberedListIcon };
     case BlockElementType.LIST_ITEM:
       return { component: ListIcon };
+    case BlockElementType.TODO_LIST:
+      return { component: TodoListIcon };
     default:
       return { component: ParagraphIcon };
   }
@@ -118,6 +133,8 @@ const getElementColor = (type: BlockElementType): string => {
     case BlockElementType.NUMBERED_LIST:
     case BlockElementType.LIST_ITEM:
       return '#52c41a';
+    case BlockElementType.TODO_LIST:
+      return '#1890ff';
     default:
       return '#1890ff';
   }

@@ -280,7 +280,7 @@ export default function FloatBar() {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleFormatClick(BlockElementType.TODO_ITEM, false);
+                  handleFormatClick(BlockElementType.TODO_LIST, false);
                   setActiveMenu(null);
                 }}
                 style={{

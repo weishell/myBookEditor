@@ -54,7 +54,7 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
   };
 
   return (
-    <ElementWrapper type={BlockElementType.TODO_ITEM} pluginId={pluginId} attrs={element.attrs}>
+    <ElementWrapper type={BlockElementType.TODO_LIST} pluginId={pluginId} attrs={element.attrs}>
       <div
         {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
         style={{

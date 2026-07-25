@@ -141,7 +141,7 @@ export const withMarkdownShortcuts = (editor: Editor) => {
       // 设置为待办事项类型
       Transforms.setNodes(
         editor,
-        { type: BlockElementType.TODO_ITEM, attrs: { checked: isChecked } } as any,
+        { type: BlockElementType.TODO_LIST, attrs: { checked: isChecked } } as any,
         { at: blockPath },
       );
 

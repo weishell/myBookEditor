@@ -59,7 +59,7 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
       );
     case BlockElementType.DIVIDER:
       return <Divider attributes={attributes} pluginId={el.id} />;
-    case BlockElementType.TODO_ITEM:
+    case BlockElementType.TODO_LIST:
       return <TodoList attributes={attributes} children={children} pluginId={el.id} element={el} />;
     default:
       return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
