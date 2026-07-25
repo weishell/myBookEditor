@@ -38,6 +38,7 @@ export const MarkTypes = {
   CODE: 'code',
   COLOR: 'color',
   HIGHLIGHT: 'highlight',
+  ART_TEXT: 'artText',
 } as const;
 
 export type MarkTypes = (typeof MarkTypes)[keyof typeof MarkTypes];

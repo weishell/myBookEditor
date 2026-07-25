@@ -3,6 +3,7 @@ import { useSlate } from 'slate-react';
 import { toggleMark, toggleBlock, MarkTypes, setColor, setBackgroundColor } from '@/plugins';
 import { BlockElementType } from '@/enums';
 import ColorPicker from '@/components/ColorPicker';
+import { ArtTextMenu } from '@/plugins/art-text';
 
 export default function FloatBar() {
   const editor = useSlate();
@@ -332,6 +333,22 @@ export default function FloatBar() {
             }
           }}
         />
+        <div
+          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
+        />
+        <div style={{ position: 'relative' }}>
+          <ToolButton
+            icon="🎨"
+            onClick={() => setActiveMenu(activeMenu === 'art' ? null : 'art')}
+            hasDropdown
+          />
+          <ArtTextMenu
+            editor={editor}
+            visible={activeMenu === 'art'}
+            position={{ x: position.x + 180, y: position.y + 36 }}
+            onClose={() => setActiveMenu(null)}
+          />
+        </div>
         <div
           style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
         />
