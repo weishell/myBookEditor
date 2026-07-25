@@ -69,13 +69,13 @@ export default function FloatBar() {
 
   if (!visible) return null;
 
-  const handleFormatClick = (format: string, isMark: boolean) => {
+  const handleFormatClick = (format: string, isMark: boolean, level?: number) => {
     const selection = window.getSelection();
     if (selection && !selection.isCollapsed) {
       if (isMark) {
         toggleMark(editor, format);
       } else {
-        toggleBlock(editor, format as BlockElementType);
+        toggleBlock(editor, format as BlockElementType, level ? { level } : undefined);
       }
     }
     setActiveMenu(null);
@@ -167,69 +167,30 @@ export default function FloatBar() {
               >
                 标题
               </div>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.HEADING_ONE, false);
-                  setActiveMenu(null);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '16px',
-                  fontWeight: 'bold',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              >
-                H1 标题
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.HEADING_TWO, false);
-                  setActiveMenu(null);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: 'bold',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              >
-                H2 标题
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.HEADING_THREE, false);
-                  setActiveMenu(null);
-                }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              >
-                H3 标题
-              </button>
+              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => (
+                <button
+                  key={level}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleFormatClick(BlockElementType.HEADING, false, level);
+                    setActiveMenu(null);
+                  }}
+                  style={{
+                    width: '100%',
+                    padding: '4px 12px',
+                    textAlign: 'left',
+                    border: 'none',
+                    background: 'transparent',
+                    cursor: 'pointer',
+                    fontSize: `${Math.max(10, 18 - level)}px`,
+                    fontWeight: 'bold',
+                    borderRadius: '4px',
+                  }}
+                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                >
+                  H{level} 标题
+                </button>
+              ))}
               <div style={{ height: '1px', backgroundColor: '#e8e8e8', margin: '4px 0' }} />
               <button
                 onClick={(e) => {

@@ -4,9 +4,7 @@ import { Editor as SlateEditor, Point, Transforms, Path } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 
 export const ENTER_KEY_BEHAVIORS: Map<BlockElementType, BlockElementType> = new Map([
-  [BlockElementType.HEADING_ONE, BlockElementType.PARAGRAPH],
-  [BlockElementType.HEADING_TWO, BlockElementType.PARAGRAPH],
-  [BlockElementType.HEADING_THREE, BlockElementType.PARAGRAPH],
+  [BlockElementType.HEADING, BlockElementType.PARAGRAPH],
 ]);
 
 export const shouldEnterCreateNewBlock = (blockType: BlockElementType): boolean => {

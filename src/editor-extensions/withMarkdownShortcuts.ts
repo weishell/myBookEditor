@@ -80,26 +80,11 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     const beforeSpace = blockText.slice(0, cursorInBlockOffset);
     console.log('markdown-shortcuts: beforeSpace:', JSON.stringify(beforeSpace));
 
-    // 检测标题语法：# ~ ######
-    if (/^#{1,6}$/.test(beforeSpace)) {
+    // 检测标题语法：# ~ ######### (H1-H9)
+    if (/^#{1,9}$/.test(beforeSpace)) {
       const level = beforeSpace.length;
-      let headingType: BlockElementType;
 
-      switch (level) {
-        case 1:
-          headingType = BlockElementType.HEADING_ONE;
-          break;
-        case 2:
-          headingType = BlockElementType.HEADING_TWO;
-          break;
-        case 3:
-          headingType = BlockElementType.HEADING_THREE;
-          break;
-        default:
-          headingType = BlockElementType.HEADING_THREE;
-      }
-
-      console.log('markdown-shortcuts: heading match, level:', level, 'type:', headingType);
+      console.log('markdown-shortcuts: heading match, level:', level);
 
       // 先删除 # 符号
       Transforms.delete(editor, {
@@ -109,8 +94,10 @@ export const withMarkdownShortcuts = (editor: Editor) => {
         },
       });
 
-      // 设置为标题类型
-      Transforms.setNodes(editor, { type: headingType } as any, { at: blockPath });
+      // 设置为标题类型，使用 attrs.level 指定级别
+      Transforms.setNodes(editor, { type: BlockElementType.HEADING, attrs: { level } } as any, {
+        at: blockPath,
+      });
 
       return;
     }

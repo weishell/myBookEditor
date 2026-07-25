@@ -13,8 +13,9 @@ const codeLines = codeText.split('\n').map((text, i) => ({
 
 export const initialValue: Descendant[] = [
   {
-    type: BlockElementType.HEADING_ONE,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 1 },
     children: [{ text: '欢迎使用文档编辑器' }],
   },
   {
@@ -31,8 +32,20 @@ export const initialValue: Descendant[] = [
     ],
   },
   {
-    type: BlockElementType.HEADING_TWO,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 1 },
+    children: [{ text: '' }],
+  },
+  {
+    type: BlockElementType.DIVIDER,
+    id: uuidv4(),
+    children: [{ text: '' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '主要功能' }],
   },
   {
@@ -45,8 +58,9 @@ export const initialValue: Descendant[] = [
     ],
   },
   {
-    type: BlockElementType.HEADING_TWO,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '图片示例' }],
   },
   {
@@ -66,8 +80,9 @@ export const initialValue: Descendant[] = [
     children: [{ text: '这是一张示例图片，支持拖拽调整尺寸和对齐功能。' }],
   },
   {
-    type: BlockElementType.HEADING_TWO,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '引用示例' }],
   },
   {
@@ -79,8 +94,9 @@ export const initialValue: Descendant[] = [
     children: [{ text: '这是一段引用文字。引用功能可以用来强调重要内容或引用他人观点。' }],
   },
   {
-    type: BlockElementType.HEADING_TWO,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '代码示例' }],
   },
   {
@@ -94,8 +110,9 @@ export const initialValue: Descendant[] = [
     children: codeLines as any,
   },
   {
-    type: BlockElementType.HEADING_THREE,
+    type: BlockElementType.HEADING,
     id: uuidv4(),
+    attrs: { level: 3 },
     children: [{ text: '小标题示例' }],
   },
   {

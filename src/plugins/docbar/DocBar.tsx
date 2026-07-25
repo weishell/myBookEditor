@@ -9,26 +9,17 @@ interface SvgIconProps {
   size?: number;
 }
 
-const H1Icon = ({ color, size = 14 }: SvgIconProps) => (
+const HeadingIcon = ({ color, size = 14, level = 1 }: SvgIconProps & { level?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <text x="12" y="16" fontSize="12" fill={color} textAnchor="middle" fontWeight="bold">
-      H1
-    </text>
-  </svg>
-);
-
-const H2Icon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <text x="12" y="16" fontSize="11" fill={color} textAnchor="middle" fontWeight="bold">
-      H2
-    </text>
-  </svg>
-);
-
-const H3Icon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <text x="12" y="16" fontSize="10" fill={color} textAnchor="middle" fontWeight="bold">
-      H3
+    <text
+      x="12"
+      y="16"
+      fontSize={Math.max(8, 13 - level)}
+      fill={color}
+      textAnchor="middle"
+      fontWeight="bold"
+    >
+      H{level}
     </text>
   </svg>
 );
@@ -87,34 +78,36 @@ const DragIcon = ({ color = '#999', size = 12 }: SvgIconProps) => (
   </svg>
 );
 
-const getElementIcon = (type: BlockElementType) => {
+interface IconConfig {
+  component: React.FC<SvgIconProps & { level?: number }>;
+  props?: { level?: number };
+}
+
+const getElementIcon = (type: BlockElementType, attrs?: any): IconConfig => {
   switch (type) {
-    case BlockElementType.HEADING_ONE:
-      return H1Icon;
-    case BlockElementType.HEADING_TWO:
-      return H2Icon;
-    case BlockElementType.HEADING_THREE:
-      return H3Icon;
+    case BlockElementType.HEADING:
+      return {
+        component: HeadingIcon,
+        props: { level: attrs?.level || 1 },
+      };
     case BlockElementType.BLOCKQUOTE:
-      return QuoteIcon;
+      return { component: QuoteIcon };
     case BlockElementType.CODE_BLOCK:
-      return CodeIcon;
+      return { component: CodeIcon };
     case BlockElementType.BULLETED_LIST:
-      return ListIcon;
+      return { component: ListIcon };
     case BlockElementType.NUMBERED_LIST:
-      return NumberedListIcon;
+      return { component: NumberedListIcon };
     case BlockElementType.LIST_ITEM:
-      return ListIcon;
+      return { component: ListIcon };
     default:
-      return ParagraphIcon;
+      return { component: ParagraphIcon };
   }
 };
 
 const getElementColor = (type: BlockElementType): string => {
   switch (type) {
-    case BlockElementType.HEADING_ONE:
-    case BlockElementType.HEADING_TWO:
-    case BlockElementType.HEADING_THREE:
+    case BlockElementType.HEADING:
     case BlockElementType.PARAGRAPH:
       return '#1890ff';
     case BlockElementType.BLOCKQUOTE:
@@ -196,7 +189,10 @@ export const DocBar = () => {
     return null;
   }
 
-  const IconComponent = getElementIcon(currentElement.type);
+  const { component: IconComponent, props } = getElementIcon(
+    currentElement.type,
+    currentElement.attrs,
+  );
   const iconColor = getElementColor(currentElement.type);
 
   return (
@@ -231,7 +227,7 @@ export const DocBar = () => {
           padding: '0',
         }}
       >
-        <IconComponent color={iconColor} />
+        <IconComponent color={iconColor} {...props} />
       </div>
       <div
         style={{

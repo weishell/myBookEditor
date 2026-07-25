@@ -9,9 +9,7 @@ import {
 } from 'slate-react';
 import { withHistory } from 'slate-history';
 import {
-  HeadingOne,
-  HeadingTwo,
-  HeadingThree,
+  Heading,
   Paragraph,
   Blockquote,
   CodeBlock,
@@ -38,18 +36,8 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
   const el = element as { type?: BlockElementType; id?: string; children: unknown[]; attrs?: any };
 
   switch (el.type) {
-    case BlockElementType.HEADING_ONE:
-      return (
-        <HeadingOne attributes={attributes} children={children} pluginId={el.id} element={el} />
-      );
-    case BlockElementType.HEADING_TWO:
-      return (
-        <HeadingTwo attributes={attributes} children={children} pluginId={el.id} element={el} />
-      );
-    case BlockElementType.HEADING_THREE:
-      return (
-        <HeadingThree attributes={attributes} children={children} pluginId={el.id} element={el} />
-      );
+    case BlockElementType.HEADING:
+      return <Heading attributes={attributes} children={children} pluginId={el.id} element={el} />;
     case BlockElementType.BLOCKQUOTE:
       return <Blockquote attributes={attributes} children={children} pluginId={el.id} />;
     case BlockElementType.CODE_BLOCK:

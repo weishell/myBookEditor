@@ -2,27 +2,56 @@ import type { Editor } from 'slate';
 import { Transforms, Element as SlateElement } from 'slate';
 import { BlockElementType } from '@/enums';
 
-export const toggleBlock = (editor: Editor, format: BlockElementType) => {
-  const isActive = isBlockActive(editor, format);
+interface ToggleBlockOptions {
+  level?: number;
+}
 
-  Transforms.setNodes(
-    editor,
-    { type: isActive ? BlockElementType.PARAGRAPH : format } as Partial<SlateElement>,
-    { match: (n) => SlateElement.isElement(n) && (editor as any).isBlock(n) },
-  );
+export const toggleBlock = (
+  editor: Editor,
+  format: BlockElementType,
+  options?: ToggleBlockOptions,
+) => {
+  const isActive = isBlockActive(editor, format, options);
+
+  if (format === BlockElementType.HEADING && options?.level) {
+    Transforms.setNodes(
+      editor,
+      {
+        type: isActive ? BlockElementType.PARAGRAPH : format,
+        attrs: { level: options.level },
+      } as Partial<SlateElement>,
+      { match: (n) => SlateElement.isElement(n) && (editor as any).isBlock(n) },
+    );
+  } else {
+    Transforms.setNodes(
+      editor,
+      { type: isActive ? BlockElementType.PARAGRAPH : format } as Partial<SlateElement>,
+      { match: (n) => SlateElement.isElement(n) && (editor as any).isBlock(n) },
+    );
+  }
 };
 
-export const isBlockActive = (editor: Editor, format: BlockElementType) => {
+export const isBlockActive = (
+  editor: Editor,
+  format: BlockElementType,
+  options?: ToggleBlockOptions,
+) => {
   const { selection } = editor;
   if (!selection) return false;
 
   const nodes = Array.from(
     (editor as any).nodes({
       at: (editor as any).unhangRange(selection),
-      match: (n: unknown) =>
-        !(n as any).isEditor &&
-        SlateElement.isElement(n) &&
-        (n as { type?: BlockElementType }).type === format,
+      match: (n: unknown) => {
+        if (!(n as any).isEditor && SlateElement.isElement(n)) {
+          const node = n as { type?: BlockElementType; attrs?: { level?: number } };
+          if (format === BlockElementType.HEADING && options?.level) {
+            return node.type === format && node.attrs?.level === options.level;
+          }
+          return node.type === format;
+        }
+        return false;
+      },
     }),
   );
 

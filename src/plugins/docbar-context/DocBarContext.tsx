@@ -4,6 +4,7 @@ import { BlockElementType } from '@/enums';
 interface ActiveElementInfo {
   id: string;
   type: BlockElementType;
+  attrs?: any;
   rect: DOMRect;
 }
 
@@ -35,10 +36,17 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
       if (element) {
         const pluginId = element.getAttribute('data-plugin-id');
         const blockType = element.getAttribute('data-block-type') as BlockElementType;
+        const attrsStr = element.getAttribute('data-block-attrs');
+        let attrs: any;
+        try {
+          attrs = attrsStr ? JSON.parse(attrsStr) : undefined;
+        } catch {
+          attrs = undefined;
+        }
 
         if (pluginId && blockType) {
           const rect = element.getBoundingClientRect();
-          setActiveElement({ id: pluginId, type: blockType, rect });
+          setActiveElement({ id: pluginId, type: blockType, attrs, rect });
           return;
         }
       }
