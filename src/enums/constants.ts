@@ -3,6 +3,13 @@
 // 零宽空格 - 用于代码块空行占位，防止 Slate normalize 清理空节点
 export const ZERO_WIDTH_SPACE = '\u200B';
 
+// 标准页面宽度
+export const PAGE_WIDTH_NORMAL = '1000px';
+// 较宽页面宽度
+export const PAGE_WIDTH_WIDE = '1200px';
+// 较窄页面宽度
+export const PAGE_WIDTH_NARROW = '800px';
+
 // 主题类型定义
 export interface EditorTheme {
   // 主题标识
