@@ -1,6 +1,6 @@
 import type { Editor } from 'slate';
 import { Transforms, Element as SlateElement } from 'slate';
-import { BlockElementType } from '@/enums';
+import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 
 export const withCodeBlock = (editor: Editor) => {
   const { normalizeNode, deleteBackward, insertBreak } = editor;
@@ -25,7 +25,7 @@ export const withCodeBlock = (editor: Editor) => {
                 type: BlockElementType.CODE_LINE,
                 id: `${(node as any).id}-line-${crypto.randomUUID()}`,
                 attrs: { lineNumber: lineNum },
-                children: [{ text: lineText }, { text: '\u200B' }],
+                children: [{ text: lineText }, { text: ZERO_WIDTH_SPACE }],
               });
             });
           } else {
@@ -114,7 +114,7 @@ export const withCodeBlock = (editor: Editor) => {
         type: BlockElementType.CODE_LINE,
         id: `${codeBlockNode.id}-line-${crypto.randomUUID()}`,
         attrs: { lineNumber: 1 },
-        children: [{ text: '' }, { text: '\u200B' }],
+        children: [{ text: '' }, { text: ZERO_WIDTH_SPACE }],
       };
 
       let insertPath: number[];

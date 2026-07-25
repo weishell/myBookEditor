@@ -1,5 +1,5 @@
 import type { Descendant } from 'slate';
-import { BlockElementType } from '@/enums';
+import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 
 const codeBlockId = uuidv4();
@@ -8,7 +8,7 @@ const codeLines = codeText.split('\n').map((text, i) => ({
   type: BlockElementType.CODE_LINE,
   id: `${codeBlockId}-line-${i}`,
   attrs: { lineNumber: i + 1 },
-  children: [{ text }, { text: '\u200B' }],
+  children: [{ text }, { text: ZERO_WIDTH_SPACE }],
 }));
 
 export const initialValue: Descendant[] = [
