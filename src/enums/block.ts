@@ -10,6 +10,9 @@ export const BlockElementType = {
   TODO_LIST: 'todo-list',
   IMAGE_BLOCK: 'image-block',
   DIVIDER: 'divider',
+  TABLE: 'table',
+  TABLE_ROW: 'table-row',
+  TABLE_CELL: 'table-cell',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

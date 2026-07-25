@@ -2,7 +2,14 @@ import { useMemo, useCallback, useEffect } from 'react';
 import { createEditor, Editor as SlateEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
-import { MenuProvider, ContextMenu, SelectionProvider, DocBarProvider, DocBar } from '@/plugins';
+import {
+  MenuProvider,
+  ContextMenu,
+  SelectionProvider,
+  DocBarProvider,
+  DocBar,
+  withTable,
+} from '@/plugins';
 import { withCodeBlock, withMarkdownShortcuts } from '@/editor-extensions';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
@@ -13,7 +20,7 @@ import { renderLeaf } from './renderLeaf';
 
 export default function Editor() {
   const editor = useMemo(
-    () => withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+    () => withTable(withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor()))))),
     [],
   );
 

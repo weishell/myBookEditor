@@ -4,6 +4,7 @@ import { toggleMark, toggleBlock, MarkTypes, setColor, setBackgroundColor } from
 import { BlockElementType } from '@/enums';
 import ColorPicker from '@/components/ColorPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
+import { insertTable } from '@/plugins/table/table-operations';
 
 export default function FloatBar() {
   const editor = useSlate();
@@ -363,6 +364,26 @@ export default function FloatBar() {
         />
         <div
           style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
+        />
+        <ToolButton
+          icon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="3" x2="9" y2="21" />
+            </svg>
+          }
+          onClick={() => {
+            insertTable(editor, 3, 3);
+            setVisible(false);
+          }}
         />
         <ToolButton icon="🔗" onClick={() => {}} />
         <ToolButton icon="💬" onClick={() => {}} />

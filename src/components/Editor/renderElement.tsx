@@ -11,6 +11,9 @@ import {
   Image,
   Divider,
   TodoList,
+  Table,
+  TableRow,
+  TableCell,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -42,6 +45,28 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
       return <Divider attributes={attributes} pluginId={el.id} />;
     case BlockElementType.TODO_LIST:
       return <TodoList attributes={attributes} children={children} pluginId={el.id} element={el} />;
+    case BlockElementType.TABLE:
+      return (
+        <Table attributes={attributes} children={children} pluginId={el.id} element={el as any} />
+      );
+    case BlockElementType.TABLE_ROW:
+      return (
+        <TableRow
+          attributes={attributes}
+          children={children}
+          pluginId={el.id}
+          element={el as any}
+        />
+      );
+    case BlockElementType.TABLE_CELL:
+      return (
+        <TableCell
+          attributes={attributes}
+          children={children}
+          pluginId={el.id}
+          element={el as any}
+        />
+      );
     default:
       return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
   }

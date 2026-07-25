@@ -14,7 +14,7 @@ export interface CustomElement extends BaseElement {
   id: string;
   style?: Record<string, unknown>;
   attrs?: CustomElementAttrs;
-  children: CustomText[];
+  children: CustomDescendant[];
 }
 
 export interface CustomText extends BaseText {

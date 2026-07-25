@@ -152,4 +152,246 @@ export const initialValue: Descendant[] = [
       { text: '你可以使用工具栏中的按钮来格式化文本。选中文字后点击相应的格式按钮即可应用样式。' },
     ],
   },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '表格示例' }],
+  },
+  {
+    type: BlockElementType.TABLE,
+    id: uuidv4(),
+    attrs: { borderColor: '#d9d9d9', borderWidth: '1px' },
+    children: [
+      {
+        type: BlockElementType.TABLE_ROW,
+        id: uuidv4(),
+        attrs: { bgColor: '#fafafa' },
+        children: [
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '120px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '姓名' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '150px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '部门' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '200px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '职位' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '入职日期' }],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: BlockElementType.TABLE_ROW,
+        id: uuidv4(),
+        children: [
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '120px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '张三' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '150px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '技术部' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '200px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '高级工程师' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '2023-01-15' }],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: BlockElementType.TABLE_ROW,
+        id: uuidv4(),
+        children: [
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '120px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '李四' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '150px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '产品部' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '200px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '产品经理' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '2023-03-20' }],
+              },
+            ],
+          },
+        ],
+      },
+      {
+        type: BlockElementType.TABLE_ROW,
+        id: uuidv4(),
+        children: [
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '120px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '王五' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '150px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '设计部' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            attrs: { width: '200px' },
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: 'UI设计师' }],
+              },
+            ],
+          },
+          {
+            type: BlockElementType.TABLE_CELL,
+            id: uuidv4(),
+            children: [
+              {
+                type: BlockElementType.PARAGRAPH,
+                id: uuidv4(),
+                attrs: {},
+                children: [{ text: '2023-06-10' }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
 ];
