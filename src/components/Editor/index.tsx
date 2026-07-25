@@ -24,6 +24,7 @@ import {
   DocBar,
   Image,
   Divider,
+  TodoList,
 } from '@/plugins';
 import { withCodeBlock, withMarkdownShortcuts } from '@/editor-extensions';
 import { BlockElementType } from '@/enums';
@@ -58,6 +59,8 @@ const renderElement = ({ element, attributes, children }: RenderElementProps) =>
       );
     case BlockElementType.DIVIDER:
       return <Divider attributes={attributes} pluginId={el.id} />;
+    case BlockElementType.TODO_ITEM:
+      return <TodoList attributes={attributes} children={children} pluginId={el.id} element={el} />;
     default:
       return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
   }

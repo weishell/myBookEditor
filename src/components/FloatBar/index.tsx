@@ -277,6 +277,26 @@ export default function FloatBar() {
               >
                 1. 有序列表
               </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleFormatClick(BlockElementType.TODO_ITEM, false);
+                  setActiveMenu(null);
+                }}
+                style={{
+                  width: '100%',
+                  padding: '6px 12px',
+                  textAlign: 'left',
+                  border: 'none',
+                  background: 'transparent',
+                  cursor: 'pointer',
+                  fontSize: '13px',
+                  borderRadius: '4px',
+                }}
+                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+              >
+                ☑ 待办事项
+              </button>
             </div>
           )}
         </div>

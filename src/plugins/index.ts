@@ -17,3 +17,4 @@ export * from './docbar';
 export * from './image';
 export * from './resize-handle';
 export * from './elements/Divider';
+export * from './todo-item';

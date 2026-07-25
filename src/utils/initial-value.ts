@@ -61,6 +61,36 @@ export const initialValue: Descendant[] = [
     type: BlockElementType.HEADING,
     id: uuidv4(),
     attrs: { level: 2 },
+    children: [{ text: '待办事项示例' }],
+  },
+  {
+    type: BlockElementType.TODO_ITEM,
+    id: uuidv4(),
+    attrs: { checked: false },
+    children: [{ text: '完成文档编辑器基础功能' }],
+  },
+  {
+    type: BlockElementType.TODO_ITEM,
+    id: uuidv4(),
+    attrs: { checked: false },
+    children: [{ text: '实现 Markdown 快捷键支持' }],
+  },
+  {
+    type: BlockElementType.TODO_ITEM,
+    id: uuidv4(),
+    attrs: { checked: true },
+    children: [{ text: '添加代码块语法高亮' }],
+  },
+  {
+    type: BlockElementType.TODO_ITEM,
+    id: uuidv4(),
+    attrs: { checked: true },
+    children: [{ text: '实现图片上传和裁剪功能' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '图片示例' }],
   },
   {

@@ -124,6 +124,30 @@ export const withMarkdownShortcuts = (editor: Editor) => {
       return;
     }
 
+    // 检测待办事项语法：- [ ] 或 - [x]
+    const todoMatch = beforeSpace.match(/^-\s*\[([ x])\]\s*$/);
+    if (todoMatch) {
+      const isChecked = todoMatch[1] === 'x';
+      console.log('markdown-shortcuts: todo match, checked:', isChecked);
+
+      // 删除语法文本
+      Transforms.delete(editor, {
+        at: {
+          anchor: { path: [...blockPath, 0], offset: 0 },
+          focus: { path: [...blockPath, 0], offset: beforeSpace.length },
+        },
+      });
+
+      // 设置为待办事项类型
+      Transforms.setNodes(
+        editor,
+        { type: BlockElementType.TODO_ITEM, attrs: { checked: isChecked } } as any,
+        { at: blockPath },
+      );
+
+      return;
+    }
+
     // 默认行为：插入空格
     insertText(text);
   };
