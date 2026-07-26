@@ -1,18 +1,15 @@
-import { BlockElementType } from '@/enums';
+import type { RenderElementProps } from 'slate-react';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import { BlockElementType } from '@/enums';
+import styles from './NumberedList.module.less';
 
-interface ElementProps {
-  attributes: Record<string, unknown>;
-  children: React.ReactNode;
-  pluginId?: string;
-}
-
-export const NumberedList = ({ attributes, children, pluginId }: ElementProps) => (
+export const NumberedList = ({
+  attributes,
+  children,
+  pluginId,
+}: RenderElementProps & { pluginId?: string }) => (
   <ElementWrapper type={BlockElementType.NUMBERED_LIST} pluginId={pluginId}>
-    <ol
-      {...(attributes as React.HTMLAttributes<HTMLOListElement>)}
-      style={{ margin: '8px 0', paddingLeft: '24px' }}
-    >
+    <ol {...attributes} className={styles.list}>
       {children}
     </ol>
   </ElementWrapper>

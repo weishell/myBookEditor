@@ -1,4 +1,5 @@
 import type { RenderLeafProps } from 'slate-react';
+import styles from './Leaf.module.less';
 
 export const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   let styledChildren = children;
@@ -16,19 +17,7 @@ export const Leaf = ({ attributes, children, leaf }: RenderLeafProps) => {
   }
 
   if ((leaf as { code?: boolean }).code) {
-    styledChildren = (
-      <code
-        style={{
-          backgroundColor: '#f5f5f5',
-          padding: '2px 4px',
-          borderRadius: '2px',
-          fontFamily: 'monospace',
-          fontSize: '0.9em',
-        }}
-      >
-        {styledChildren}
-      </code>
-    );
+    styledChildren = <code className={styles.code}>{styledChildren}</code>;
   }
 
   return <span {...attributes}>{styledChildren}</span>;

@@ -2,6 +2,7 @@ import React from 'react';
 import type { RenderElementProps } from 'slate-react';
 import type { CustomElement } from '@/components/Editor/types';
 import type { TableCellAttrs } from './table-operations';
+import styles from './TableCell.module.less';
 
 interface TableCellProps extends RenderElementProps {
   pluginId?: string;
@@ -32,13 +33,10 @@ export const TableCell: React.FC<TableCellProps> = ({
       colSpan={colspan}
       rowSpan={rowspan}
       data-col-index={colIndex}
+      className={styles.cell}
       style={{
-        border: '1px solid #d9d9d9',
-        padding: '8px 12px',
         backgroundColor: bgColor || 'transparent',
         width: width || 'auto',
-        verticalAlign: 'top',
-        minWidth: '60px',
       }}
       onContextMenu={(e) => {
         e.preventDefault();

@@ -1,6 +1,7 @@
 import React from 'react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import styles from './Paragraph.module.less';
 
 interface ElementProps {
   attributes: Record<string, unknown>;
@@ -16,7 +17,7 @@ export const Paragraph = ({ attributes, children, pluginId, element }: ElementPr
     <ElementWrapper type={BlockElementType.PARAGRAPH} pluginId={pluginId} isEmpty={isEmpty}>
       <p
         {...(attributes as React.HTMLAttributes<HTMLParagraphElement>)}
-        style={{ margin: '8px 0', lineHeight: '1.8' }}
+        className={styles.paragraph}
       >
         {children}
       </p>

@@ -1,15 +1,15 @@
-import { BlockElementType } from '@/enums';
+import type { RenderElementProps } from 'slate-react';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import { BlockElementType } from '@/enums';
+import styles from './ListItem.module.less';
 
-interface ElementProps {
-  attributes: Record<string, unknown>;
-  children: React.ReactNode;
-  pluginId?: string;
-}
-
-export const ListItem = ({ attributes, children, pluginId }: ElementProps) => (
+export const ListItem = ({
+  attributes,
+  children,
+  pluginId,
+}: RenderElementProps & { pluginId?: string }) => (
   <ElementWrapper type={BlockElementType.LIST_ITEM} pluginId={pluginId}>
-    <li {...(attributes as React.HTMLAttributes<HTMLLIElement>)} style={{ margin: '4px 0' }}>
+    <li {...attributes} className={styles.item}>
       {children}
     </li>
   </ElementWrapper>

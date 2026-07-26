@@ -1,0 +1,71 @@
+// CodeBlock 组件样式
+.container {
+  position: relative;
+  margin: @spacing-md 0;
+  border-radius: 6px;
+  border: 1px solid @border-color-light;
+  background-color: @bg-subtle;
+  overflow: hidden;
+  box-shadow: none;
+  max-width: 100%;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: @spacing-xs @spacing-md;
+  transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
+  user-select: none;
+}
+
+.controlsWrapper {
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+}
+
+.copyButton {
+  cursor: pointer;
+  font-size: @font-size-sm;
+  padding: 2px 6px;
+  border-radius: 3px;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+}
+
+.codeBodyWrapper {
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.codeContent {
+  padding: @spacing-sm 0;
+  background-color: @bg-subtle;
+  outline: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: @font-size-sm;
+  line-height: 18px;
+  color: @text-secondary;
+  overflow-x: hidden;
+  width: 100%;
+}
+
+.resizeHandle {
+  height: 6px;
+  background-color: @bg-subtle;
+  cursor: ns-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-top: 1px solid @border-color-light;
+  transition: opacity 0.2s ease;
+  user-select: none;
+}
+
+.resizeHandleBar {
+  width: @spacing-xl;
+  height: 2px;
+  background-color: @border-color;
+  border-radius: 1px;
+}

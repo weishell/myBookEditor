@@ -1,6 +1,7 @@
 import React from 'react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import styles from './Heading.module.less';
 
 interface ElementProps {
   attributes: Record<string, unknown>;
@@ -40,12 +41,11 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
     >
       <h1
         {...(attributes as React.HTMLAttributes<HTMLHeadingElement>)}
+        className={styles.heading}
         style={{
           fontSize: style.fontSize,
-          fontWeight: 'bold',
           lineHeight: style.lineHeight,
-          margin: `0 0 ${style.marginBottom}px`,
-          position: 'relative',
+          marginBottom: style.marginBottom,
         }}
       >
         {children}

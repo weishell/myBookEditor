@@ -1,0 +1,143 @@
+// FloatBar 组件样式
+// 注：variables.less 已通过 vite.config.ts 的 additionalData 全局注入
+
+// 主工具栏（位置 left/top 动态计算，保留 inline）
+.toolbar {
+  position: fixed;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  padding: 2px;
+  box-shadow: @shadow-md;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  z-index: 10000;
+}
+
+// 相对定位包装容器（用于承载下拉菜单）
+.wrapper {
+  position: relative;
+}
+
+// 工具按钮
+.toolButton {
+  padding: 6px @spacing-sm;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: @font-size-md;
+  border-radius: @radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: @text-primary;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+// 按钮文字标签
+.toolButtonLabel {
+  font-size: @font-size-sm;
+}
+
+// 下拉箭头
+.dropdownArrow {
+  font-size: 10px;
+  color: @text-tertiary;
+}
+
+// 下拉菜单基础样式
+.dropdown {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  margin-top: @spacing-xs;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: @spacing-xs;
+  z-index: 10001;
+}
+
+// 文本下拉菜单
+.dropdownText {
+  min-width: 200px;
+}
+
+// 列表下拉菜单
+.dropdownList {
+  min-width: 160px;
+}
+
+// 菜单标题
+.menuTitle {
+  padding: @spacing-xs @spacing-sm;
+  font-size: @font-size-sm;
+  color: @text-tertiary;
+  font-weight: 600;
+}
+
+// 菜单项（正文 / 列表项）
+.menuItem {
+  width: 100%;
+  padding: 6px @spacing-md;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: @font-size-base;
+  border-radius: @radius-sm;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+// 标题菜单项（font-size 动态，保留 inline）
+.menuItemHeading {
+  width: 100%;
+  padding: @spacing-xs @spacing-md;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-weight: bold;
+  border-radius: @radius-sm;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+// 垂直分隔线
+.divider {
+  width: 1px;
+  height: 20px;
+  background-color: @border-color-light;
+  margin: 0 @spacing-xs;
+}
+
+// 水平分隔线（菜单内部）
+.dividerHorizontal {
+  height: 1px;
+  background-color: @border-color-light;
+  margin: @spacing-xs 0;
+}
+
+// 文字格式图标
+.iconBold {
+  font-weight: bold;
+}
+
+.iconItalic {
+  font-style: italic;
+}
+
+.iconUnderline {
+  text-decoration: underline;
+}

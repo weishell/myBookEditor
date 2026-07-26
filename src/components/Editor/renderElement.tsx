@@ -30,13 +30,29 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
         <CodeBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
       );
     case BlockElementType.CODE_LINE:
-      return <CodeLine attributes={attributes} children={children} pluginId={el.id} element={el} />;
+      return <CodeLine attributes={attributes} children={children} element={element} />;
     case BlockElementType.LIST_ITEM:
-      return <ListItem attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <ListItem attributes={attributes} children={children} pluginId={el.id} element={element} />
+      );
     case BlockElementType.NUMBERED_LIST:
-      return <NumberedList attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <NumberedList
+          attributes={attributes}
+          children={children}
+          pluginId={el.id}
+          element={element}
+        />
+      );
     case BlockElementType.BULLETED_LIST:
-      return <BulletedList attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <BulletedList
+          attributes={attributes}
+          children={children}
+          pluginId={el.id}
+          element={element}
+        />
+      );
     case BlockElementType.IMAGE_BLOCK:
       return (
         <Image attributes={attributes} pluginId={el.id || ''} element={el as { attrs: any }} />

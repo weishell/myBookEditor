@@ -4,6 +4,7 @@ import { Transforms, Element as SlateElement } from 'slate';
 import type { Descendant } from 'slate';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import styles from './TodoList.module.less';
 
 interface ElementProps {
   attributes: Record<string, unknown>;
@@ -55,38 +56,13 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
 
   return (
     <ElementWrapper type={BlockElementType.TODO_LIST} pluginId={pluginId} attrs={element.attrs}>
-      <div
-        {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '8px',
-          padding: '4px 0',
-          minHeight: '24px',
-        }}
-      >
+      <div {...(attributes as React.HTMLAttributes<HTMLDivElement>)} className={styles.container}>
         <span
           onMouseDown={handleMouseDown}
+          className={styles.checkbox}
           style={{
-            width: '16px',
-            height: '16px',
-            minWidth: '16px',
-            minHeight: '16px',
-            margin: '0',
             border: isChecked ? '2px solid #1890ff' : '2px solid #d9d9d9',
-            borderRadius: '4px',
             backgroundColor: isChecked ? '#1890ff' : 'transparent',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            flexShrink: 0,
-            padding: 0,
-            transition: 'all 0.15s ease',
-            outline: 'none',
-            userSelect: 'none',
-            WebkitUserSelect: 'none',
-            pointerEvents: 'auto',
           }}
           contentEditable={false}
         >
@@ -96,7 +72,7 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
               height="10"
               viewBox="0 0 10 10"
               fill="none"
-              style={{ pointerEvents: 'none' }}
+              className={styles.checkboxIcon}
             >
               <path
                 d="M2 5L4 7L8 3"
@@ -109,14 +85,11 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
           )}
         </span>
         <span
+          className={styles.text}
           style={{
-            flex: 1,
             textDecoration: isChecked ? 'line-through' : 'none',
             color: isChecked ? '#999' : '#333',
-            fontSize: '14px',
-            lineHeight: '1.6',
             opacity: isChecked ? 0.6 : 1,
-            transition: 'all 0.15s ease',
           }}
         >
           {children}

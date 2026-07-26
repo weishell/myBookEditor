@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import styles from './ResizeHandle.module.less';
 
 interface ResizeHandleProps {
   bounds: DOMRect;
@@ -121,70 +122,52 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
 
   const positions = [HandlePosition.NW, HandlePosition.NE, HandlePosition.SW, HandlePosition.SE];
 
-  const lineColor = '#1890ff';
   const lineWidth = 2;
 
   return (
     <>
       <div
+        className={styles.borderLine}
         style={{
-          position: 'fixed',
           left: bounds.left,
           top: bounds.top,
           width: bounds.width,
           height: lineWidth,
-          backgroundColor: lineColor,
-          zIndex: 10000,
         }}
       />
       <div
+        className={styles.borderLine}
         style={{
-          position: 'fixed',
           left: bounds.right - lineWidth,
           top: bounds.top,
           width: lineWidth,
           height: bounds.height,
-          backgroundColor: lineColor,
-          zIndex: 10000,
         }}
       />
       <div
+        className={styles.borderLine}
         style={{
-          position: 'fixed',
           left: bounds.left,
           top: bounds.bottom - lineWidth,
           width: bounds.width,
           height: lineWidth,
-          backgroundColor: lineColor,
-          zIndex: 10000,
         }}
       />
       <div
+        className={styles.borderLine}
         style={{
-          position: 'fixed',
           left: bounds.left,
           top: bounds.top,
           width: lineWidth,
           height: bounds.height,
-          backgroundColor: lineColor,
-          zIndex: 10000,
         }}
       />
 
       {positions.map((position) => (
         <div
           key={position}
-          style={{
-            ...getHandleStyle(position, bounds),
-            position: 'fixed',
-            width: '10px',
-            height: '10px',
-            backgroundColor: '#fff',
-            border: '2px solid #1890ff',
-            borderRadius: '50%',
-            zIndex: 10001,
-            boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-          }}
+          className={styles.handle}
+          style={getHandleStyle(position, bounds)}
           onMouseDown={(e) => handleMouseDown(e, position)}
         />
       ))}

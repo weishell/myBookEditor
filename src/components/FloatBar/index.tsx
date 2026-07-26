@@ -5,6 +5,7 @@ import { BlockElementType } from '@/enums';
 import ColorPicker from '@/components/ColorPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
 import { insertTable } from '@/plugins/table/table-operations';
+import styles from './FloatBar.module.less';
 
 export default function FloatBar() {
   const editor = useSlate();
@@ -101,74 +102,32 @@ export default function FloatBar() {
         e.stopPropagation();
         onClick();
       }}
-      className={className}
-      style={{
-        padding: '6px 8px',
-        border: 'none',
-        background: 'transparent',
-        cursor: 'pointer',
-        fontSize: '14px',
-        borderRadius: '4px',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '2px',
-        color: '#333',
-      }}
-      onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-      onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+      className={`${styles.toolButton} ${className || ''}`}
     >
       {icon}
-      {label && <span style={{ fontSize: '12px' }}>{label}</span>}
-      {hasDropdown && <span style={{ fontSize: '10px', color: '#999' }}>▼</span>}
+      {label && <span className={styles.toolButtonLabel}>{label}</span>}
+      {hasDropdown && <span className={styles.dropdownArrow}>▼</span>}
     </button>
   );
 
   return (
     <div className="float-bar">
       <div
+        className={styles.toolbar}
         style={{
-          position: 'fixed',
           left: position.x,
           top: position.y,
-          backgroundColor: '#fff',
-          border: '1px solid #e8e8e8',
-          borderRadius: '8px',
-          padding: '2px',
-          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '0',
-          zIndex: 10000,
         }}
       >
-        <div style={{ position: 'relative' }}>
+        <div className={styles.wrapper}>
           <ToolButton
             icon="T"
             onClick={() => setActiveMenu(activeMenu === 'text' ? null : 'text')}
             hasDropdown
           />
           {activeMenu === 'text' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: '4px',
-                backgroundColor: '#fff',
-                border: '1px solid #e8e8e8',
-                borderRadius: '8px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                padding: '4px',
-                minWidth: '200px',
-                zIndex: 10001,
-              }}
-            >
-              <div
-                style={{ padding: '4px 8px', fontSize: '12px', color: '#999', fontWeight: '600' }}
-              >
-                标题
-              </div>
+            <div className={`${styles.dropdown} ${styles.dropdownText}`}>
+              <div className={styles.menuTitle}>标题</div>
               {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => (
                 <button
                   key={level}
@@ -177,85 +136,43 @@ export default function FloatBar() {
                     handleFormatClick(BlockElementType.HEADING, false, level);
                     setActiveMenu(null);
                   }}
+                  className={styles.menuItemHeading}
                   style={{
-                    width: '100%',
-                    padding: '4px 12px',
-                    textAlign: 'left',
-                    border: 'none',
-                    background: 'transparent',
-                    cursor: 'pointer',
                     fontSize: `${Math.max(10, 18 - level)}px`,
-                    fontWeight: 'bold',
-                    borderRadius: '4px',
                   }}
-                  onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
                 >
                   H{level} 标题
                 </button>
               ))}
-              <div style={{ height: '1px', backgroundColor: '#e8e8e8', margin: '4px 0' }} />
+              <div className={styles.dividerHorizontal} />
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleFormatClick(BlockElementType.PARAGRAPH, false);
                   setActiveMenu(null);
                 }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                className={styles.menuItem}
               >
                 正文
               </button>
             </div>
           )}
         </div>
-        <div style={{ position: 'relative' }}>
+        <div className={styles.wrapper}>
           <ToolButton
             icon="☰"
             onClick={() => setActiveMenu(activeMenu === 'list' ? null : 'list')}
             hasDropdown
           />
           {activeMenu === 'list' && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                left: 0,
-                marginTop: '4px',
-                backgroundColor: '#fff',
-                border: '1px solid #e8e8e8',
-                borderRadius: '8px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                padding: '4px',
-                minWidth: '160px',
-                zIndex: 10001,
-              }}
-            >
+            <div className={`${styles.dropdown} ${styles.dropdownList}`}>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   handleFormatClick(BlockElementType.BULLETED_LIST, false);
                   setActiveMenu(null);
                 }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                className={styles.menuItem}
               >
                 • 无序列表
               </button>
@@ -265,17 +182,7 @@ export default function FloatBar() {
                   handleFormatClick(BlockElementType.NUMBERED_LIST, false);
                   setActiveMenu(null);
                 }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                className={styles.menuItem}
               >
                 1. 有序列表
               </button>
@@ -285,41 +192,27 @@ export default function FloatBar() {
                   handleFormatClick(BlockElementType.TODO_LIST, false);
                   setActiveMenu(null);
                 }}
-                style={{
-                  width: '100%',
-                  padding: '6px 12px',
-                  textAlign: 'left',
-                  border: 'none',
-                  background: 'transparent',
-                  cursor: 'pointer',
-                  fontSize: '13px',
-                  borderRadius: '4px',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
+                className={styles.menuItem}
               >
                 ☑ 待办事项
               </button>
             </div>
           )}
         </div>
-        <div
-          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
-        />
+        <div className={styles.divider} />
         <ToolButton
-          icon={<span style={{ fontWeight: 'bold' }}>B</span>}
+          icon={<span className={styles.iconBold}>B</span>}
           onClick={() => handleFormatClick(MarkTypes.BOLD, true)}
         />
         <ToolButton
-          icon={<span style={{ fontStyle: 'italic' }}>I</span>}
+          icon={<span className={styles.iconItalic}>I</span>}
           onClick={() => handleFormatClick(MarkTypes.ITALIC, true)}
         />
         <ToolButton
-          icon={<span style={{ textDecoration: 'underline' }}>U</span>}
+          icon={<span className={styles.iconUnderline}>U</span>}
           onClick={() => handleFormatClick(MarkTypes.UNDERLINE, true)}
         />
-        <div
-          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
-        />
+        <div className={styles.divider} />
         <ColorPicker
           onTextColorChange={(color) => {
             const selection = window.getSelection();
@@ -334,10 +227,8 @@ export default function FloatBar() {
             }
           }}
         />
-        <div
-          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
-        />
-        <div style={{ position: 'relative' }}>
+        <div className={styles.divider} />
+        <div className={styles.wrapper}>
           <ToolButton
             icon="🎨"
             onClick={() => setActiveMenu(activeMenu === 'art' ? null : 'art')}
@@ -350,9 +241,7 @@ export default function FloatBar() {
             onClose={() => setActiveMenu(null)}
           />
         </div>
-        <div
-          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
-        />
+        <div className={styles.divider} />
         <ToolButton icon="{" onClick={() => handleFormatClick(MarkTypes.CODE, true)} />
         <ToolButton
           icon="“"
@@ -362,9 +251,7 @@ export default function FloatBar() {
           icon="</>"
           onClick={() => handleFormatClick(BlockElementType.CODE_BLOCK, false)}
         />
-        <div
-          style={{ width: '1px', height: '20px', backgroundColor: '#e8e8e8', margin: '0 4px' }}
-        />
+        <div className={styles.divider} />
         <ToolButton
           icon={
             <svg

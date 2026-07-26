@@ -1,0 +1,88 @@
+// Image 组件样式
+
+.wrapper {
+  margin: @spacing-sm 0;
+  display: flex;
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+.toolbar {
+  position: absolute;
+  top: -48px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0;
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  padding: 2px;
+  z-index: 10000;
+  box-shadow: @shadow-md;
+  border: 1px solid @border-color-light;
+  white-space: nowrap;
+}
+
+.toolbarButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background-color: transparent;
+  border-radius: @radius-sm;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.toolbarButtonText {
+  font-size: @font-size-xs;
+  color: @text-tertiary;
+}
+
+.toolbarButtonActive {
+  background-color: @border-color-lighter;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background-color: @border-color-light;
+  margin: @spacing-xs 2px;
+}
+
+.imageContainer {
+  position: relative;
+  max-width: 90%;
+  overflow: hidden;
+  border-radius: @radius-sm;
+  cursor: grab;
+}
+
+.imageContainerCropped {
+  max-width: none;
+}
+
+.imageContainerSelected {
+  box-shadow: 0 0 0 2px @color-primary;
+}
+
+.image {
+  display: block;
+}
+
+.imageCropped {
+  position: absolute;
+  object-fit: none;
+}
+
+.imageFull {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}

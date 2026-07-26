@@ -3,6 +3,7 @@ import { useDocBar } from '@/plugins/docbar-context';
 import { useMenu } from '@/plugins/menu-context';
 import { useSelection } from '@/plugins/selection-context';
 import { BlockElementType } from '@/enums';
+import styles from './DocBar.module.less';
 
 interface SvgIconProps {
   color: string;
@@ -251,51 +252,18 @@ export const DocBar = () => {
   return (
     <div
       data-docbar-area
+      className={styles.docbar}
       style={{
-        position: 'fixed',
         left: currentElement.rect.left - 52,
         top: currentElement.rect.top + 4,
-        height: '24px',
-        display: 'flex',
-        alignItems: 'center',
-        zIndex: 1000,
-        pointerEvents: 'auto',
       }}
       onMouseEnter={handleIconMouseEnter}
       onMouseLeave={handleIconMouseLeave}
     >
-      <div
-        style={{
-          width: '24px',
-          height: '24px',
-          border: 'none',
-          background: '#fff',
-          borderRadius: '4px 0 0 4px',
-          cursor: 'pointer',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transition: 'all 0.15s ease',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          padding: '0',
-        }}
-      >
+      <div className={styles.iconButton}>
         <IconComponent color={iconColor} {...props} />
       </div>
-      <div
-        style={{
-          width: '24px',
-          height: '24px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: '0 4px 4px 0',
-          background: '#fff',
-          boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
-          transition: 'all 0.15s ease',
-          cursor: 'move',
-        }}
-      >
+      <div className={styles.dragButton}>
         <DragIcon color="#999" />
       </div>
     </div>

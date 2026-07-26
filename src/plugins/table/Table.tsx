@@ -5,6 +5,7 @@ import type { CustomElement } from '@/components/Editor/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
 import { insertRow, insertColumn } from './table-operations';
+import styles from './Table.module.less';
 
 interface TableProps extends RenderElementProps {
   pluginId?: string;
@@ -179,36 +180,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     [editor, element],
   );
 
-  // 飞书风格圆点样式
-  const dotStyle: React.CSSProperties = {
-    position: 'absolute',
-    width: '12px',
-    height: '12px',
-    borderRadius: '50%',
-    backgroundColor: 'transparent',
-    backgroundImage: 'radial-gradient(circle, #8c8c8c 1.5px, transparent 1.5px)',
-    backgroundRepeat: 'no-repeat',
-    backgroundPosition: 'center',
-    cursor: 'pointer',
-    padding: '0',
-    zIndex: 10,
-    transform: 'translate(-50%, -50%)',
-    WebkitAppearance: 'none',
-    appearance: 'none',
-    outline: 'none',
-    border: 'none',
-    userSelect: 'none',
-  };
-
   return (
-    <div
-      ref={wrapperRef}
-      style={{
-        margin: '16px 0',
-        position: 'relative',
-      }}
-      onContextMenu={handleContextMenu}
-    >
+    <div ref={wrapperRef} className={styles.wrapper} onContextMenu={handleContextMenu}>
       {/* 行插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
       {rowDots.map((pos, i) => (
         <button
@@ -219,8 +192,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             e.preventDefault();
             e.stopPropagation();
           }}
+          className={styles.dot}
           style={{
-            ...dotStyle,
             top: pos.top,
             left: -12,
           }}
@@ -237,8 +210,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             e.preventDefault();
             e.stopPropagation();
           }}
+          className={styles.dot}
           style={{
-            ...dotStyle,
             top: -12,
             left: pos.left,
           }}
@@ -246,7 +219,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       ))}
 
       {/* 横向滚动容器 */}
-      <div ref={scrollRef} style={{ overflowX: 'auto', position: 'relative' }}>
+      <div ref={scrollRef} className={styles.scrollContainer}>
         {/* Slate 管理的 div */}
         <div
           ref={setSlateDivRef}
@@ -257,10 +230,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         >
           <table
             ref={tableRef}
+            className={styles.table}
             style={{
-              borderCollapse: 'collapse',
               border: `${borderWidth} solid ${borderColor}`,
-              minWidth: '100%',
             }}
           >
             <tbody>

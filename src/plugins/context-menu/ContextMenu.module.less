@@ -1,0 +1,113 @@
+// ContextMenu 组件样式
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 999;
+}
+
+.menu {
+  position: fixed;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: 0;
+  z-index: 1001;
+  min-width: 180px;
+}
+
+.toolbar {
+  padding: @spacing-xs;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.divider {
+  height: 1px;
+  background-color: @border-color-light;
+}
+
+.btnPrimary {
+  width: 36px;
+  height: 32px;
+  border: none;
+  background: @color-primary;
+  color: #fff;
+  cursor: pointer;
+  text-align: center;
+  font-size: @font-size-sm;
+  font-weight: bold;
+  border-radius: @radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background: #40a9ff;
+  }
+}
+
+.btnTool {
+  width: 36px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: center;
+  font-size: @font-size-md;
+  color: @text-primary;
+  border-radius: @radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.btnToolBold {
+  composes: btnTool;
+  font-size: @font-size-sm;
+  font-weight: bold;
+}
+
+.btnToolMono {
+  composes: btnTool;
+  font-size: @font-size-sm;
+  font-family: monospace;
+}
+
+.btnAction {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  padding: @spacing-sm @spacing-md;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  text-align: left;
+  font-size: @font-size-base;
+  color: @text-primary;
+  border-radius: 0;
+  gap: @spacing-sm;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.actionIcon {
+  font-size: @font-size-md;
+}
+
+.actionArrow {
+  margin-left: auto;
+  font-size: @font-size-sm;
+  color: @text-tertiary;
+}

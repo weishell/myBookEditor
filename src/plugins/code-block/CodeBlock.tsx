@@ -5,6 +5,7 @@ import { Select } from 'antd';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { SUPPORTED_LANGUAGES } from '@/utils/code-highlighter';
+import styles from './CodeBlock.module.less';
 
 interface CodeBlockAttrs {
   language?: string;
@@ -108,37 +109,22 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
     <ElementWrapper type={BlockElementType.CODE_BLOCK} pluginId={pluginId}>
       <div
         ref={containerRef}
-        className="code-block-container"
-        style={{
-          position: 'relative',
-          margin: '12px 0',
-          borderRadius: '6px',
-          border: '1px solid #e5e7eb',
-          backgroundColor: '#f9fafb',
-          overflow: 'hidden',
-          boxShadow: 'none',
-          maxWidth: '100%',
-        }}
+        className={styles.container}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
       >
         <div
           contentEditable={false}
           suppressContentEditableWarning={true}
+          className={styles.toolbar}
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '4px 12px',
             backgroundColor: isToolbarVisible ? '#f9fafb' : '#ffffff',
             borderBottom: isToolbarVisible ? '1px solid #e5e7eb' : 'none',
             opacity: isToolbarVisible ? 1 : 0,
             pointerEvents: isToolbarVisible ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease',
-            userSelect: 'none',
           }}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={styles.controlsWrapper}>
             <Select
               value={localLanguage}
               onChange={handleLanguageChange}
@@ -166,14 +152,9 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
           </div>
 
           <div
+            className={styles.copyButton}
             style={{
-              cursor: 'pointer',
               color: showCopySuccess ? '#52c41a' : '#6b7280',
-              fontSize: '12px',
-              padding: '2px 6px',
-              borderRadius: '3px',
-              backgroundColor: '#ffffff',
-              border: '1px solid #e5e7eb',
             }}
             onClick={(e) => {
               e.stopPropagation();
@@ -185,26 +166,17 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         </div>
 
         <div
+          className={styles.codeBodyWrapper}
           style={{
             height: height - 32,
-            overflowY: 'auto',
-            overflowX: 'hidden',
           }}
         >
           <div
             {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
+            className={styles.codeContent}
             style={{
-              padding: '8px 0',
-              backgroundColor: '#f9fafb',
-              outline: 'none',
-              fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-              fontSize: '12px',
-              lineHeight: '18px',
-              color: '#374151',
               whiteSpace: localWrap ? 'pre-wrap' : 'pre',
               wordBreak: localWrap ? 'break-all' : 'normal',
-              overflowX: 'hidden',
-              width: '100%',
             }}
           >
             {children}
@@ -214,29 +186,14 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         <div
           contentEditable={false}
           suppressContentEditableWarning={true}
+          className={styles.resizeHandle}
           style={{
-            height: '6px',
-            backgroundColor: '#f9fafb',
-            cursor: 'ns-resize',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderTop: '1px solid #e5e7eb',
             opacity: isHovered ? 1 : 0,
             pointerEvents: isHovered ? 'auto' : 'none',
-            transition: 'opacity 0.2s ease',
-            userSelect: 'none',
           }}
           onMouseDown={handleDragStart}
         >
-          <div
-            style={{
-              width: '24px',
-              height: '2px',
-              backgroundColor: '#d1d5db',
-              borderRadius: '1px',
-            }}
-          />
+          <div className={styles.resizeHandleBar} />
         </div>
       </div>
     </ElementWrapper>

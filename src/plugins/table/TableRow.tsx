@@ -2,6 +2,7 @@ import React from 'react';
 import type { RenderElementProps } from 'slate-react';
 import type { CustomElement } from '@/components/Editor/types';
 import type { TableRowAttrs } from './table-operations';
+import styles from './TableRow.module.less';
 
 interface TableRowProps extends RenderElementProps {
   pluginId?: string;
@@ -35,6 +36,7 @@ export const TableRow: React.FC<TableRowProps> = ({
     <tr
       {...attributes}
       data-row-index={rowIndex}
+      className={styles.row}
       style={{ backgroundColor: bgColor || 'transparent' }}
     >
       {renderChildren()}

@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactCrop from 'react-image-crop';
 import type { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import styles from './ImageCropper.module.less';
 
 interface ImageCropperProps {
   imageUrl: string;
@@ -93,153 +94,45 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
 
   return (
     <div
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.7)',
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        zIndex: 99999,
-        cursor: 'default',
-      }}
+      className={styles.overlay}
       onClick={(e) => {
         if (e.target === e.currentTarget) {
           onCancel();
         }
       }}
     >
-      <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: '8px',
-          padding: '16px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.3)',
-          maxWidth: '90vw',
-          maxHeight: '90vh',
-          display: 'flex',
-          flexDirection: 'column',
-        }}
-      >
-        <div
-          style={{
-            fontSize: '16px',
-            fontWeight: 'bold',
-            marginBottom: '12px',
-            color: '#333',
-          }}
-        >
-          裁剪图片
-        </div>
+      <div className={styles.modal}>
+        <div className={styles.title}>裁剪图片</div>
 
-        <div
-          style={{
-            position: 'relative',
-            border: '1px solid #e8e8e8',
-            borderRadius: '4px',
-            backgroundColor: '#f5f5f5',
-            maxWidth: '800px',
-            maxHeight: '600px',
-            marginBottom: '12px',
-          }}
-        >
+        <div className={styles.cropContainer}>
           <ReactCrop
             crop={crop}
             onChange={onCropChange}
             onComplete={onCropComplete}
-            style={{
-              maxWidth: '800px',
-              maxHeight: '600px',
-            }}
+            className={styles.crop}
           >
             <img
               ref={imgRef}
               src={imageUrl}
               alt=""
-              style={{
-                display: 'block',
-                maxWidth: '100%',
-                maxHeight: '600px',
-                objectFit: 'contain',
-              }}
+              className={styles.cropImage}
               draggable={false}
               onLoad={onImageLoad}
             />
           </ReactCrop>
         </div>
 
-        <div
-          style={{
-            display: 'flex',
-            justifyContent: 'flex-end',
-            gap: '8px',
-          }}
-        >
-          <button
-            onClick={handleClear}
-            style={{
-              padding: '6px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '4px',
-              backgroundColor: '#fff',
-              color: '#666',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#1890ff')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d9d9d9')}
-          >
+        <div className={styles.buttonRow}>
+          <button onClick={handleClear} className={`${styles.button} ${styles.buttonSecondary}`}>
             清除裁剪
           </button>
-          <button
-            onClick={handleReset}
-            style={{
-              padding: '6px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '4px',
-              backgroundColor: '#fff',
-              color: '#666',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#1890ff')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d9d9d9')}
-          >
+          <button onClick={handleReset} className={`${styles.button} ${styles.buttonSecondary}`}>
             重置
           </button>
-          <button
-            onClick={onCancel}
-            style={{
-              padding: '6px 16px',
-              border: '1px solid #d9d9d9',
-              borderRadius: '4px',
-              backgroundColor: '#fff',
-              color: '#666',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.borderColor = '#1890ff')}
-            onMouseLeave={(e) => (e.currentTarget.style.borderColor = '#d9d9d9')}
-          >
+          <button onClick={onCancel} className={`${styles.button} ${styles.buttonSecondary}`}>
             取消
           </button>
-          <button
-            onClick={handleConfirm}
-            style={{
-              padding: '6px 16px',
-              border: 'none',
-              borderRadius: '4px',
-              backgroundColor: '#1890ff',
-              color: '#fff',
-              cursor: 'pointer',
-              fontSize: '14px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#40a9ff')}
-            onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = '#1890ff')}
-          >
+          <button onClick={handleConfirm} className={`${styles.button} ${styles.buttonPrimary}`}>
             确认裁剪
           </button>
         </div>

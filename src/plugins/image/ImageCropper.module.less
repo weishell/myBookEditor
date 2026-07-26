@@ -1,0 +1,88 @@
+// ImageCropper 组件样式
+
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 99999;
+  cursor: default;
+}
+
+.modal {
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  padding: @spacing-lg;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.title {
+  font-size: @font-size-lg;
+  font-weight: bold;
+  margin-bottom: @spacing-md;
+  color: @text-primary;
+}
+
+.cropContainer {
+  position: relative;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-sm;
+  background-color: @bg-hover;
+  max-width: 800px;
+  max-height: 600px;
+  margin-bottom: @spacing-md;
+}
+
+.crop {
+  max-width: 800px;
+  max-height: 600px;
+}
+
+.cropImage {
+  display: block;
+  max-width: 100%;
+  max-height: 600px;
+  object-fit: contain;
+}
+
+.buttonRow {
+  display: flex;
+  justify-content: flex-end;
+  gap: @spacing-sm;
+}
+
+.button {
+  padding: 6px @spacing-lg;
+  border-radius: @radius-sm;
+  cursor: pointer;
+  font-size: @font-size-md;
+}
+
+.buttonSecondary {
+  border: 1px solid @border-color;
+  background-color: @bg-base;
+  color: @text-secondary;
+
+  &:hover {
+    border-color: @color-primary;
+  }
+}
+
+.buttonPrimary {
+  border: none;
+  background-color: @color-primary;
+  color: @bg-base;
+
+  &:hover {
+    background-color: #40a9ff;
+  }
+}

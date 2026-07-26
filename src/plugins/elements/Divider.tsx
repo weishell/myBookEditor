@@ -1,24 +1,14 @@
-import React from 'react';
+import { BlockElementType } from '@/enums';
+import { ElementWrapper } from '@/plugins/element-wrapper';
+import styles from './Divider.module.less';
 
-interface DividerProps {
+interface ElementProps {
   attributes: Record<string, unknown>;
-  children?: React.ReactNode;
   pluginId?: string;
 }
 
-export const Divider: React.FC<DividerProps> = ({ attributes }) => {
-  return (
-    <div
-      {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
-      contentEditable={false}
-      suppressContentEditableWarning={true}
-      style={{
-        height: '1px',
-        backgroundColor: '#e5e7eb',
-        margin: '16px 0',
-        border: 'none',
-        pointerEvents: 'none',
-      }}
-    />
-  );
-};
+export const Divider = ({ attributes, pluginId }: ElementProps) => (
+  <ElementWrapper type={BlockElementType.DIVIDER} pluginId={pluginId}>
+    <div {...(attributes as React.HTMLAttributes<HTMLDivElement>)} className={styles.divider} />
+  </ElementWrapper>
+);

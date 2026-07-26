@@ -6,6 +6,7 @@ import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import ImageCropper from './ImageCropper';
 import { v4 as uuidv4 } from 'uuid';
+import styles from './Image.module.less';
 
 interface ImageAttrs {
   url: string;
@@ -227,56 +228,21 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
     <ElementWrapper type={BlockElementType.IMAGE_BLOCK} pluginId={pluginId}>
       <div
         ref={wrapperRef}
-        style={{
-          margin: '8px 0',
-          display: 'flex',
-          ...getAlignStyle(),
-          userSelect: 'none',
-          width: '100%',
-          position: 'relative',
-        }}
+        className={styles.wrapper}
+        style={getAlignStyle()}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
         {(showToolbar || isSelected) && (
           <div
             ref={toolbarRef}
-            style={{
-              position: 'absolute',
-              top: '-48px',
-              left: '50%',
-              transform: 'translateX(-50%)',
-              display: 'flex',
-              gap: '0',
-              backgroundColor: '#fff',
-              borderRadius: '8px',
-              padding: '2px',
-              zIndex: 10000,
-              boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-              border: '1px solid #e8e8e8',
-              whiteSpace: 'nowrap',
-            }}
+            className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
             <button
               onClick={() => handleAlign('left')}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: attrs.align === 'left' ? '#f0f0f0' : 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor =
-                  attrs.align === 'left' ? '#f0f0f0' : 'transparent')
-              }
+              className={`${styles.toolbarButton} ${attrs.align === 'left' ? styles.toolbarButtonActive : ''}`}
             >
               <svg
                 width="16"
@@ -296,22 +262,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
             </button>
             <button
               onClick={() => handleAlign('center')}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: attrs.align === 'center' ? '#f0f0f0' : 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor =
-                  attrs.align === 'center' ? '#f0f0f0' : 'transparent')
-              }
+              className={`${styles.toolbarButton} ${attrs.align === 'center' ? styles.toolbarButtonActive : ''}`}
             >
               <svg
                 width="16"
@@ -331,22 +282,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
             </button>
             <button
               onClick={() => handleAlign('right')}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: attrs.align === 'right' ? '#f0f0f0' : 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) =>
-                (e.currentTarget.style.backgroundColor =
-                  attrs.align === 'right' ? '#f0f0f0' : 'transparent')
-              }
+              className={`${styles.toolbarButton} ${attrs.align === 'right' ? styles.toolbarButtonActive : ''}`}
             >
               <svg
                 width="16"
@@ -364,118 +300,33 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
                 <path d="M10 15h6"></path>
               </svg>
             </button>
-            <div
-              style={{
-                width: '1px',
-                height: '20px',
-                backgroundColor: '#e8e8e8',
-                margin: '4px 2px',
-              }}
-            />
+            <div className={styles.divider} />
             <button
               onClick={() => handleResize(CROP_WIDTH * 0.25, CROP_HEIGHT * 0.25)}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#666',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
             >
               S
             </button>
             <button
               onClick={() => handleResize(CROP_WIDTH * 0.5, CROP_HEIGHT * 0.5)}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#666',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
             >
               M
             </button>
             <button
               onClick={() => handleResize(CROP_WIDTH * 0.75, CROP_HEIGHT * 0.75)}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#666',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
             >
               L
             </button>
             <button
               onClick={() => handleResize(attrs.width || 800, attrs.height || 450)}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '11px',
-                color: '#666',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
             >
               原
             </button>
-            <div
-              style={{
-                width: '1px',
-                height: '20px',
-                backgroundColor: '#e8e8e8',
-                margin: '4px 2px',
-              }}
-            />
-            <button
-              onClick={handleOpenCrop}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
+            <div className={styles.divider} />
+            <button onClick={handleOpenCrop} className={styles.toolbarButton}>
               <svg
                 width="16"
                 height="16"
@@ -514,19 +365,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
                   }
                 }
               }}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
+              className={styles.toolbarButton}
             >
               <svg
                 width="16"
@@ -542,22 +381,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
                 <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
               </svg>
             </button>
-            <button
-              onClick={handleRemove}
-              style={{
-                width: '28px',
-                height: '28px',
-                border: 'none',
-                background: 'transparent',
-                borderRadius: '4px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-              onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
-            >
+            <button onClick={handleRemove} className={styles.toolbarButton}>
               <svg
                 width="16"
                 height="16"
@@ -578,16 +402,10 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
         <div
           {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
           ref={containerRef}
-          className="image-container"
+          className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''} ${isSelected ? styles.imageContainerSelected : ''}`}
           style={{
-            position: 'relative',
             width: DISPLAY_WIDTH,
-            maxWidth: hasCrop ? 'none' : '90%',
             aspectRatio: ASPECT_RATIO,
-            overflow: 'hidden',
-            borderRadius: '4px',
-            boxShadow: isSelected ? '0 0 0 2px #1890ff' : 'none',
-            cursor: 'grab',
           }}
           contentEditable={false}
           suppressContentEditableWarning={true}
@@ -596,23 +414,17 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           <img
             src={attrs.url}
             alt=""
-            style={{
-              display: 'block',
-              ...(hasCrop
+            className={`${styles.image} ${hasCrop ? styles.imageCropped : styles.imageFull}`}
+            style={
+              hasCrop
                 ? {
-                    position: 'absolute' as const,
                     left: -(attrs.offsetLeft || 0),
                     top: -(attrs.offsetTop || 0),
                     width: attrs.width,
                     height: attrs.height,
-                    objectFit: 'none' as const,
                   }
-                : {
-                    width: '100%',
-                    height: '100%',
-                    objectFit: 'contain' as const,
-                  }),
-            }}
+                : undefined
+            }
             draggable={false}
             onLoad={updateBounds}
           />

@@ -1,0 +1,39 @@
+// Table 组件样式
+.wrapper {
+  margin: 16px 0;
+  position: relative;
+}
+
+.scrollContainer {
+  overflow-x: auto;
+  position: relative;
+}
+
+.table {
+  border-collapse: collapse;
+  min-width: 100%;
+}
+
+// 插入行/列圆点
+.dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: transparent;
+  background-image: radial-gradient(circle, @text-tertiary 1.5px, transparent 1.5px);
+  background-repeat: no-repeat;
+  background-position: center;
+  cursor: pointer;
+  padding: 0;
+  z-index: 10;
+  transform: translate(-50%, -50%);
+  appearance: none;
+  outline: none;
+  border: none;
+  user-select: none;
+
+  &:hover {
+    background-image: radial-gradient(circle, @color-primary 2px, transparent 2px);
+  }
+}
