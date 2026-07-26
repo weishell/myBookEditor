@@ -182,26 +182,21 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 飞书风格圆点样式
   const dotStyle: React.CSSProperties = {
     position: 'absolute',
-    width: '16px',
-    height: '16px',
+    width: '12px',
+    height: '12px',
     borderRadius: '50%',
-    backgroundColor: '#1890ff',
-    border: '2px solid #ffffff',
-    boxShadow: '0 0 0 1px #1890ff',
+    backgroundColor: 'transparent',
+    backgroundImage: 'radial-gradient(circle, #8c8c8c 1.5px, transparent 1.5px)',
+    backgroundRepeat: 'no-repeat',
+    backgroundPosition: 'center',
     cursor: 'pointer',
-    fontSize: '12px',
-    fontWeight: 'bold',
-    lineHeight: '16px',
-    color: '#ffffff',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
     padding: '0',
     zIndex: 10,
     transform: 'translate(-50%, -50%)',
     WebkitAppearance: 'none',
     appearance: 'none',
     outline: 'none',
+    border: 'none',
     userSelect: 'none',
   };
 
@@ -229,9 +224,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             top: pos.top,
             left: -12,
           }}
-        >
-          +
-        </button>
+        />
       ))}
 
       {/* 列插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
@@ -249,9 +242,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             top: -12,
             left: pos.left,
           }}
-        >
-          +
-        </button>
+        />
       ))}
 
       {/* 横向滚动容器 */}

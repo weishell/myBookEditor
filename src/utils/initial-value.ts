@@ -394,4 +394,13 @@ export const initialValue: Descendant[] = [
       },
     ],
   },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '表格支持插入行、插入列、删除行、删除列以及合并单元格等操作，右键点击表格可以打开更多功能菜单。',
+      },
+    ],
+  },
 ];
