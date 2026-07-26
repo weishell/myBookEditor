@@ -76,12 +76,25 @@ const findTableInDocument = (
   return null;
 };
 
-export const insertRow = (editor: Editor, at?: number) => {
-  // 方法1：通过文档树遍历查找表格
-  const foundTable = findTableInDocument(editor.children, []);
+// 获取表格路径：优先使用传入的 path，否则遍历文档查找
+const getTablePath = (editor: Editor, tablePath?: number[]): [CustomElement, number[]] | null => {
+  if (tablePath) {
+    try {
+      const [node] = Editor.node(editor, tablePath);
+      if (SlateElement.isElement(node) && (node as CustomElement).type === BlockElementType.TABLE) {
+        return [node as CustomElement, tablePath];
+      }
+    } catch {
+      // path 无效，回退到搜索
+    }
+  }
+  return findTableInDocument(editor.children, []);
+};
+
+export const insertRow = (editor: Editor, at?: number, tablePath?: number[]) => {
+  const foundTable = getTablePath(editor, tablePath);
 
   if (!foundTable) {
-    // 方法2：回退到使用 nodes() 查找
     const nodes: NodeEntry[] = Array.from(
       (editor as any).nodes({
         match: (n: unknown) =>
@@ -109,12 +122,10 @@ const insertRowInternal = (editor: Editor, tableNode: [CustomElement, number[]],
   });
 };
 
-export const insertColumn = (editor: Editor, at?: number) => {
-  // 方法1：通过文档树遍历查找表格
-  const foundTable = findTableInDocument(editor.children, []);
+export const insertColumn = (editor: Editor, at?: number, tablePath?: number[]) => {
+  const foundTable = getTablePath(editor, tablePath);
 
   if (!foundTable) {
-    // 方法2：回退到使用 nodes() 查找
     const nodes: NodeEntry[] = Array.from(
       (editor as any).nodes({
         match: (n: unknown) =>
@@ -135,15 +146,17 @@ const insertColumnInternal = (
 ) => {
   const [tableElement, tablePath] = tableNode;
 
-  tableElement.children.forEach((row, rowIndex) => {
-    const rowElement = row as CustomElement;
+  // 从最后一行开始插入，避免路径偏移问题
+  const rows = tableElement.children as CustomElement[];
+  for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
+    const rowElement = rows[rowIndex];
     const cellCount = rowElement.children.length;
     const insertIndex = at !== undefined ? Math.min(at, cellCount) : cellCount;
 
     Transforms.insertNodes(editor, createTableCell(), {
       at: [...tablePath, rowIndex, insertIndex],
     });
-  });
+  }
 };
 
 export const deleteRow = (editor: Editor) => {
@@ -206,9 +219,11 @@ export const deleteColumn = (editor: Editor) => {
   if (firstRow.children.length <= 1) {
     Transforms.removeNodes(editor, { at: tablePath });
   } else {
-    tableElement.children.forEach((_, rowIndex) => {
+    // 从最后一行开始删除
+    const rows = tableElement.children as CustomElement[];
+    for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
       Transforms.removeNodes(editor, { at: [...tablePath, rowIndex, colIndex] });
-    });
+    }
   }
 };
 

@@ -2,14 +2,7 @@ import { useMemo, useCallback, useEffect } from 'react';
 import { createEditor, Editor as SlateEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
-import {
-  MenuProvider,
-  ContextMenu,
-  SelectionProvider,
-  DocBarProvider,
-  DocBar,
-  withTable,
-} from '@/plugins';
+import { MenuProvider, ContextMenu, SelectionProvider, DocBarProvider, DocBar } from '@/plugins';
 import { withCodeBlock, withMarkdownShortcuts } from '@/editor-extensions';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
@@ -17,10 +10,11 @@ import { codeDecorate } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
 import { renderElement } from './renderElement';
 import { renderLeaf } from './renderLeaf';
+import { PAGE_WIDTH_NORMAL } from '@/enums';
 
 export default function Editor() {
   const editor = useMemo(
-    () => withTable(withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor()))))),
+    () => withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
     [],
   );
 
@@ -46,7 +40,7 @@ export default function Editor() {
             <DocBar />
             <div
               style={{
-                maxWidth: '900px',
+                maxWidth: PAGE_WIDTH_NORMAL,
                 margin: '0 auto',
                 padding: '40px 50px',
                 border: '1px solid #e8e8e8',
