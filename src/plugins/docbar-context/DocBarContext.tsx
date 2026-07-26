@@ -5,6 +5,7 @@ interface ActiveElementInfo {
   id: string;
   type: BlockElementType;
   attrs?: any;
+  isEmpty?: boolean;
   rect: DOMRect;
 }
 
@@ -46,7 +47,8 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
 
         if (pluginId && blockType) {
           const rect = element.getBoundingClientRect();
-          setActiveElement({ id: pluginId, type: blockType, attrs, rect });
+          const isEmpty = element.getAttribute('data-empty') === 'true';
+          setActiveElement({ id: pluginId, type: blockType, attrs, isEmpty, rect });
           return;
         }
       }

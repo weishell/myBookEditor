@@ -32,6 +32,22 @@ const ParagraphIcon = ({ color, size = 14 }: SvgIconProps) => (
   </svg>
 );
 
+const EmptyIcon = ({ color, size = 14 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <rect
+      x="7"
+      y="7"
+      width="10"
+      height="10"
+      rx="3"
+      stroke={color}
+      strokeWidth="1.5"
+      strokeDasharray="3 2"
+    />
+    <path d="M12 8v8M8 12h8" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+  </svg>
+);
+
 const QuoteIcon = ({ color, size = 14 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
@@ -106,7 +122,12 @@ interface IconConfig {
   props?: { level?: number };
 }
 
-const getElementIcon = (type: BlockElementType, attrs?: any): IconConfig => {
+const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean): IconConfig => {
+  // 当标题或段落为空时，显示加号图标
+  if (isEmpty && (type === BlockElementType.HEADING || type === BlockElementType.PARAGRAPH)) {
+    return { component: EmptyIcon };
+  }
+
   switch (type) {
     case BlockElementType.HEADING:
       return {
@@ -223,8 +244,9 @@ export const DocBar = () => {
   const { component: IconComponent, props } = getElementIcon(
     currentElement.type,
     currentElement.attrs,
+    currentElement.isEmpty,
   );
-  const iconColor = getElementColor(currentElement.type);
+  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor(currentElement.type);
 
   return (
     <div

@@ -1,5 +1,4 @@
 import React from 'react';
-import { useSelected, useFocused } from 'slate-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 
@@ -27,15 +26,18 @@ const HEADING_STYLES: Record<
 };
 
 export const Heading = ({ attributes, children, pluginId, element }: ElementProps) => {
-  const isSelected = useSelected();
-  const isFocused = useFocused();
   const level = element?.attrs?.level || 1;
   const style = HEADING_STYLES[level] || HEADING_STYLES[1];
 
   const isEmpty = element?.children?.[0]?.text === '' || element?.children?.[0]?.text === undefined;
 
   return (
-    <ElementWrapper type={BlockElementType.HEADING} pluginId={pluginId} attrs={element?.attrs}>
+    <ElementWrapper
+      type={BlockElementType.HEADING}
+      pluginId={pluginId}
+      attrs={element?.attrs}
+      isEmpty={isEmpty}
+    >
       <h1
         {...(attributes as React.HTMLAttributes<HTMLHeadingElement>)}
         style={{
@@ -46,22 +48,6 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
           position: 'relative',
         }}
       >
-        {isSelected && isFocused && isEmpty && (
-          <span
-            contentEditable={false}
-            suppressContentEditableWarning={true}
-            style={{
-              position: 'absolute',
-              left: 0,
-              top: 0,
-              color: '#999',
-              opacity: 0.5,
-              pointerEvents: 'none',
-            }}
-          >
-            H{level}
-          </span>
-        )}
         {children}
       </h1>
     </ElementWrapper>

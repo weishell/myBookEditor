@@ -68,6 +68,8 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
         />
       );
     default:
-      return <Paragraph attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <Paragraph attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
   }
 };
