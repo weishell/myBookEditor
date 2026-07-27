@@ -1,4 +1,5 @@
 import React from 'react';
+import { useSelected } from 'slate-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import styles from './Heading.module.less';
@@ -27,6 +28,7 @@ const HEADING_STYLES: Record<
 };
 
 export const Heading = ({ attributes, children, pluginId, element }: ElementProps) => {
+  const isSelected = useSelected();
   const level = element?.attrs?.level || 1;
   const style = HEADING_STYLES[level] || HEADING_STYLES[1];
 
@@ -48,7 +50,7 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
           marginBottom: style.marginBottom,
         }}
       >
-        {isEmpty && (
+        {isEmpty && isSelected && (
           <span
             className={styles.placeholder}
             contentEditable={false}

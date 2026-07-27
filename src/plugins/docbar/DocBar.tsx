@@ -164,28 +164,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
   }
 };
 
-const getElementColor = (type: BlockElementType): string => {
-  switch (type) {
-    case BlockElementType.HEADING:
-    case BlockElementType.PARAGRAPH:
-      return '#1890ff';
-    case BlockElementType.BLOCKQUOTE:
-      return '#faad14';
-    case BlockElementType.CODE_BLOCK:
-      return '#722ed1';
-    case BlockElementType.BULLETED_LIST:
-    case BlockElementType.NUMBERED_LIST:
-    case BlockElementType.LIST_ITEM:
-      return '#52c41a';
-    case BlockElementType.TODO_LIST:
-      return '#1890ff';
-    case BlockElementType.TABLE:
-      return '#fa8c16';
-    case BlockElementType.IMAGE_BLOCK:
-      return '#52c41a';
-    default:
-      return '#1890ff';
-  }
+const getElementColor = (): string => {
+  return '#1890ff';
 };
 
 export const DocBar = () => {
@@ -259,7 +239,7 @@ export const DocBar = () => {
     currentElement.attrs,
     currentElement.isEmpty,
   );
-  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor(currentElement.type);
+  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor();
 
   return (
     <div

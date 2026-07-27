@@ -9,6 +9,11 @@ interface ElementProps {
 
 export const Divider = ({ attributes, pluginId }: ElementProps) => (
   <ElementWrapper type={BlockElementType.DIVIDER} pluginId={pluginId}>
-    <div {...(attributes as React.HTMLAttributes<HTMLDivElement>)} className={styles.divider} />
+    <div
+      {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
+      className={styles.divider}
+      contentEditable={false}
+      suppressContentEditableWarning={true}
+    />
   </ElementWrapper>
 );
