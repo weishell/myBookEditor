@@ -12,7 +12,11 @@ import { renderElement } from './renderElement';
 import { renderLeaf } from './renderLeaf';
 import { PAGE_WIDTH_NORMAL } from '@/enums';
 
-export default function Editor() {
+interface EditorProps {
+  readOnly?: boolean;
+}
+
+export default function Editor({ readOnly = false }: EditorProps) {
   const editor = useMemo(
     () => withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
     [],
@@ -22,20 +26,31 @@ export default function Editor() {
     // 强制 normalize，将 code-block 的文本节点转换为 code-line 元素
     SlateEditor.normalize(editor, { force: true });
   }, [editor]);
+
   const keyboardHandler = useMemo(() => createKeyboardHandler(editor), [editor]);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
-      keyboardHandler(e);
+      if (!readOnly) {
+        keyboardHandler(e);
+      }
     },
-    [keyboardHandler],
+    [keyboardHandler, readOnly],
   );
 
   return (
-    <Slate editor={editor} initialValue={initialValue}>
+    <Slate
+      editor={editor}
+      initialValue={initialValue}
+      onChange={(value) => {
+        if (!readOnly) {
+          console.log(value);
+        }
+      }}
+    >
       <SelectionProvider>
         <MenuProvider>
-          <FloatBar />
-          <ContextMenu />
+          {!readOnly && <FloatBar />}
+          {!readOnly && <ContextMenu />}
           <DocBarProvider>
             <DocBar />
             <div
@@ -47,6 +62,7 @@ export default function Editor() {
                 borderRadius: '8px',
                 backgroundColor: '#fff',
                 minHeight: '500px',
+                pointerEvents: readOnly ? 'none' : 'auto',
               }}
             >
               <Editable
@@ -59,6 +75,7 @@ export default function Editor() {
                 }}
                 decorate={codeDecorate}
                 onKeyDown={handleKeyDown}
+                readOnly={readOnly}
               />
             </div>
           </DocBarProvider>

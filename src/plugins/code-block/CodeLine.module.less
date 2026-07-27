@@ -5,6 +5,7 @@
   white-space: pre-wrap;
   word-break: break-all;
   min-height: 18px;
+  counter-increment: code-line-number;
 }
 
 .lineNumber {
@@ -15,6 +16,10 @@
   color: @text-tertiary;
   font-size: @font-size-sm;
   user-select: none;
+
+  &::before {
+    content: counter(code-line-number);
+  }
 }
 
 .codeContent {

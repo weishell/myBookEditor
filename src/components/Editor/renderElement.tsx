@@ -30,7 +30,7 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
         <CodeBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
       );
     case BlockElementType.CODE_LINE:
-      return <CodeLine attributes={attributes} children={children} element={element} />;
+      return <CodeLine attributes={attributes} children={children} />;
     case BlockElementType.LIST_ITEM:
       return (
         <ListItem attributes={attributes} children={children} pluginId={el.id} element={element} />

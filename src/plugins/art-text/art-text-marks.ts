@@ -60,6 +60,11 @@ export const ArtTextPresets = {
     colors: ['#add8e6', '#00bfff', '#1e90ff'],
     direction: 'top-to-bottom' as const,
   },
+  云舞缭绕: {
+    type: 'gradient' as const,
+    colors: ['#19CAAD', '#D6D5B7', '#8CC7B5', '#A0EEE1', '#BEE7E9', '#BEEDC7', '#F4606C'],
+    direction: 'left-to-right' as const,
+  },
   GreenGlow: {
     type: 'glow' as const,
     glowColor: '#00ff00',

@@ -110,6 +110,14 @@ const TableIcon = ({ color, size = 14 }: SvgIconProps) => (
   </svg>
 );
 
+const ImageIcon = ({ color, size = 14 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
+    <rect x="3" y="3" width="18" height="18" rx="2" />
+    <circle cx="8.5" cy="8.5" r="1.5" />
+    <polyline points="21 15 16 10 5 21" />
+  </svg>
+);
+
 const DragIcon = ({ color = '#999', size = 12 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <line x1="9" y1="18" x2="15" y2="18" />
@@ -149,6 +157,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: TodoListIcon };
     case BlockElementType.TABLE:
       return { component: TableIcon };
+    case BlockElementType.IMAGE_BLOCK:
+      return { component: ImageIcon };
     default:
       return { component: ParagraphIcon };
   }
@@ -171,6 +181,8 @@ const getElementColor = (type: BlockElementType): string => {
       return '#1890ff';
     case BlockElementType.TABLE:
       return '#fa8c16';
+    case BlockElementType.IMAGE_BLOCK:
+      return '#52c41a';
     default:
       return '#1890ff';
   }

@@ -7,7 +7,6 @@ const codeText = 'console.log("Hello, World!");\nconst a = 1;\nconst b = 2;\ncon
 const codeLines = codeText.split('\n').map((text, i) => ({
   type: BlockElementType.CODE_LINE,
   id: `${codeBlockId}-line-${i}`,
-  attrs: { lineNumber: i + 1 },
   children: [{ text }, { text: ZERO_WIDTH_SPACE }],
 }));
 

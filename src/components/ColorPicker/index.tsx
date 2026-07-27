@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const FONT_COLORS = [
   '#000000',
@@ -18,6 +19,16 @@ const FONT_COLORS = [
   '#009999',
   '#669900',
   '#996633',
+  '#19CAAD',
+  '#D6D5B7',
+  '#8CC7B5',
+  '#D1BA74',
+  '#A0EEE1',
+  '#E6CEAC',
+  '#BEE7E9',
+  '#ECAD9E',
+  '#BEEDC7',
+  '#F4606C',
 ];
 
 const HIGHLIGHT_COLORS = [
@@ -54,6 +65,7 @@ export default function ColorPicker({
   onBackgroundColorChange,
 }: ColorPickerProps) {
   const [open, setOpen] = useState(false);
+  const { t } = useTranslation();
 
   const handleTextColorClick = (color: string) => {
     onTextColorChange(color || null);
@@ -135,7 +147,7 @@ export default function ColorPicker({
               marginBottom: '8px',
             }}
           >
-            字体颜色
+            {t('colorPicker.fontColor')}
           </div>
           <div
             style={{
@@ -183,7 +195,7 @@ export default function ColorPicker({
               marginBottom: '8px',
             }}
           >
-            背景颜色
+            {t('colorPicker.backgroundColor')}
           </div>
           <div
             style={{
@@ -232,7 +244,7 @@ export default function ColorPicker({
             }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
           >
-            恢复默认
+            {t('colorPicker.reset')}
           </button>
         </div>
       )}

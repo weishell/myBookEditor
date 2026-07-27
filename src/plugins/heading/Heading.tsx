@@ -41,13 +41,22 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
     >
       <h1
         {...(attributes as React.HTMLAttributes<HTMLHeadingElement>)}
-        className={styles.heading}
+        className={`${styles.heading} ${isEmpty ? styles.empty : ''}`}
         style={{
           fontSize: style.fontSize,
           lineHeight: style.lineHeight,
           marginBottom: style.marginBottom,
         }}
       >
+        {isEmpty && (
+          <span
+            className={styles.placeholder}
+            contentEditable={false}
+            suppressContentEditableWarning={true}
+          >
+            H{level}
+          </span>
+        )}
         {children}
       </h1>
     </ElementWrapper>
