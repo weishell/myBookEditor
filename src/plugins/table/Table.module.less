@@ -14,7 +14,7 @@
   min-width: 100%;
 }
 
-// 插入行/列圆点
+// 插入行/列圆点 - 飞书风格
 .dot {
   position: absolute;
   width: 12px;
@@ -27,13 +27,19 @@
   cursor: pointer;
   padding: 0;
   z-index: 10;
-  transform: translate(-50%, -50%);
+  transform: translate(-50%, -50%) scale(0.9);
+  transform-origin: center center;
+  transition: transform 0.15s ease, background-image 0.15s ease,
+    width 0.15s ease, height 0.15s ease;
   appearance: none;
   outline: none;
   border: none;
   user-select: none;
 
   &:hover {
-    background-image: radial-gradient(circle, @color-primary 2px, transparent 2px);
+    width: 16px;
+    height: 16px;
+    transform: translate(-50%, -50%) scale(1);
+    background-image: radial-gradient(circle, @color-primary 3px, transparent 3px);
   }
 }

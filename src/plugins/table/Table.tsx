@@ -1,6 +1,7 @@
-import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
+import React, { useState, useCallback, useRef, useLayoutEffect, useEffect } from 'react';
 import type { RenderElementProps } from 'slate-react';
 import { useSlateStatic, ReactEditor } from 'slate-react';
+import { Path } from 'slate';
 import type { CustomElement } from '@/components/Editor/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
@@ -31,6 +32,18 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const [rowDots, setRowDots] = useState<DotPosition[]>([]);
   const [colDots, setColDots] = useState<DotPosition[]>([]);
 
+  // 智能显示状态
+  const [showDots, setShowDots] = useState(false);
+  const [isPinned, setIsPinned] = useState(false);
+  const hoverCountRef = useRef(0);
+  const hideTimerRef = useRef<number | null>(null);
+  const isPinnedRef = useRef(false);
+
+  // 同步 ref
+  useEffect(() => {
+    isPinnedRef.current = isPinned;
+  }, [isPinned]);
+
   const attrs = element.attrs as TableAttrs;
   const { borderColor = '#d9d9d9', borderWidth = '1px' } = attrs || {};
 
@@ -53,6 +66,72 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     },
     [slateRef],
   );
+
+  // 检查光标是否在表格内
+  const isCursorInTable = useCallback(() => {
+    if (!editor.selection) return false;
+    try {
+      const tablePath = ReactEditor.findPath(editor, element);
+      const selectionPath = editor.selection.anchor.path;
+      return Path.isAncestor(tablePath, selectionPath);
+    } catch {
+      return false;
+    }
+  }, [editor, element]);
+
+  // 光标进入表格 → 常驻显示
+  useEffect(() => {
+    const checkAndPin = () => {
+      if (isCursorInTable()) {
+        setIsPinned(true);
+      }
+    };
+    checkAndPin();
+  });
+
+  // 鼠标事件：进入/离开 wrapper 和圆点
+  const handleMouseEnter = useCallback(() => {
+    hoverCountRef.current += 1;
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    setShowDots(true);
+  }, []);
+
+  const handleMouseLeave = useCallback(() => {
+    hoverCountRef.current -= 1;
+    if (hoverCountRef.current <= 0) {
+      hoverCountRef.current = 0;
+      if (isPinnedRef.current) return;
+      if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = window.setTimeout(() => {
+        setShowDots(false);
+      }, 300);
+    }
+  }, []);
+
+  // 点击钉住后，点击外部释放
+  useEffect(() => {
+    if (!isPinned) return;
+    const handleOutsideMouseDown = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setIsPinned(false);
+        setShowDots(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideMouseDown);
+    return () => document.removeEventListener('mousedown', handleOutsideMouseDown);
+  }, [isPinned]);
+
+  // 清理定时器
+  useEffect(() => {
+    return () => {
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+      }
+    };
+  }, []);
 
   // 测量 DOM 位置
   useLayoutEffect(() => {
@@ -156,6 +235,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     (at: number, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      setIsPinned(true);
+      setShowDots(true);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
       try {
         const path = ReactEditor.findPath(editor, element);
         insertRow(editor, at, path);
@@ -170,6 +255,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     (at: number, e: React.MouseEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      setIsPinned(true);
+      setShowDots(true);
+      if (hideTimerRef.current) {
+        clearTimeout(hideTimerRef.current);
+        hideTimerRef.current = null;
+      }
       try {
         const path = ReactEditor.findPath(editor, element);
         insertColumn(editor, at, path);
@@ -181,42 +272,54 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   );
 
   return (
-    <div ref={wrapperRef} className={styles.wrapper} onContextMenu={handleContextMenu}>
+    <div
+      ref={wrapperRef}
+      className={styles.wrapper}
+      onContextMenu={handleContextMenu}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
       {/* 行插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
-      {rowDots.map((pos, i) => (
-        <button
-          key={`row-dot-${i}`}
-          contentEditable={false}
-          onClick={(e) => handleInsertRow(i, e)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          className={styles.dot}
-          style={{
-            top: pos.top,
-            left: -12,
-          }}
-        />
-      ))}
+      {showDots &&
+        rowDots.map((pos, i) => (
+          <button
+            key={`row-dot-${i}`}
+            contentEditable={false}
+            onClick={(e) => handleInsertRow(i, e)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={styles.dot}
+            style={{
+              top: pos.top,
+              left: -12,
+            }}
+          />
+        ))}
 
       {/* 列插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
-      {colDots.map((pos, i) => (
-        <button
-          key={`col-dot-${i}`}
-          contentEditable={false}
-          onClick={(e) => handleInsertColumn(i, e)}
-          onMouseDown={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-          }}
-          className={styles.dot}
-          style={{
-            top: -12,
-            left: pos.left,
-          }}
-        />
-      ))}
+      {showDots &&
+        colDots.map((pos, i) => (
+          <button
+            key={`col-dot-${i}`}
+            contentEditable={false}
+            onClick={(e) => handleInsertColumn(i, e)}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseEnter={handleMouseEnter}
+            onMouseLeave={handleMouseLeave}
+            className={styles.dot}
+            style={{
+              top: -12,
+              left: pos.left,
+            }}
+          />
+        ))}
 
       {/* 横向滚动容器 */}
       <div ref={scrollRef} className={styles.scrollContainer}>
