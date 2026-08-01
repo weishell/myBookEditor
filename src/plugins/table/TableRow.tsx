@@ -1,6 +1,6 @@
 import React from 'react';
 import type { RenderElementProps } from 'slate-react';
-import type { CustomElement } from '@/components/Editor/types';
+import type { CustomElement } from '@/core/types';
 import type { TableRowAttrs } from './table-operations';
 import styles from './TableRow.module.less';
 

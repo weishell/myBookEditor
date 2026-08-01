@@ -1,5 +1,5 @@
 import { Editor, Element, Transforms, Range } from 'slate';
-import type { CustomElement } from '@/components/Editor/types';
+import type { CustomElement } from '@/core/types';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 

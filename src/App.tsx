@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Editor from '@/components/Editor';
+import Editor from '@/core';
 import NotFound from '@/pages/NotFound';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ModeSwitcher from '@/components/ModeSwitcher';

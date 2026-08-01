@@ -1,6 +1,6 @@
 import { Editor, Transforms, Element } from 'slate';
 import type { Descendant } from 'slate';
-import type { CustomElement, CustomElementAttrs } from '@/components/Editor/types';
+import type { CustomElement, CustomElementAttrs } from '@/core/types';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 

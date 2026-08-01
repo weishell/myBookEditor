@@ -2,7 +2,7 @@ import React, { useState, useCallback, useRef, useLayoutEffect, useEffect } from
 import type { RenderElementProps } from 'slate-react';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Path } from 'slate';
-import type { CustomElement } from '@/components/Editor/types';
+import type { CustomElement } from '@/core/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
 import { insertRow, insertColumn } from './table-operations';
