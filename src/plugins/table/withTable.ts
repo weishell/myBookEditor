@@ -1,5 +1,4 @@
-import type { Editor } from 'slate';
-import { Editor as SlateEditor, Element as SlateElement, Transforms, Range } from 'slate';
+import { Editor, Element, Transforms, Range } from 'slate';
 import type { CustomElement } from '@/components/Editor/types';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
@@ -10,7 +9,7 @@ const isInTable = (editor: Editor) => {
   const [table] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
     }),
   );
   return !!table;
@@ -20,7 +19,7 @@ const getCellPath = (editor: Editor): number[] | null => {
   const nodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_CELL,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_CELL,
     }),
   );
   const cell = nodes[0];
@@ -48,7 +47,7 @@ export const withTable = (editor: Editor) => {
       return;
     }
 
-    const [paragraph] = SlateEditor.node(editor, [...cellPath, 0]);
+    const [paragraph] = Editor.node(editor, [...cellPath, 0]);
     const paragraphElement = paragraph as CustomElement;
 
     if (paragraphElement.children.length === 0 || !paragraphElement.children[0]) {

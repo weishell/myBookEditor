@@ -1,5 +1,5 @@
 import { useMemo, useCallback, useEffect } from 'react';
-import { createEditor, Editor as SlateEditor } from 'slate';
+import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
 import { MenuProvider, ContextMenu, SelectionProvider, DocBarProvider, DocBar } from '@/plugins';
@@ -16,7 +16,7 @@ interface EditorProps {
   readOnly?: boolean;
 }
 
-export default function Editor({ readOnly = false }: EditorProps) {
+export default function BookEditor({ readOnly = false }: EditorProps) {
   const editor = useMemo(
     () =>
       withEditorBehaviors(
@@ -26,7 +26,7 @@ export default function Editor({ readOnly = false }: EditorProps) {
   );
 
   useEffect(() => {
-    SlateEditor.normalize(editor, { force: true });
+    Editor.normalize(editor, { force: true });
   }, [editor]);
 
   const keyboardHandler = useMemo(() => createKeyboardHandler(editor), [editor]);

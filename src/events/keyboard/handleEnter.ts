@@ -1,5 +1,4 @@
-import type { Editor } from 'slate';
-import { Editor as SlateEditor, Transforms, Point } from 'slate';
+import { Editor, Transforms, Point } from 'slate';
 import { BlockElementType } from '@/enums';
 import { handleEnterAtBlockEnd } from '@/utils/block-behaviors';
 
@@ -15,8 +14,8 @@ export const handleEnter = (editor: Editor) => {
     return;
   }
 
-  const match = SlateEditor.above(editor, {
-    match: (n: any) => SlateEditor.isBlock(editor, n),
+  const match = Editor.above(editor, {
+    match: (n: any) => Editor.isBlock(editor, n),
     mode: 'lowest',
   });
 

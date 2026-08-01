@@ -1,6 +1,5 @@
 import { BlockElementType } from '@/enums';
-import type { Editor } from 'slate';
-import { Editor as SlateEditor, Point, Transforms, Path } from 'slate';
+import { Editor, Point, Transforms, Path } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 
 export const ENTER_KEY_BEHAVIORS: Map<BlockElementType, BlockElementType> = new Map([
@@ -28,7 +27,7 @@ export const isAtEndOfBlock = (editor: Editor, blockPath: Path): boolean => {
   const { selection } = editor;
   if (!selection || !isSelectionCollapsed(selection)) return false;
 
-  const blockEnd = SlateEditor.end(editor, blockPath);
+  const blockEnd = Editor.end(editor, blockPath);
   return Point.equals(selection.anchor, blockEnd);
 };
 
@@ -36,8 +35,8 @@ export const handleEnterAtBlockEnd = (editor: Editor): boolean => {
   const { selection } = editor;
   if (!selection || !isSelectionCollapsed(selection)) return false;
 
-  const match = SlateEditor.above(editor, {
-    match: (n: any) => SlateEditor.isBlock(editor, n),
+  const match = Editor.above(editor, {
+    match: (n: any) => Editor.isBlock(editor, n),
     mode: 'lowest',
   });
 

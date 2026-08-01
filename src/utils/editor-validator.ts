@@ -1,5 +1,4 @@
-import type { Editor, Range, Node, Path, Element } from 'slate';
-import { Node as SlateNode, Path as SlatePath } from 'slate';
+import { Editor, Range, Node, Path, Element } from 'slate';
 
 /**
  * 编辑器验证工具类
@@ -66,7 +65,7 @@ export class EditorValidator {
       }
     }
     try {
-      const node = SlateNode.get(this.editor, path);
+      const node = Node.get(this.editor, path);
       return node !== undefined;
     } catch {
       return false;
@@ -80,8 +79,8 @@ export class EditorValidator {
    */
   isElementAtPath(path: Path): boolean {
     if (!this.validatePath(path)) return false;
-    const node = SlateNode.get(this.editor, path);
-    return SlateNode.isElement(node);
+    const node = Node.get(this.editor, path);
+    return Node.isElement(node);
   }
 
   /**
@@ -91,8 +90,8 @@ export class EditorValidator {
    */
   isTextAtPath(path: Path): boolean {
     if (!this.validatePath(path)) return false;
-    const node = SlateNode.get(this.editor, path);
-    return SlateNode.isText(node);
+    const node = Node.get(this.editor, path);
+    return Node.isText(node);
   }
 
   /**
@@ -106,7 +105,7 @@ export class EditorValidator {
    */
   hasPreviousSibling(path: Path): boolean {
     if (!this.validatePath(path)) return false;
-    const previousPath = SlatePath.previous(path);
+    const previousPath = Path.previous(path);
     return this.validatePath(previousPath);
   }
 
@@ -117,8 +116,8 @@ export class EditorValidator {
    */
   getPreviousSibling(path: Path): Node | null {
     if (!this.hasPreviousSibling(path)) return null;
-    const previousPath = SlatePath.previous(path);
-    return SlateNode.get(this.editor, previousPath);
+    const previousPath = Path.previous(path);
+    return Node.get(this.editor, previousPath);
   }
 
   /**
@@ -132,7 +131,7 @@ export class EditorValidator {
    */
   hasNextSibling(path: Path): boolean {
     if (!this.validatePath(path)) return false;
-    const nextPath = SlatePath.next(path);
+    const nextPath = Path.next(path);
     return this.validatePath(nextPath);
   }
 
@@ -143,8 +142,8 @@ export class EditorValidator {
    */
   getNextSibling(path: Path): Node | null {
     if (!this.hasNextSibling(path)) return null;
-    const nextPath = SlatePath.next(path);
-    return SlateNode.get(this.editor, nextPath);
+    const nextPath = Path.next(path);
+    return Node.get(this.editor, nextPath);
   }
 
   /**
@@ -154,7 +153,7 @@ export class EditorValidator {
    *
    * 校验逻辑：
    * 1. 路径格式校验（数组、非负整数）
-   * 2. 使用 SlateNode.get 尝试获取节点
+   * 2. 使用 Node.get 尝试获取节点
    * 3. 捕获可能的异常并返回 null
    */
   getNodeByPath(path: Path): Node | null {
@@ -165,7 +164,7 @@ export class EditorValidator {
       }
     }
     try {
-      const node = SlateNode.get(this.editor, path);
+      const node = Node.get(this.editor, path);
       return node || null;
     } catch {
       return null;
@@ -193,7 +192,7 @@ export class EditorValidator {
         return true;
       }
 
-      if (SlateNode.isElement(currentNode) && currentNode.children) {
+      if (Node.isElement(currentNode) && currentNode.children) {
         for (let i = 0; i < currentNode.children.length; i++) {
           if (traverse(currentNode.children[i], [...currentPath, i])) {
             return true;
@@ -242,7 +241,7 @@ export class EditorValidator {
    */
   getParentPath(path: Path): Path | null {
     if (!this.validatePath(path) || path.length === 0) return null;
-    const parentPath = SlatePath.parent(path);
+    const parentPath = Path.parent(path);
     return parentPath.length > 0 || (parentPath.length === 0 && this.validatePath(parentPath))
       ? parentPath
       : null;
@@ -257,7 +256,7 @@ export class EditorValidator {
     const parentPath = this.getParentPath(path);
     if (!parentPath) return null;
     const node = this.getNodeByPath(parentPath);
-    return node !== null && SlateNode.isElement(node) ? node : null;
+    return node !== null && Node.isElement(node) ? node : null;
   }
 
   /**
@@ -268,7 +267,7 @@ export class EditorValidator {
    */
   nodeHasAttribute(path: Path, attrName: string): boolean {
     const node = this.getNodeByPath(path);
-    if (!node || !SlateNode.isElement(node)) return false;
+    if (!node || !Node.isElement(node)) return false;
     return attrName in node;
   }
 
@@ -280,7 +279,7 @@ export class EditorValidator {
    */
   getNodeAttribute<T = unknown>(path: Path, attrName: string): T | undefined {
     const node = this.getNodeByPath(path);
-    if (!node || !SlateNode.isElement(node)) return undefined;
+    if (!node || !Node.isElement(node)) return undefined;
     return (node as unknown as Record<string, T>)[attrName];
   }
 }

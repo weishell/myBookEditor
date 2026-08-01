@@ -1,5 +1,4 @@
-import type { Editor } from 'slate';
-import { Transforms, Element as SlateElement, Editor as SlateEditor, Path, Node } from 'slate';
+import { Transforms, Element, Editor, Path, Node } from 'slate';
 import { BlockElementType } from '@/enums';
 
 // 最大缩进级别
@@ -37,9 +36,9 @@ export function getIndent(element: any): number {
 export function hasNonIndentableInSelection(editor: Editor): boolean {
   if (!editor.selection) return false;
 
-  for (const [node] of SlateEditor.nodes(editor, {
+  for (const [node] of Editor.nodes(editor, {
     at: editor.selection,
-    match: (n: any) => SlateElement.isElement(n) && SlateEditor.isBlock(editor, n),
+    match: (n: any) => Element.isElement(n) && Editor.isBlock(editor, n),
     mode: 'highest',
   })) {
     const type = (node as any)?.type as BlockElementType;
@@ -60,9 +59,9 @@ function getSelectedBlocks(editor: Editor): { node: any; path: number[] }[] | nu
   const blocks: { node: any; path: number[] }[] = [];
   let hasNonIndentable = false;
 
-  for (const [node, path] of SlateEditor.nodes(editor, {
+  for (const [node, path] of Editor.nodes(editor, {
     at: editor.selection,
-    match: (n: any) => SlateElement.isElement(n) && SlateEditor.isBlock(editor, n),
+    match: (n: any) => Element.isElement(n) && Editor.isBlock(editor, n),
     mode: 'highest',
   })) {
     const type = (node as any)?.type as BlockElementType;

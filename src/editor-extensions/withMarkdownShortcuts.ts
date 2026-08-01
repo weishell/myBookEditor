@@ -1,5 +1,4 @@
-import type { Editor } from 'slate';
-import { Editor as SlateEditor, Transforms, Range, Element as SlateElement } from 'slate';
+import { Editor, Transforms, Range, Element } from 'slate';
 import { BlockElementType } from '@/enums';
 
 export const withMarkdownShortcuts = (editor: Editor) => {
@@ -22,8 +21,8 @@ export const withMarkdownShortcuts = (editor: Editor) => {
 
     // 使用 Editor.above 获取离选区最近的块级祖先
     // 在表格单元格内时，这会返回单元格内的段落，而不是表格本身
-    const result = SlateEditor.above(editor, {
-      match: (n: any) => SlateElement.isElement(n) && SlateEditor.isBlock(editor, n),
+    const result = Editor.above(editor, {
+      match: (n: any) => Element.isElement(n) && Editor.isBlock(editor, n),
       at: anchor.path,
     });
 
@@ -44,7 +43,7 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     }
 
     // 获取块内的完整文本内容
-    const blockText = SlateEditor.string(editor, blockPath);
+    const blockText = Editor.string(editor, blockPath);
 
     // 获取光标在块内的偏移位置
     const depth = blockPath.length;

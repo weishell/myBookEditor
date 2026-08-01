@@ -1,20 +1,19 @@
-import type { Editor } from 'slate';
-import { Transforms, Element as SlateElement, Editor as SlateEditor } from 'slate';
+import { Transforms, Element, Editor } from 'slate';
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 
 export const withCodeBlock = (editor: Editor) => {
   const { normalizeNode, deleteBackward, insertBreak, insertData } = editor;
 
   editor.normalizeNode = ([node, path]) => {
-    if (SlateElement.isElement(node) && (node as any).type === BlockElementType.CODE_BLOCK) {
+    if (Element.isElement(node) && (node as any).type === BlockElementType.CODE_BLOCK) {
       const children = (node as any).children || [];
-      const hasTextNodes = children.some((child: any) => !SlateElement.isElement(child));
+      const hasTextNodes = children.some((child: any) => !Element.isElement(child));
 
       if (hasTextNodes) {
         const newChildren: any[] = [];
 
         children.forEach((child: any) => {
-          if (!SlateElement.isElement(child)) {
+          if (!Element.isElement(child)) {
             const text = child.text || '';
             const lines = text.split('\n');
 
@@ -53,7 +52,7 @@ export const withCodeBlock = (editor: Editor) => {
 
     const lineResults = (editor as any).nodes({
       at: selection,
-      match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_LINE,
+      match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_LINE,
     });
 
     const lineNodes = Array.from(lineResults) as [any, number[]][];
@@ -78,7 +77,7 @@ export const withCodeBlock = (editor: Editor) => {
 
     const codeBlockResults = (editor as any).nodes({
       at: selection,
-      match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
+      match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
     });
 
     const codeBlockNodes = Array.from(codeBlockResults) as [any, number[]][];
@@ -87,7 +86,7 @@ export const withCodeBlock = (editor: Editor) => {
 
       const lineResults = (editor as any).nodes({
         at: selection,
-        match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_LINE,
+        match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_LINE,
       });
 
       const lineNodes = Array.from(lineResults) as [any, number[]][];
@@ -118,14 +117,14 @@ export const withCodeBlock = (editor: Editor) => {
 
     const blockquoteResults = (editor as any).nodes({
       at: selection,
-      match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.BLOCKQUOTE,
+      match: (n: any) => Element.isElement(n) && n.type === BlockElementType.BLOCKQUOTE,
     });
 
     const blockquoteNodes = Array.from(blockquoteResults) as [any, number[]][];
     if (blockquoteNodes.length > 0) {
       const [blockquoteNode, blockquotePath] = blockquoteNodes[0];
 
-      const blockText = SlateEditor.string(editor, blockquotePath);
+      const blockText = Editor.string(editor, blockquotePath);
       const { anchor } = selection;
 
       const depth = blockquotePath.length;
@@ -170,7 +169,7 @@ export const withCodeBlock = (editor: Editor) => {
 
     const codeBlockResults = (editor as any).nodes({
       at: selection,
-      match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
+      match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
     });
 
     const codeBlockNodes = Array.from(codeBlockResults) as [any, number[]][];
@@ -183,7 +182,7 @@ export const withCodeBlock = (editor: Editor) => {
       const lines = text.split('\n');
       const lineResults = (editor as any).nodes({
         at: selection,
-        match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_LINE,
+        match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_LINE,
       });
       const lineNodes = Array.from(lineResults) as [any, number[]][];
 

@@ -1,5 +1,4 @@
-import type { Editor } from 'slate';
-import { Transforms, Element as SlateElement } from 'slate';
+import { Editor, Transforms, Element } from 'slate';
 import { BlockElementType } from '@/enums';
 
 interface ToggleBlockOptions {
@@ -19,14 +18,14 @@ export const toggleBlock = (
       {
         type: isActive ? BlockElementType.PARAGRAPH : format,
         attrs: { level: options.level },
-      } as Partial<SlateElement>,
-      { match: (n) => SlateElement.isElement(n) && (editor as any).isBlock(n) },
+      } as Partial<Element>,
+      { match: (n) => Element.isElement(n) && (editor as any).isBlock(n) },
     );
   } else {
     Transforms.setNodes(
       editor,
-      { type: isActive ? BlockElementType.PARAGRAPH : format } as Partial<SlateElement>,
-      { match: (n) => SlateElement.isElement(n) && (editor as any).isBlock(n) },
+      { type: isActive ? BlockElementType.PARAGRAPH : format } as Partial<Element>,
+      { match: (n) => Element.isElement(n) && (editor as any).isBlock(n) },
     );
   }
 };
@@ -43,7 +42,7 @@ export const isBlockActive = (
     (editor as any).nodes({
       at: (editor as any).unhangRange(selection),
       match: (n: unknown) => {
-        if (!(n as any).isEditor && SlateElement.isElement(n)) {
+        if (!(n as any).isEditor && Element.isElement(n)) {
           const node = n as { type?: BlockElementType; attrs?: { level?: number } };
           if (format === BlockElementType.HEADING && options?.level) {
             return node.type === format && node.attrs?.level === options.level;

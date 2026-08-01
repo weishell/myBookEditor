@@ -1,4 +1,4 @@
-import { Editor, Transforms, Element as SlateElement } from 'slate';
+import { Editor, Transforms, Element } from 'slate';
 import type { Descendant } from 'slate';
 import type { CustomElement, CustomElementAttrs } from '@/components/Editor/types';
 import { BlockElementType } from '@/enums';
@@ -62,7 +62,7 @@ const findTableInDocument = (
 ): [CustomElement, number[]] | null => {
   for (let i = 0; i < nodes.length; i++) {
     const node = nodes[i];
-    if (SlateElement.isElement(node)) {
+    if (Element.isElement(node)) {
       const currentPath = [...path, i];
       if ((node as CustomElement).type === BlockElementType.TABLE) {
         return [node as CustomElement, currentPath];
@@ -81,7 +81,7 @@ const getTablePath = (editor: Editor, tablePath?: number[]): [CustomElement, num
   if (tablePath) {
     try {
       const [node] = Editor.node(editor, tablePath);
-      if (SlateElement.isElement(node) && (node as CustomElement).type === BlockElementType.TABLE) {
+      if (Element.isElement(node) && (node as CustomElement).type === BlockElementType.TABLE) {
         return [node as CustomElement, tablePath];
       }
     } catch {
@@ -98,7 +98,7 @@ export const insertRow = (editor: Editor, at?: number, tablePath?: number[]) => 
     const nodes: NodeEntry[] = Array.from(
       (editor as any).nodes({
         match: (n: unknown) =>
-          SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+          Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
       }),
     );
     if (nodes.length === 0) return;
@@ -129,7 +129,7 @@ export const insertColumn = (editor: Editor, at?: number, tablePath?: number[]) 
     const nodes: NodeEntry[] = Array.from(
       (editor as any).nodes({
         match: (n: unknown) =>
-          SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+          Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
       }),
     );
     if (nodes.length === 0) return;
@@ -163,7 +163,7 @@ export const deleteRow = (editor: Editor) => {
   const rowNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_ROW,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_ROW,
     }),
   );
   const tableRowNode = rowNodes[0];
@@ -174,7 +174,7 @@ export const deleteRow = (editor: Editor) => {
   const tableNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
     }),
   );
   const tableNode = tableNodes[0];
@@ -193,7 +193,7 @@ export const deleteColumn = (editor: Editor) => {
   const cellNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_CELL,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_CELL,
     }),
   );
   const tableCellNode = cellNodes[0];
@@ -206,7 +206,7 @@ export const deleteColumn = (editor: Editor) => {
   const tableNodes: NodeEntry[] = Array.from(
     (editor as any).nodes({
       match: (n: unknown) =>
-        SlateElement.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
     }),
   );
   const tableNode = tableNodes[0];
@@ -235,7 +235,7 @@ export const updateTableCell = (
   Transforms.setNodes(
     editor,
     { attrs: { ...attrs } },
-    { at: cellPath, match: (n) => SlateElement.isElement(n) },
+    { at: cellPath, match: (n) => Element.isElement(n) },
   );
 };
 
@@ -247,7 +247,7 @@ export const updateTableRow = (
   Transforms.setNodes(
     editor,
     { attrs: { ...attrs } },
-    { at: rowPath, match: (n) => SlateElement.isElement(n) },
+    { at: rowPath, match: (n) => Element.isElement(n) },
   );
 };
 
@@ -255,6 +255,6 @@ export const updateTable = (editor: Editor, tablePath: number[], attrs: Partial<
   Transforms.setNodes(
     editor,
     { attrs: { ...attrs } },
-    { at: tablePath, match: (n) => SlateElement.isElement(n) },
+    { at: tablePath, match: (n) => Element.isElement(n) },
   );
 };
