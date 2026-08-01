@@ -1,6 +1,38 @@
-// Divider 组件样式
-.divider {
+// Divider 组件样式 - 飞书风格
+
+// 扩大的可点击命中区域：线上下各 15px 共 31px 高度可点击
+.hitArea {
+  position: relative;
+  height: 31px; // 上下各 15px + 1px 线
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.hitAreaSelected {
+  background-color: @bg-selected;
+
+  &:hover {
+    background-color: @bg-selected;
+  }
+}
+
+// 真正的 1px 分割线
+.line {
+  width: 100%;
   height: 1px;
   background: @border-color-light;
-  margin: @spacing-lg 0;
+  transition: background-color 0.15s ease;
+}
+
+.lineSelected {
+  background: @color-primary;
+  box-shadow: 0 0 0 1px @color-primary;
 }

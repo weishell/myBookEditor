@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Transforms } from 'slate';
-import { useSlate } from 'slate-react';
+import { useSlate, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
@@ -21,15 +21,18 @@ interface ImageAttrs {
 
 interface ImageProps {
   attributes: any;
+  children?: React.ReactNode;
   pluginId: string;
-  element: { attrs: ImageAttrs };
+  element: { attrs: ImageAttrs } & Record<string, any>;
 }
 
-const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
+const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlate();
   const { attrs } = element;
+  // 用 Slate 原生 useSelected 检测选中状态
+  const isSelected = useSelected();
+
   const [showToolbar, setShowToolbar] = useState(false);
-  const [isSelected, setIsSelected] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const [isCropping, setIsCropping] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -157,11 +160,6 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
     setIsCropping(false);
   }, []);
 
-  const handleClick = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsSelected((prev) => !prev);
-  }, []);
-
   const showToolbarHandler = useCallback(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
@@ -171,12 +169,13 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
+    // 选中状态下不隐藏工具栏
+    if (isSelected) return;
     hideTimerRef.current = window.setTimeout(() => {
       setShowToolbar(false);
-      setIsSelected(false);
       hideTimerRef.current = null;
     }, 300);
-  }, []);
+  }, [isSelected]);
 
   const handleAlign = useCallback(
     (align: 'left' | 'center' | 'right') => {
@@ -225,7 +224,7 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
   };
 
   return (
-    <ElementWrapper type={BlockElementType.IMAGE_BLOCK} pluginId={pluginId}>
+    <ElementWrapper type={BlockElementType.IMAGE_BLOCK} pluginId={pluginId} attributes={attributes}>
       <div
         ref={wrapperRef}
         className={styles.wrapper}
@@ -400,7 +399,6 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
         )}
 
         <div
-          {...(attributes as React.HTMLAttributes<HTMLDivElement>)}
           ref={containerRef}
           className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''} ${isSelected ? styles.imageContainerSelected : ''}`}
           style={{
@@ -409,7 +407,6 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           }}
           contentEditable={false}
           suppressContentEditableWarning={true}
-          onClick={handleClick}
         >
           <img
             src={attrs.url}
@@ -440,6 +437,8 @@ const Image: React.FC<ImageProps> = ({ attributes, pluginId, element }) => {
           />
         )}
       </div>
+
+      {children}
 
       {isCropping && (
         <ImageCropper

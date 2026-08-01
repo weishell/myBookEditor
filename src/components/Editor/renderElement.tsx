@@ -55,10 +55,17 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
       );
     case BlockElementType.IMAGE_BLOCK:
       return (
-        <Image attributes={attributes} pluginId={el.id || ''} element={el as { attrs: any }} />
+        <Image
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
       );
     case BlockElementType.DIVIDER:
-      return <Divider attributes={attributes} pluginId={el.id} />;
+      return (
+        <Divider attributes={attributes} children={children} pluginId={el.id} element={el as any} />
+      );
     case BlockElementType.TODO_LIST:
       return <TodoList attributes={attributes} children={children} pluginId={el.id} element={el} />;
     case BlockElementType.TABLE:

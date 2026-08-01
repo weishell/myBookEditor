@@ -3,7 +3,7 @@ import { createEditor, Editor as SlateEditor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
 import { MenuProvider, ContextMenu, SelectionProvider, DocBarProvider, DocBar } from '@/plugins';
-import { withCodeBlock, withMarkdownShortcuts } from '@/editor-extensions';
+import { withCodeBlock, withMarkdownShortcuts, withEditorBehaviors } from '@/editor-extensions';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
@@ -18,7 +18,10 @@ interface EditorProps {
 
 export default function Editor({ readOnly = false }: EditorProps) {
   const editor = useMemo(
-    () => withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+    () =>
+      withEditorBehaviors(
+        withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+      ),
     [],
   );
 

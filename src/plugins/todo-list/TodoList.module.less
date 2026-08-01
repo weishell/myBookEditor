@@ -1,10 +1,31 @@
 // TodoList 组件样式
+
 .container {
+  position: relative;
   display: flex;
   align-items: center;
-  gap: @spacing-sm;
   padding: @spacing-xs 0;
   min-height: 24px;
+  padding-left: 28px; // 给 checkboxWrapper 留出绝对定位空间
+}
+
+// Checkbox 外层：绝对定位，扩大点击区域
+// 从文档流移除，防止光标出现在方块附近
+.checkboxWrapper {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  -webkit-user-select: none;
+  pointer-events: auto;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .checkbox {
@@ -14,7 +35,6 @@
   min-height: 16px;
   margin: 0;
   border-radius: @radius-sm;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -22,9 +42,8 @@
   padding: 0;
   transition: all 0.15s ease;
   outline: none;
-  user-select: none;
-  -webkit-user-select: none;
-  pointer-events: auto;
+  box-sizing: border-box;
+  pointer-events: none; // 事件由 wrapper 统一处理
 }
 
 .checkboxIcon {
@@ -36,4 +55,5 @@
   font-size: @font-size-md;
   line-height: @line-height-base;
   transition: all 0.15s ease;
+  word-break: break-word;
 }

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useCallback } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element as SlateElement } from 'slate';
 import type { Descendant } from 'slate';
@@ -36,54 +36,70 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
   const editor = useSlateStatic();
   const isChecked = element.attrs?.checked ?? false;
 
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
+  // 点击 checkbox：只切换勾选，不设光标
+  // 选中就是选中操作，点击文字区域才出现光标
+  const handleCheckboxMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
 
-    const nodeId = element.id;
-    if (!nodeId) return;
+      const nodeId = element.id;
+      if (!nodeId) return;
 
-    // 直接遍历 editor.children 查找节点，不受选区影响
-    const path = findNodePath(editor.children as Descendant[], nodeId);
+      const path = findNodePath(editor.children as Descendant[], nodeId);
+      if (!path) return;
 
-    if (!path) {
-      console.warn('TodoList: node not found, id:', nodeId);
-      return;
-    }
-
-    Transforms.setNodes(editor, { attrs: { ...element.attrs, checked: !isChecked } }, { at: path });
-  };
+      Transforms.setNodes(
+        editor,
+        { attrs: { ...element.attrs, checked: !isChecked } },
+        { at: path },
+      );
+    },
+    [editor, element, isChecked],
+  );
 
   return (
-    <ElementWrapper type={BlockElementType.TODO_LIST} pluginId={pluginId} attrs={element.attrs}>
-      <div {...(attributes as React.HTMLAttributes<HTMLDivElement>)} className={styles.container}>
-        <span
-          onMouseDown={handleMouseDown}
-          className={styles.checkbox}
-          style={{
-            border: isChecked ? '2px solid #1890ff' : '2px solid #d9d9d9',
-            backgroundColor: isChecked ? '#1890ff' : 'transparent',
-          }}
+    <ElementWrapper
+      type={BlockElementType.TODO_LIST}
+      pluginId={pluginId}
+      attrs={element?.attrs}
+      attributes={attributes}
+    >
+      <div className={styles.container}>
+        {/* checkbox 绝对定位，扩大点击区，阻止光标出现在方块附近 */}
+        <div
+          className={styles.checkboxWrapper}
+          onMouseDown={handleCheckboxMouseDown}
           contentEditable={false}
+          suppressContentEditableWarning={true}
         >
-          {isChecked && (
-            <svg
-              width="10"
-              height="10"
-              viewBox="0 0 10 10"
-              fill="none"
-              className={styles.checkboxIcon}
-            >
-              <path
-                d="M2 5L4 7L8 3"
-                stroke="white"
-                strokeWidth="1.5"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          )}
-        </span>
+          <span
+            className={styles.checkbox}
+            style={{
+              border: isChecked ? '2px solid #1890ff' : '2px solid #d9d9d9',
+              backgroundColor: isChecked ? '#1890ff' : 'transparent',
+            }}
+          >
+            {isChecked && (
+              <svg
+                width="10"
+                height="10"
+                viewBox="0 0 10 10"
+                fill="none"
+                className={styles.checkboxIcon}
+              >
+                <path
+                  d="M2 5L4 7L8 3"
+                  stroke="white"
+                  strokeWidth="1.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            )}
+          </span>
+        </div>
+
         <span
           className={styles.text}
           style={{
