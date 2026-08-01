@@ -26,7 +26,6 @@ export default function Editor({ readOnly = false }: EditorProps) {
   );
 
   useEffect(() => {
-    // 强制 normalize，将 code-block 的文本节点转换为 code-line 元素
     SlateEditor.normalize(editor, { force: true });
   }, [editor]);
 
@@ -39,9 +38,7 @@ export default function Editor({ readOnly = false }: EditorProps) {
     },
     [keyboardHandler, readOnly],
   );
-  const handleChange = useCallback(() => {
-    // 保留 onChange 入口，便于后续接入持久化或协同能力。
-  }, []);
+  const handleChange = useCallback(() => {}, []);
 
   return (
     <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>

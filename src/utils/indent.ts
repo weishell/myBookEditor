@@ -1,5 +1,5 @@
 import type { Editor } from 'slate';
-import { Transforms, Element as SlateElement, Editor as SlateEditor } from 'slate';
+import { Transforms, Element as SlateElement, Editor as SlateEditor, Path, Node } from 'slate';
 import { BlockElementType } from '@/enums';
 
 // 最大缩进级别
@@ -79,22 +79,43 @@ function getSelectedBlocks(editor: Editor): { node: any; path: number[] }[] | nu
 }
 
 /**
+ * 获取上一个同级块的缩进级别
+ * 如果是第一个块，返回 -1（不允许缩进）
+ */
+function getPrevSiblingIndent(editor: Editor, path: number[]): number {
+  try {
+    const prevPath = Path.previous(path);
+    const prevNode = Node.get(editor, prevPath) as any;
+    return getIndent(prevNode);
+  } catch {
+    return -1;
+  }
+}
+
+/**
  * 增加缩进（Tab）
- * 如果选区包含非文本块，返回 false
+ * 规则：不能超过前一个块的缩进 + 1；第一个块不能缩进
  */
 export function increaseIndent(editor: Editor): boolean {
   const blocks = getSelectedBlocks(editor);
   if (!blocks || blocks.length === 0) return false;
 
+  let changed = false;
+
   for (const { node, path } of blocks) {
     const currentIndent = getIndent(node);
+    const prevIndent = getPrevSiblingIndent(editor, path);
+
+    if (prevIndent < 0) continue;
+    if (currentIndent >= prevIndent + 1) continue;
     if (currentIndent >= MAX_INDENT) continue;
 
     const newAttrs = { ...(node as any).attrs, indent: currentIndent + 1 };
     Transforms.setNodes(editor, { attrs: newAttrs } as any, { at: path });
+    changed = true;
   }
 
-  return true;
+  return changed;
 }
 
 /**

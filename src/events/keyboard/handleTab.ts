@@ -1,18 +1,13 @@
 import { isHotkey } from 'is-hotkey';
-import { message } from 'antd';
 import type { Editor } from 'slate';
 import { increaseIndent, decreaseIndent, hasNonIndentableInSelection } from '@/utils/indent';
+import { showCursorToast, type ToastKey } from '@/components/InlineToast';
 
-/**
- * 处理 Tab 键缩进
- * 始终阻止默认行为，非文本块时给出提示
- */
 export function handleTabIndent(editor: Editor, e: React.KeyboardEvent): void {
-  // Tab 增加，Shift+Tab 减少，兼容 Mac
   if (isHotkey('shift+tab', e as any)) {
     e.preventDefault();
     if (hasNonIndentableInSelection(editor)) {
-      message.warning('缩进仅针对文本类内容');
+      showCursorToast(editor, 'toast.indentOnlyText');
       return;
     }
     decreaseIndent(editor);
@@ -22,10 +17,13 @@ export function handleTabIndent(editor: Editor, e: React.KeyboardEvent): void {
   if (isHotkey('tab', e as any)) {
     e.preventDefault();
     if (hasNonIndentableInSelection(editor)) {
-      message.warning('缩进仅针对文本类内容');
+      showCursorToast(editor, 'toast.indentOnlyText');
       return;
     }
-    increaseIndent(editor);
+    const ok = increaseIndent(editor);
+    if (!ok) {
+      showCursorToast(editor, 'toast.indentMaxReached' as ToastKey);
+    }
     return;
   }
 }

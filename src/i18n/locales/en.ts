@@ -4,4 +4,8 @@ export default {
     backgroundColor: 'Background Color',
     reset: 'Reset',
   },
+  toast: {
+    indentOnlyText: 'Indent is only available for text content',
+    indentMaxReached: 'Maximum indentation limit reached',
+  },
 } as const;

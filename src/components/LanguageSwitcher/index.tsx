@@ -1,21 +1,16 @@
-import { useTranslation } from 'react-i18next';
+import { useLanguage } from '@/context/LanguageContext';
 import styles from './LanguageSwitcher.module.less';
 
 export default function LanguageSwitcher() {
-  const { i18n } = useTranslation();
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'zh' ? 'en' : 'zh';
-    i18n.changeLanguage(newLang);
-  };
+  const { language, toggleLanguage } = useLanguage();
 
   return (
     <button
       className={styles.button}
       onClick={toggleLanguage}
-      title={i18n.language === 'zh' ? '切换到英文' : 'Switch to Chinese'}
+      title={language === 'zh' ? '切换到英文' : 'Switch to Chinese'}
     >
-      {i18n.language === 'zh' ? 'EN' : '中文'}
+      {language === 'zh' ? '中文' : 'EN'}
     </button>
   );
 }
