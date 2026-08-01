@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Transforms } from 'slate';
-import { useSlate } from 'slate-react';
+import { useSlateStatic } from 'slate-react';
 import { Select } from 'antd';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
@@ -24,7 +24,7 @@ interface ElementProps {
 }
 
 export const CodeBlock = ({ attributes, children, pluginId, element }: ElementProps) => {
-  const editor = useSlate();
+  const editor = useSlateStatic();
   const [height, setHeight] = useState<number>(element?.attrs?.height || 150);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);

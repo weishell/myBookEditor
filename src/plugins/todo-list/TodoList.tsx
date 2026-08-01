@@ -23,6 +23,9 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
       e.preventDefault();
       e.stopPropagation();
 
+      // 清除光标选区，让编辑器失焦
+      editor.deselect();
+
       let path;
       try {
         path = ReactEditor.findPath(editor, element);

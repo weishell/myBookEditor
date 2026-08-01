@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Transforms } from 'slate';
-import { ReactEditor, useSlate, useSelected } from 'slate-react';
+import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
@@ -27,7 +27,7 @@ interface ImageProps {
 }
 
 const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }) => {
-  const editor = useSlate();
+  const editor = useSlateStatic();
   const { attrs } = element;
   // 用 Slate 原生 useSelected 检测选中状态
   const isSelected = useSelected();

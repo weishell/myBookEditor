@@ -1,6 +1,6 @@
 import React, { useState, useCallback, useRef, useLayoutEffect } from 'react';
 import type { RenderElementProps } from 'slate-react';
-import { useSlate, ReactEditor } from 'slate-react';
+import { useSlateStatic, ReactEditor } from 'slate-react';
 import type { CustomElement } from '@/components/Editor/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
@@ -21,7 +21,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const { ref: slateRef, ...otherAttributes } = attributes as {
     ref?: React.RefCallback<HTMLDivElement>;
   };
-  const editor = useSlate();
+  const editor = useSlateStatic();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);

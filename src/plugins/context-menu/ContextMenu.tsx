@@ -38,7 +38,8 @@ export const ContextMenu = () => {
     }
   }, [visible, position, adjustPosition]);
 
-  const handleMenuClick = () => {
+  const handleMenuClick = (_action: string) => {
+    console.warn(_action);
     closeMenu();
   };
 

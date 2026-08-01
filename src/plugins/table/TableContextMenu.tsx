@@ -1,5 +1,5 @@
 import React from 'react';
-import { useSlate, ReactEditor } from 'slate-react';
+import { useSlateStatic, ReactEditor } from 'slate-react';
 import { insertRow, insertColumn, deleteRow, deleteColumn } from './table-operations';
 
 interface TableContextMenuProps {
@@ -13,7 +13,7 @@ export const TableContextMenu: React.FC<TableContextMenuProps> = ({
   position,
   onClose,
 }) => {
-  const editor = useSlate();
+  const editor = useSlateStatic();
 
   if (!visible) return null;
 
