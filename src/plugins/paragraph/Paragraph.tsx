@@ -14,7 +14,12 @@ export const Paragraph = ({ attributes, children, pluginId, element }: ElementPr
   const isEmpty = element?.children?.[0]?.text === '' || element?.children?.[0]?.text === undefined;
 
   return (
-    <ElementWrapper type={BlockElementType.PARAGRAPH} pluginId={pluginId} isEmpty={isEmpty}>
+    <ElementWrapper
+      type={BlockElementType.PARAGRAPH}
+      pluginId={pluginId}
+      attrs={element?.attrs}
+      isEmpty={isEmpty}
+    >
       <p
         {...(attributes as React.HTMLAttributes<HTMLParagraphElement>)}
         className={styles.paragraph}

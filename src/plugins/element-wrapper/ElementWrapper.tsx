@@ -1,5 +1,6 @@
 import React, { useCallback } from 'react';
 import { BlockElementType } from '@/enums';
+import { INDENT_PX } from '@/utils/indent';
 
 interface ElementWrapperProps {
   type: BlockElementType;
@@ -37,6 +38,10 @@ export const ElementWrapper = ({
     [slateRef],
   );
 
+  // 缩进样式
+  const indent = attrs?.indent ?? 0;
+  const indentStyle = indent > 0 ? { marginLeft: `${indent * INDENT_PX}px` } : undefined;
+
   return (
     <div
       ref={handleRef}
@@ -46,7 +51,7 @@ export const ElementWrapper = ({
       data-block-attrs={attrs ? JSON.stringify(attrs) : undefined}
       data-empty={isEmpty ? 'true' : undefined}
       className={className}
-      style={{ position: 'relative' }}
+      style={{ position: 'relative', ...indentStyle }}
     >
       {children}
     </div>

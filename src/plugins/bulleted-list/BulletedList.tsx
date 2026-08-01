@@ -7,8 +7,9 @@ export const BulletedList = ({
   attributes,
   children,
   pluginId,
+  element,
 }: RenderElementProps & { pluginId?: string }) => (
-  <ElementWrapper type={BlockElementType.BULLETED_LIST} pluginId={pluginId}>
+  <ElementWrapper type={BlockElementType.BULLETED_LIST} pluginId={pluginId} attrs={element?.attrs}>
     <ul {...attributes} className={styles.list}>
       {children}
     </ul>

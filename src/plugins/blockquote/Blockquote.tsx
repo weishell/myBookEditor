@@ -6,10 +6,11 @@ interface ElementProps {
   attributes: Record<string, unknown>;
   children: React.ReactNode;
   pluginId?: string;
+  element?: any;
 }
 
-export const Blockquote = ({ attributes, children, pluginId }: ElementProps) => (
-  <ElementWrapper type={BlockElementType.BLOCKQUOTE} pluginId={pluginId}>
+export const Blockquote = ({ attributes, children, pluginId, element }: ElementProps) => (
+  <ElementWrapper type={BlockElementType.BLOCKQUOTE} pluginId={pluginId} attrs={element?.attrs}>
     <blockquote
       {...(attributes as React.HTMLAttributes<HTMLQuoteElement>)}
       className={styles.blockquote}

@@ -24,7 +24,9 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
     case BlockElementType.HEADING:
       return <Heading attributes={attributes} children={children} pluginId={el.id} element={el} />;
     case BlockElementType.BLOCKQUOTE:
-      return <Blockquote attributes={attributes} children={children} pluginId={el.id} />;
+      return (
+        <Blockquote attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.CODE_BLOCK:
       return (
         <CodeBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
