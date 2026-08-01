@@ -18,6 +18,16 @@ interface DotPosition {
   left: number;
 }
 
+interface HoveredDot {
+  type: 'row' | 'col';
+  index: number;
+}
+
+interface TableSize {
+  width: number;
+  height: number;
+}
+
 export const Table: React.FC<TableProps> = ({ attributes, children, element }) => {
   const { ref: slateRef, ...otherAttributes } = attributes as {
     ref?: React.RefCallback<HTMLDivElement>;
@@ -31,10 +41,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
   const [rowDots, setRowDots] = useState<DotPosition[]>([]);
   const [colDots, setColDots] = useState<DotPosition[]>([]);
+  const [tableSize, setTableSize] = useState<TableSize>({ width: 0, height: 0 });
 
   // 智能显示状态
   const [showDots, setShowDots] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
+  const [hoveredDot, setHoveredDot] = useState<HoveredDot | null>(null);
   const hoverCountRef = useRef(0);
   const hideTimerRef = useRef<number | null>(null);
   const isPinnedRef = useRef(false);
@@ -107,6 +119,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       hideTimerRef.current = window.setTimeout(() => {
         setShowDots(false);
+        setHoveredDot(null);
       }, 300);
     }
   }, []);
@@ -118,6 +131,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsPinned(false);
         setShowDots(false);
+        setHoveredDot(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideMouseDown);
@@ -143,6 +157,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       if (!tableRef.current || !wrapperRef.current) return;
 
       const wrapperRect = wrapperRef.current.getBoundingClientRect();
+      const tableRect = tableRef.current.getBoundingClientRect();
       const rows = tableRef.current.querySelectorAll('tr');
       if (rows.length === 0) {
         if (retryCount < maxRetries) {
@@ -160,6 +175,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         }
         return;
       }
+
+      // 更新表格尺寸
+      setTableSize({
+        width: tableRect.width,
+        height: tableRect.height,
+      });
 
       // 测量行边界位置（相对于 wrapper）
       const newRowDots: DotPosition[] = [];
@@ -237,6 +258,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setIsPinned(true);
       setShowDots(true);
+      setHoveredDot(null);
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
         hideTimerRef.current = null;
@@ -257,6 +279,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setIsPinned(true);
       setShowDots(true);
+      setHoveredDot(null);
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
         hideTimerRef.current = null;
@@ -270,6 +293,66 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     },
     [editor, element],
   );
+
+  // 指示线渲染数据
+  let indicatorLine: React.ReactNode = null;
+  let tooltip: React.ReactNode = null;
+
+  if (hoveredDot && showDots) {
+    if (hoveredDot.type === 'row') {
+      const pos = rowDots[hoveredDot.index];
+      if (pos && tableSize.width > 0) {
+        indicatorLine = (
+          <div
+            className={styles.indicatorLineH}
+            style={{
+              top: pos.top,
+              left: 0,
+              width: tableSize.width,
+            }}
+          />
+        );
+        tooltip = (
+          <div
+            className={styles.insertTooltip}
+            style={{
+              top: pos.top,
+              left: -12,
+              transform: 'translate(-100%, -50%)',
+            }}
+          >
+            插入行
+          </div>
+        );
+      }
+    } else {
+      const pos = colDots[hoveredDot.index];
+      if (pos && tableSize.height > 0) {
+        indicatorLine = (
+          <div
+            className={styles.indicatorLineV}
+            style={{
+              top: 0,
+              left: pos.left,
+              height: tableSize.height,
+            }}
+          />
+        );
+        tooltip = (
+          <div
+            className={styles.insertTooltip}
+            style={{
+              top: -12,
+              left: pos.left,
+              transform: 'translate(-50%, -100%)',
+            }}
+          >
+            插入列
+          </div>
+        );
+      }
+    }
+  }
 
   return (
     <div
@@ -290,8 +373,14 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               e.preventDefault();
               e.stopPropagation();
             }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={() => {
+              handleMouseEnter();
+              setHoveredDot({ type: 'row', index: i });
+            }}
+            onMouseLeave={() => {
+              handleMouseLeave();
+              setHoveredDot((prev) => (prev?.type === 'row' && prev.index === i ? null : prev));
+            }}
             className={styles.dot}
             style={{
               top: pos.top,
@@ -311,8 +400,14 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               e.preventDefault();
               e.stopPropagation();
             }}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
+            onMouseEnter={() => {
+              handleMouseEnter();
+              setHoveredDot({ type: 'col', index: i });
+            }}
+            onMouseLeave={() => {
+              handleMouseLeave();
+              setHoveredDot((prev) => (prev?.type === 'col' && prev.index === i ? null : prev));
+            }}
             className={styles.dot}
             style={{
               top: -12,
@@ -320,6 +415,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             }}
           />
         ))}
+
+      {/* 悬浮指示线 */}
+      {indicatorLine}
+
+      {/* 插入提示 tooltip */}
+      {tooltip}
 
       {/* 横向滚动容器 */}
       <div ref={scrollRef} className={styles.scrollContainer}>
