@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Transforms } from 'slate';
-import { useSlate, useSelected } from 'slate-react';
+import { ReactEditor, useSlate, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
@@ -92,33 +92,33 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
     updateBounds,
   ]);
 
+  const getElementPath = useCallback(() => {
+    try {
+      return ReactEditor.findPath(editor, element as any);
+    } catch {
+      return null;
+    }
+  }, [editor, element]);
+
   const handleResize = useCallback(
     (newWidth: number, newHeight: number) => {
-      if (!editor || !editor.children) return;
+      const path = getElementPath();
+      if (!path) return;
 
-      for (let i = 0; i < editor.children.length; i++) {
-        const child = editor.children[i] as any;
-        if (
-          child.type === BlockElementType.IMAGE_BLOCK &&
-          child.attrs?.url === attrsRef.current.url
-        ) {
-          const currentAttrs = attrsRef.current;
-          Transforms.setNodes(
-            editor,
-            {
-              attrs: {
-                ...currentAttrs,
-                width: newWidth,
-                height: newHeight,
-              },
-            } as any,
-            { at: [i] },
-          );
-          return;
-        }
-      }
+      const currentAttrs = attrsRef.current;
+      Transforms.setNodes(
+        editor,
+        {
+          attrs: {
+            ...currentAttrs,
+            width: newWidth,
+            height: newHeight,
+          },
+        } as any,
+        { at: path },
+      );
     },
-    [editor],
+    [editor, getElementPath],
   );
 
   const handleOpenCrop = useCallback(() => {
@@ -127,33 +127,25 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
   const handleCrop = useCallback(
     (offsetLeft: number, offsetTop: number, offsetWidth: number, offsetHeight: number) => {
-      if (!editor || !editor.children) return;
-
-      for (let i = 0; i < editor.children.length; i++) {
-        const child = editor.children[i] as any;
-        if (
-          child.type === BlockElementType.IMAGE_BLOCK &&
-          child.attrs?.url === attrsRef.current.url
-        ) {
-          Transforms.setNodes(
-            editor,
-            {
-              attrs: {
-                ...attrsRef.current,
-                offsetLeft,
-                offsetTop,
-                offsetWidth,
-                offsetHeight,
-              },
-            } as any,
-            { at: [i] },
-          );
-          break;
-        }
+      const path = getElementPath();
+      if (path) {
+        Transforms.setNodes(
+          editor,
+          {
+            attrs: {
+              ...attrsRef.current,
+              offsetLeft,
+              offsetTop,
+              offsetWidth,
+              offsetHeight,
+            },
+          } as any,
+          { at: path },
+        );
       }
       setIsCropping(false);
     },
-    [editor],
+    [editor, getElementPath],
   );
 
   const handleCancelCrop = useCallback(() => {
@@ -179,38 +171,22 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
   const handleAlign = useCallback(
     (align: 'left' | 'center' | 'right') => {
-      if (!editor || !editor.children) return;
+      const path = getElementPath();
+      if (!path) return;
 
-      for (let i = 0; i < editor.children.length; i++) {
-        const child = editor.children[i] as any;
-        if (
-          child.type === BlockElementType.IMAGE_BLOCK &&
-          child.attrs?.url === attrsRef.current.url
-        ) {
-          Transforms.setNodes(editor, { attrs: { ...attrsRef.current, align } } as any, {
-            at: [i],
-          });
-          return;
-        }
-      }
+      Transforms.setNodes(editor, { attrs: { ...attrsRef.current, align } } as any, {
+        at: path,
+      });
     },
-    [editor],
+    [editor, getElementPath],
   );
 
   const handleRemove = useCallback(() => {
-    if (!editor || !editor.children) return;
+    const path = getElementPath();
+    if (!path) return;
 
-    for (let i = 0; i < editor.children.length; i++) {
-      const child = editor.children[i] as any;
-      if (
-        child.type === BlockElementType.IMAGE_BLOCK &&
-        child.attrs?.url === attrsRef.current.url
-      ) {
-        Transforms.removeNodes(editor, { at: [i] });
-        return;
-      }
-    }
-  }, [editor]);
+    Transforms.removeNodes(editor, { at: path });
+  }, [editor, getElementPath]);
 
   const getAlignStyle = () => {
     switch (attrs.align) {
@@ -343,26 +319,21 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
             </button>
             <button
               onClick={() => {
-                if (!editor || !editor.children) return;
-                for (let i = 0; i < editor.children.length; i++) {
-                  const child = editor.children[i] as any;
-                  if (
-                    child.type === BlockElementType.IMAGE_BLOCK &&
-                    child.attrs?.url === attrsRef.current.url
-                  ) {
-                    Transforms.insertNodes(
-                      editor,
-                      {
-                        type: BlockElementType.IMAGE_BLOCK,
-                        id: uuidv4(),
-                        attrs: { ...attrsRef.current },
-                        children: [{ text: '' }],
-                      } as any,
-                      { at: [i + 1] },
-                    );
-                    return;
-                  }
-                }
+                const path = getElementPath();
+                if (!path) return;
+
+                const insertPath = [...path];
+                insertPath[insertPath.length - 1] += 1;
+                Transforms.insertNodes(
+                  editor,
+                  {
+                    type: BlockElementType.IMAGE_BLOCK,
+                    id: uuidv4(),
+                    attrs: { ...attrsRef.current },
+                    children: [{ text: '' }],
+                  } as any,
+                  { at: insertPath },
+                );
               }}
               className={styles.toolbarButton}
             >

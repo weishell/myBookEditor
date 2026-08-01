@@ -1,7 +1,6 @@
 import React, { useCallback } from 'react';
-import { useSlateStatic } from 'slate-react';
-import { Transforms, Element as SlateElement } from 'slate';
-import type { Descendant } from 'slate';
+import { ReactEditor, useSlateStatic } from 'slate-react';
+import { Transforms } from 'slate';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import styles from './TodoList.module.less';
@@ -12,25 +11,6 @@ interface ElementProps {
   pluginId?: string;
   element?: any;
 }
-
-// 递归查找节点路径
-const findNodePath = (
-  nodes: Descendant[],
-  targetId: string,
-  currentPath: number[] = [],
-): number[] | null => {
-  for (let i = 0; i < nodes.length; i++) {
-    const node = nodes[i];
-    if (SlateElement.isElement(node) && (node as any).id === targetId) {
-      return [...currentPath, i];
-    }
-    if (SlateElement.isElement(node) && node.children) {
-      const found = findNodePath(node.children as Descendant[], targetId, [...currentPath, i]);
-      if (found) return found;
-    }
-  }
-  return null;
-};
 
 export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
@@ -43,11 +23,12 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
       e.preventDefault();
       e.stopPropagation();
 
-      const nodeId = element.id;
-      if (!nodeId) return;
-
-      const path = findNodePath(editor.children as Descendant[], nodeId);
-      if (!path) return;
+      let path;
+      try {
+        path = ReactEditor.findPath(editor, element);
+      } catch {
+        return;
+      }
 
       Transforms.setNodes(
         editor,

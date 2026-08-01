@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, useContext, useMemo, useState, type ReactNode } from 'react';
 import type { EditorMode } from '@/components/ModeSwitcher';
 
 interface EditorContextType {
@@ -10,8 +10,9 @@ const EditorContext = createContext<EditorContextType | undefined>(undefined);
 
 export function EditorProvider({ children }: { children: ReactNode }) {
   const [mode, setMode] = useState<EditorMode>('edit');
+  const value = useMemo(() => ({ mode, setMode }), [mode]);
 
-  return <EditorContext.Provider value={{ mode, setMode }}>{children}</EditorContext.Provider>;
+  return <EditorContext.Provider value={value}>{children}</EditorContext.Provider>;
 }
 
 export function useEditorMode() {

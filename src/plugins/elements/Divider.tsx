@@ -7,6 +7,7 @@ interface ElementProps {
   attributes: Record<string, unknown>;
   children?: React.ReactNode;
   pluginId?: string;
+  element?: Record<string, unknown>;
 }
 
 export const Divider = ({ attributes, children, pluginId }: ElementProps) => {

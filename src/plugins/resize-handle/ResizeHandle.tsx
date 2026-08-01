@@ -105,7 +105,6 @@ const ResizeHandle: React.FC<ResizeHandleProps> = ({
   };
 
   const handleMouseDown = (e: React.MouseEvent, position: HandlePositionType) => {
-    console.log('handleMouseDown:', position);
     e.preventDefault();
     e.stopPropagation();
     isDraggingRef.current = true;

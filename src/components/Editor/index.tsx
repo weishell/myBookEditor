@@ -39,17 +39,12 @@ export default function Editor({ readOnly = false }: EditorProps) {
     },
     [keyboardHandler, readOnly],
   );
+  const handleChange = useCallback(() => {
+    // 保留 onChange 入口，便于后续接入持久化或协同能力。
+  }, []);
 
   return (
-    <Slate
-      editor={editor}
-      initialValue={initialValue}
-      onChange={(value) => {
-        if (!readOnly) {
-          console.log(value);
-        }
-      }}
-    >
+    <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>
       <SelectionProvider>
         <MenuProvider>
           {!readOnly && <FloatBar />}
