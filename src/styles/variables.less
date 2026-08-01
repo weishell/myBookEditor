@@ -2,16 +2,16 @@
 // 全局样式变量 - 统一管理主题色、间距、字号、圆角等
 // ============================================================
 
-// 主题色
-@color-primary: #1890ff;
+// 主题色 - 通过 CSS 变量实现运行时换肤
+@color-primary: var(--theme-primary);
 @color-success: #52c41a;
 @color-warning: #faad14;
 @color-danger: #ff4d4f;
 @color-orange: #fa8c16;
 @color-purple: #722ed1;
 
-// DocBar 图标颜色
-@docbar-color: #1890ff;
+// DocBar 图标颜色 - 跟随主题
+@docbar-color: var(--theme-primary);
 
 // 文字色
 @text-primary: #262626;

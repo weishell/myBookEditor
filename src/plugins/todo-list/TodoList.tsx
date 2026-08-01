@@ -60,8 +60,8 @@ export const TodoList: React.FC<ElementProps> = ({ attributes, children, pluginI
           <span
             className={styles.checkbox}
             style={{
-              border: isChecked ? '2px solid #1890ff' : '2px solid #d9d9d9',
-              backgroundColor: isChecked ? '#1890ff' : 'transparent',
+              border: isChecked ? '2px solid var(--theme-primary)' : '2px solid #d9d9d9',
+              backgroundColor: isChecked ? 'var(--theme-primary)' : 'transparent',
             }}
           >
             {isChecked && (

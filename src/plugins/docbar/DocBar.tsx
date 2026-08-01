@@ -165,7 +165,7 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
 };
 
 const getElementColor = (): string => {
-  return '#1890ff';
+  return 'var(--theme-primary)';
 };
 
 export const DocBar = () => {

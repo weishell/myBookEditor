@@ -3,7 +3,9 @@ import Editor from '@/components/Editor';
 import NotFound from '@/pages/NotFound';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ModeSwitcher from '@/components/ModeSwitcher';
+import ThemeSwitcher from '@/components/ThemeSwitcher';
 import { EditorProvider, useEditorMode } from '@/context/EditorContext';
+import { ThemeProvider } from '@/context/ThemeContext';
 import styles from './App.module.less';
 
 function AppLayout() {
@@ -15,6 +17,7 @@ function AppLayout() {
         <header className={styles.header}>
           <div className={styles.logo}>MyBook Editor</div>
           <div className={styles.controls}>
+            <ThemeSwitcher />
             <ModeSwitcher mode={mode} onChange={setMode} />
             <LanguageSwitcher />
           </div>
@@ -32,9 +35,11 @@ function AppLayout() {
 
 function App() {
   return (
-    <EditorProvider>
-      <AppLayout />
-    </EditorProvider>
+    <ThemeProvider>
+      <EditorProvider>
+        <AppLayout />
+      </EditorProvider>
+    </ThemeProvider>
   );
 }
 

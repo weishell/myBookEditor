@@ -9,6 +9,9 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* 主题色 - 运行时可由 ThemeContext 动态修改 */
+  --theme-primary: #1890ff;
 }
 
 * {

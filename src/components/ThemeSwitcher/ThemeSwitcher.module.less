@@ -1,0 +1,74 @@
+.button {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  border: 1px solid @border-color-light;
+  border-radius: 4px;
+  background-color: @bg-base;
+  cursor: pointer;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background-color: @bg-subtle;
+    border-color: @border-color;
+  }
+}
+
+.swatch {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  border: 2px solid @bg-base;
+  box-shadow: 0 0 0 1px @border-color;
+  flex-shrink: 0;
+}
+
+.dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: @spacing-xs;
+  z-index: 1000;
+  min-width: 120px;
+}
+
+.option {
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+  padding: @spacing-sm @spacing-md;
+  border-radius: @radius-sm;
+  cursor: pointer;
+  font-size: @font-size-sm;
+  color: @text-primary;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.optionSwatch {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  border: 1px solid @border-color-light;
+}
+
+.optionActive {
+  background-color: @bg-subtle;
+  font-weight: 500;
+}
+
+.wrapper {
+  position: relative;
+}
