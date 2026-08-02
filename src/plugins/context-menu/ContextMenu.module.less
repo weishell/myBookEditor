@@ -111,3 +111,20 @@
   font-size: @font-size-sm;
   color: @text-tertiary;
 }
+
+// 激活的 action 按钮（如字体面板展开时）
+.btnActionActive {
+  background-color: @bg-hover;
+  color: @color-primary;
+}
+
+// 字体悬浮二级菜单：fixed 定位浮在按钮右侧，不撑高主菜单
+.fontFlyout {
+  position: fixed;
+  z-index: 1002;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: @spacing-xs;
+}

@@ -1,19 +1,28 @@
-import { useEffect, useRef, useCallback } from 'react';
+// 右键 / DocBar 拖拽按钮触发的上下文菜单
+//
+// 字体选择用 antd Popover 做二级菜单（右侧弹出），
+// Popover 打开时同步 setHoveringMenu(true) 防止主菜单 200ms 后自动关闭。
+
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { useSlateStatic, ReactEditor } from 'slate-react';
+import { Popover } from 'antd';
 import { useMenu } from '@/plugins/menu-context';
+import { setBlockFont } from '@/plugins/font';
+import FontPicker from '@/components/FontPicker';
 import styles from './ContextMenu.module.less';
 
 export const ContextMenu = () => {
-  const { visible, position, closeMenu, setHoveringMenu } = useMenu();
+  const { visible, position, closeMenu, setHoveringMenu, targetId } = useMenu();
   const menuRef = useRef<HTMLDivElement>(null);
+  const editor = useSlateStatic();
+  const [fontOpen, setFontOpen] = useState(false);
 
   const adjustPosition = useCallback(() => {
     if (!menuRef.current) return;
-
     const menu = menuRef.current;
     const rect = menu.getBoundingClientRect();
     const windowHeight = window.innerHeight;
     const maxHeight = windowHeight - 40;
-
     if (rect.height > maxHeight) {
       menu.style.maxHeight = `${maxHeight}px`;
       menu.style.overflowY = 'auto';
@@ -21,25 +30,45 @@ export const ContextMenu = () => {
       menu.style.maxHeight = 'none';
       menu.style.overflowY = 'visible';
     }
-
     if (rect.bottom > windowHeight) {
       const newTop = windowHeight - rect.height - 20;
-      if (newTop >= 0) {
-        menu.style.top = `${newTop}px`;
-      }
+      if (newTop >= 0) menu.style.top = `${newTop}px`;
     }
   }, []);
 
   useEffect(() => {
-    if (visible) {
-      requestAnimationFrame(() => {
-        adjustPosition();
-      });
-    }
+    if (visible) requestAnimationFrame(adjustPosition);
   }, [visible, position, adjustPosition]);
 
-  const handleMenuClick = (_action: string) => {
-    console.warn(_action);
+  // 菜单关闭时重置内部状态
+  useEffect(() => {
+    if (!visible) setFontOpen(false);
+  }, [visible]);
+
+  const handleMenuClick = (action: string) => {
+    console.warn(action);
+    closeMenu();
+  };
+
+  // DocBar 场景：用 targetId（当前 hover 块的 pluginId）找到 Slate 节点路径
+  // 优先于 selection，确保只改当前 hover 的块，不受选区影响
+  const getTargetPath = (): number[] | undefined => {
+    if (!targetId) return undefined;
+    const el = document.querySelector(`[data-plugin-id="${targetId}"]`);
+    if (!el) return undefined;
+    try {
+      const node = ReactEditor.toSlateNode(editor, el);
+      return ReactEditor.findPath(editor, node);
+    } catch {
+      return undefined;
+    }
+  };
+
+  // 字体选择回调：DocBar 场景只改当前 hover 的块
+  const handleFontChange = (fontFamily: string) => {
+    const targetPath = getTargetPath();
+    setBlockFont(editor, fontFamily, targetPath);
+    setFontOpen(false);
     closeMenu();
   };
 
@@ -82,7 +111,7 @@ export const ContextMenu = () => {
             ☐
           </button>
           <button onClick={() => handleMenuClick('code')} className={styles.btnToolMono}>
-            {}
+            {'{ }'}
           </button>
           <button onClick={() => handleMenuClick('quote')} className={styles.btnTool}>
             "
@@ -100,6 +129,36 @@ export const ContextMenu = () => {
           <span>缩进和对齐</span>
           <span className={styles.actionArrow}>›</span>
         </button>
+        <Popover
+          open={fontOpen}
+          onOpenChange={(open) => {
+            setFontOpen(open);
+            setHoveringMenu(open);
+          }}
+          content={
+            <div
+              onMouseEnter={() => setHoveringMenu(true)}
+              onMouseLeave={() => setHoveringMenu(false)}
+            >
+              <FontPicker onFontChange={handleFontChange} />
+            </div>
+          }
+          trigger="click"
+          placement="right"
+        >
+          <button
+            className={`${styles.btnAction} ${fontOpen ? styles.btnActionActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFontOpen(!fontOpen);
+              setHoveringMenu(true);
+            }}
+          >
+            <span className={styles.actionIcon}>Aa</span>
+            <span>字体</span>
+            <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
+          </button>
+        </Popover>
         <button onClick={() => handleMenuClick('color')} className={styles.btnAction}>
           <span className={styles.actionIcon}>🎨</span>
           <span>颜色</span>

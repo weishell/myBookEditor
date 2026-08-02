@@ -20,3 +20,4 @@ export * from './elements/Divider';
 export * from './todo-list';
 export * from './art-text';
 export * from './table';
+export * from './font';

@@ -1,8 +1,16 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSlate } from 'slate-react';
-import { toggleMark, toggleBlock, MarkTypes, setColor, setBackgroundColor } from '@/plugins';
+import {
+  toggleMark,
+  toggleBlock,
+  MarkTypes,
+  setColor,
+  setBackgroundColor,
+  setFontFamily,
+} from '@/plugins';
 import { BlockElementType } from '@/enums';
 import ColorPicker from '@/components/ColorPicker';
+import FontPicker from '@/components/FontPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
 import { insertTable } from '@/plugins/table/table-operations';
 import styles from './FloatBar.module.less';
@@ -227,6 +235,28 @@ export default function FloatBar() {
             }
           }}
         />
+        <div className={styles.divider} />
+        <div className={styles.wrapper}>
+          <ToolButton
+            icon="Aa"
+            label=""
+            onClick={() => setActiveMenu(activeMenu === 'font' ? null : 'font')}
+            hasDropdown
+          />
+          {activeMenu === 'font' && (
+            <div className={`${styles.dropdown} ${styles.dropdownFont}`}>
+              <FontPicker
+                onFontChange={(family) => {
+                  const selection = window.getSelection();
+                  if (selection && !selection.isCollapsed) {
+                    setFontFamily(editor, family || null);
+                  }
+                  setActiveMenu(null);
+                }}
+              />
+            </div>
+          )}
+        </div>
         <div className={styles.divider} />
         <div className={styles.wrapper}>
           <ToolButton

@@ -24,6 +24,7 @@ import { initialValue } from '@/utils/initial-value';
 import { createKeyboardHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
+import { useEditorMode } from '@/context/EditorContext';
 import { renderElement } from './renderElement';
 import { renderLeaf } from './renderLeaf';
 import { PAGE_WIDTH_NORMAL } from '@/enums';
@@ -33,6 +34,7 @@ interface EditorProps {
 }
 
 export default function BookEditor({ readOnly = false }: EditorProps) {
+  const { setEditor, globalFont } = useEditorMode();
   const editor = useMemo(
     () =>
       withDelete(
@@ -42,6 +44,12 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
       ),
     [],
   );
+
+  // 把 editor 实例注册到 EditorContext，供 header 中的全局组件使用
+  useEffect(() => {
+    setEditor(editor);
+    return () => setEditor(null);
+  }, [editor, setEditor]);
 
   useEffect(() => {
     Editor.normalize(editor, { force: true });
@@ -76,6 +84,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 backgroundColor: '#fff',
                 minHeight: '500px',
                 pointerEvents: readOnly ? 'none' : 'auto',
+                fontFamily: globalFont,
               }}
             >
               <Editable

@@ -75,4 +75,21 @@ export default {
     indentOnlyText: '缩进仅针对文本类内容',
     indentMaxReached: '已达到最大缩进限制',
   },
+  fontSwitcher: {
+    title: '全文字体',
+    reset: '恢复默认',
+    systemFont: '系统字体',
+    webFont: 'Web 字体（首次使用需加载）',
+    mixed: '混合字体',
+    names: {
+      default: '默认',
+      songti: '宋体',
+      heiti: '黑体',
+      kaiti: '楷体',
+      fangsong: '仿宋',
+      yahei: '微软雅黑',
+      jinshusong: '金书宋',
+      dongfangdakai: '东方大楷',
+    },
+  },
 } as const;

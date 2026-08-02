@@ -31,6 +31,16 @@ export const setBackgroundColor = (editor: Editor, backgroundColor: string | nul
   }
 };
 
+// Text 层字体：设置选区文字的 font-family mark
+// 优先级：text mark > block attrs.fontFamily > 全局 globalFont
+export const setFontFamily = (editor: Editor, fontFamily: string | null) => {
+  if (fontFamily) {
+    (editor as any).addMark('fontFamily', fontFamily);
+  } else {
+    (editor as any).removeMark('fontFamily');
+  }
+};
+
 export const MarkTypes = {
   BOLD: 'bold',
   ITALIC: 'italic',
@@ -39,6 +49,7 @@ export const MarkTypes = {
   COLOR: 'color',
   HIGHLIGHT: 'highlight',
   ART_TEXT: 'artText',
+  FONT_FAMILY: 'fontFamily',
 } as const;
 
 export type MarkTypes = (typeof MarkTypes)[keyof typeof MarkTypes];

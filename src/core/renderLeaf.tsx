@@ -35,6 +35,10 @@ export const renderLeaf = (props: RenderLeafProps) => {
   }
 
   const style: React.CSSProperties = {};
+  // Text 层字体 mark（优先级最高，覆盖 block 级和全局级）
+  if ((leaf as any).fontFamily) {
+    style.fontFamily = (leaf as any).fontFamily;
+  }
   // 用户手动设置的颜色优先级高于代码高亮
   if ((leaf as any).color) {
     style.color = (leaf as any).color;

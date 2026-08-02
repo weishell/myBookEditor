@@ -4,6 +4,7 @@ import NotFound from '@/pages/NotFound';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 import ModeSwitcher from '@/components/ModeSwitcher';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
+import FontSwitcher from '@/components/FontSwitcher';
 import { InlineToastHost } from '@/components/InlineToast';
 import { EditorProvider, useEditorMode } from '@/context/EditorContext';
 import { ThemeProvider } from '@/context/ThemeContext';
@@ -19,6 +20,7 @@ function AppLayout() {
         <header className={styles.header}>
           <div className={styles.logo}>MyBook Editor</div>
           <div className={styles.controls}>
+            <FontSwitcher />
             <ThemeSwitcher />
             <ModeSwitcher mode={mode} onChange={setMode} />
             <LanguageSwitcher />

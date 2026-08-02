@@ -75,4 +75,21 @@ export default {
     indentOnlyText: 'Indent is only available for text content',
     indentMaxReached: 'Maximum indentation limit reached',
   },
+  fontSwitcher: {
+    title: 'Document Font',
+    reset: 'Reset to Default',
+    systemFont: 'System Font',
+    webFont: 'Web Font (loads on first use)',
+    mixed: 'Mixed Fonts',
+    names: {
+      default: 'Default',
+      songti: 'Songti (Serif)',
+      heiti: 'Heiti (Sans)',
+      kaiti: 'Kaiti',
+      fangsong: 'FangSong',
+      yahei: 'Microsoft YaHei',
+      jinshusong: 'Jinshu Song',
+      dongfangdakai: 'Dongfang Dakai',
+    },
+  },
 } as const;
