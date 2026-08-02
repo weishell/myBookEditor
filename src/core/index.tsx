@@ -64,7 +64,9 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     },
     [keyboardHandler, readOnly],
   );
-  const handleChange = useCallback(() => {}, []);
+  const handleChange = useCallback(() => {
+    console.warn('onChange', editor.children, editor);
+  }, [editor]);
 
   return (
     <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>

@@ -4,8 +4,9 @@
 // Popover 打开时同步 setHoveringMenu(true) 防止主菜单 200ms 后自动关闭。
 
 import { useEffect, useRef, useCallback, useState } from 'react';
-import { useSlateStatic, ReactEditor } from 'slate-react';
+import { useSlateStatic } from 'slate-react';
 import { Popover } from 'antd';
+import { Editor, Element } from 'slate';
 import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
 import FontPicker from '@/components/FontPicker';
@@ -50,18 +51,21 @@ export const ContextMenu = () => {
     closeMenu();
   };
 
-  // DocBar 场景：用 targetId（当前 hover 块的 pluginId）找到 Slate 节点路径
-  // 优先于 selection，确保只改当前 hover 的块，不受选区影响
+  // DocBar 场景：按 element.id 直接遍历 Slate 文档树找路径
+  // 使用 Editor.nodes() 从根节点遍历所有节点，因为 Node.get(editor, [])
+  // 返回的 editor 对象不是 Element 类型（Editor.isEditor 返回 true），
+  // 导致 Element.isElement(editor) 返回 false，递归搜索无法进入子节点
   const getTargetPath = (): number[] | undefined => {
     if (!targetId) return undefined;
-    const el = document.querySelector(`[data-plugin-id="${targetId}"]`);
-    if (!el) return undefined;
-    try {
-      const node = ReactEditor.toSlateNode(editor, el);
-      return ReactEditor.findPath(editor, node);
-    } catch {
-      return undefined;
+
+    // 遍历所有节点，找到 id 匹配的 Element
+    const entries = Array.from(Editor.nodes(editor, { at: [] }));
+    for (const [node, path] of entries) {
+      if (Element.isElement(node) && (node as any).id === targetId) {
+        return path;
+      }
     }
+    return undefined;
   };
 
   // 字体选择回调：DocBar 场景只改当前 hover 的块
