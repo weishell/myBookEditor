@@ -1,9 +1,11 @@
+// 删除/退格劫持插件（withDelete）
+//
+// 用途：统一拦截 Slate 编辑器的删除行为（退格 deleteBackward、
+//       正向删除 deleteForward），方便后续在删除前后插入自定义逻辑，
+//       例如：自定义块拆分、空块清理、回收站记录等。
+// 当前：透传原行为，不做任何修改，仅占用接入点。
 import { Editor } from 'slate';
 
-/**
- * 劫持删除操作（deleteBackward / deleteForward）
- * 目前仅透传原始行为，后续在此扩展自定义删除逻辑
- */
 export const withDelete = (editor: Editor) => {
   const { deleteBackward, deleteForward } = editor;
 

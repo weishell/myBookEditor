@@ -1,3 +1,9 @@
+// 语言切换 Context（LanguageContext）
+//
+// 用法：用 LanguageProvider 包裹应用，通过 useLanguage() 拿到
+//       language（当前语言 zh/en）/ setLanguage / toggleLanguage。
+// 底层：基于 i18next 的 changeLanguage 触发真正的翻译切换，
+//       Context 仅承担统一封装与 React 重渲染订阅。
 import { createContext, useContext, useMemo, useCallback, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { AppLanguage } from '@/i18n';

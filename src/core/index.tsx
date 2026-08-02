@@ -1,3 +1,14 @@
+// 编辑器核心（core/BookEditor）
+//
+// 职责：
+//   1. 创建并组合所有 Slate withXxx 编辑器扩展（历史、代码块、Markdown、
+//      编辑器行为劫持、删除劫持等），最外层 withDelete 确保删除逻辑最先拦截。
+//   2. 初始化 Slate / Editable，挂载渲染 renderElement/renderLeaf，
+//      并装配 DocBar / FloatBar / ContextMenu 等全局工具层。
+//   3. 装配全局键盘事件分发与代码块 decorate。
+//
+// 设计：从 components/Editor 抽离，作为项目的编辑器运行核心，便于单独测试、
+//       替换上层 UI 壳子或二次开发包装。
 import { useMemo, useCallback, useEffect } from 'react';
 import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';

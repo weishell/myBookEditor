@@ -1,3 +1,11 @@
+// 飞书风格跟随光标的行内提示气泡（InlineToast）
+//
+// 使用场景：替代 message 弹窗，做操作反馈提示，例如：
+//   - 按 Tab 但选区含非文本块时，提示"缩进仅针对文本类内容"
+//   - 达到最大缩进时，提示"已达到最大缩进限制"
+//
+// 触发方式：调用 showCursorToast(editor, toastKey)，
+//           内部通过 ReactEditor.toDOMRange 定位光标，Portal 到 body。
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';

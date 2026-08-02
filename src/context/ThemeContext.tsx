@@ -1,3 +1,12 @@
+// 主题换肤 Context（ThemeContext）
+//
+// 用法：用 ThemeProvider 包裹应用，通过 useTheme() 拿到
+//       themeId / setTheme / toggleTheme，并通过 CSS 变量 --theme-primary
+//       作用到 documentElement，从而让 DocBar 图标、Checkbox、分割线选中态、
+//       图片拖拽边缘、表格插入线等全局跟随主题色变化。
+//
+// 主题色约定：所有颜色均避开 Ant Design 的语义色（error red / success green /
+//            warning yellow），避免出现视觉歧义。
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 
 // 主题标识

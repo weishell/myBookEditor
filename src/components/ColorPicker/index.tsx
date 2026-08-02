@@ -1,58 +1,84 @@
+// 颜色选择器（FloatBar 里的字体颜色/背景色按钮）
+//
+// 职责：
+//   - 展示两组色块（字体色 / 高亮背景色），点击后通过回调把选中色
+//     交回上层 FloatBar 写入 Slate marks（textColor / backgroundColor）。
+//   - 色块按色系分组从深到浅排列，悬浮显示 antd Tooltip 展示 i18n 颜色名。
+//   - Tooltip 采用 Z_INDEX_HIGHEST 档位 10010，高于面板 10001 避免被遮。
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Tooltip } from 'antd';
+import { Z_INDEX_HIGHEST } from '@/enums';
+import styles from './ColorPicker.module.less';
 
-const FONT_COLORS = [
-  '#000000',
-  '#333333',
-  '#666666',
-  '#999999',
-  '#cccccc',
-  '#ff0000',
-  '#ff6600',
-  '#ffcc00',
-  '#33cc00',
-  '#00ccff',
-  '#0066ff',
-  '#9900ff',
-  '#ff00ff',
-  '#ff99cc',
-  '#009999',
-  '#669900',
-  '#996633',
-  '#19CAAD',
-  '#D6D5B7',
-  '#8CC7B5',
-  '#D1BA74',
-  '#A0EEE1',
-  '#E6CEAC',
-  '#BEE7E9',
-  '#ECAD9E',
-  '#BEEDC7',
-  '#F4606C',
+interface ColorItem {
+  id: string;
+  value: string;
+}
+
+// 字体颜色：按色系分组排列，每组从深到浅，扁平化到一个网格
+const FONT_COLORS: ColorItem[] = [
+  // 无彩色
+  { id: 'black', value: '#000000' },
+  { id: 'darkGray', value: '#333333' },
+  // 红色系
+  { id: 'wine', value: '#c62828' },
+  { id: 'red', value: '#ff0000' },
+  // 橙色系
+  { id: 'orangeRed', value: '#ff6600' },
+  // 黄色系
+  { id: 'golden', value: '#ffcc00' },
+  { id: 'sandYellow', value: '#D1BA74' },
+  // 绿色系
+  { id: 'olive', value: '#669900' },
+  { id: 'brightGreen', value: '#33cc00' },
+  // 青色系
+  { id: 'lightCyan', value: '#A0EEE1' },
+  { id: 'iceBlue', value: '#BEE7E9' },
+  // 蓝色系
+  { id: 'lake', value: '#1377a8' },
+  { id: 'blue', value: '#0066ff' },
+  { id: 'skyBlue', value: '#00ccff' },
+  // 紫色系
+  { id: 'purple', value: '#9900ff' },
+  { id: 'magenta', value: '#ff00ff' },
+  // 棕色系
+  { id: 'brown', value: '#996633' },
+  { id: 'skin', value: '#ECAD9E' },
+  { id: 'cream', value: '#E6CEAC' },
 ];
 
-const HIGHLIGHT_COLORS = [
-  '',
-  '#fff1b8',
-  '#ffe082',
-  '#ffd54f',
-  '#ffcc80',
-  '#ffebee',
-  '#ffcdd2',
-  '#ef9a9a',
-  '#ffab91',
-  '#d1c4e9',
-  '#c5cae9',
-  '#bbdefb',
-  '#b3e5fc',
-  '#b2dfdb',
-  '#a5d6a7',
-  '#c8e6c9',
-  '#fff9c4',
-  '#fff59d',
-  '#f3e5f5',
-  '#e1bee7',
-  '#fce4ec',
+// 背景色：按色系分组排列，每组从深到浅，扁平化到一个网格
+const BG_COLORS: ColorItem[] = [
+  // 无色
+  { id: 'none', value: '' },
+  // 红色系
+  { id: 'lightRed', value: '#ef9a9a' },
+  { id: 'salmon', value: '#ffab91' },
+  { id: 'bgPink', value: '#ffcdd2' },
+  { id: 'paleRed', value: '#ffebee' },
+  // 橙色系
+  { id: 'lightOrange', value: '#ffcc80' },
+  // 黄色系
+  { id: 'goldenYellow', value: '#ffd54f' },
+  { id: 'warmYellow', value: '#ffe082' },
+  { id: 'lightYellow', value: '#fff1b8' },
+  { id: 'wheat', value: '#fff59d' },
+  { id: 'paleYellow', value: '#fff9c4' },
+  // 绿色系
+  { id: 'bgLightGreen', value: '#a5d6a7' },
+  { id: 'paleGreen', value: '#c8e6c9' },
+  { id: 'bgMint', value: '#b2dfdb' },
+  // 蓝色系
+  { id: 'lightBlue', value: '#bbdefb' },
+  { id: 'brightBlue', value: '#b3e5fc' },
+  { id: 'periwinkle', value: '#c5cae9' },
+  // 紫色系
+  { id: 'lightPurple', value: '#d1c4e9' },
+  { id: 'purplePink', value: '#e1bee7' },
+  { id: 'palePurple', value: '#f3e5f5' },
+  // 粉色系
+  { id: 'palePink', value: '#fce4ec' },
 ];
 
 interface ColorPickerProps {
@@ -84,165 +110,74 @@ export default function ColorPicker({
   };
 
   return (
-    <div className="color-picker" style={{ position: 'relative' }}>
+    <div className={styles.picker}>
       <button
+        className={styles.trigger}
         onClick={(e) => {
           e.stopPropagation();
           setOpen(!open);
         }}
-        style={{
-          padding: '6px 10px',
-          border: 'none',
-          background: 'transparent',
-          cursor: 'pointer',
-          fontSize: '14px',
-          borderRadius: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: '2px',
-          color: '#333',
-        }}
-        onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
-        onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
       >
-        <span
-          style={{
-            backgroundColor: '#fff1b8',
-            padding: '2px 6px',
-            borderRadius: '2px',
-            fontSize: '14px',
-            fontWeight: '600',
-            color: '#333',
-          }}
-        >
-          A
-        </span>
-        <span style={{ fontSize: '10px', color: '#999' }}>▼</span>
+        <span className={styles.triggerIcon}>A</span>
+        <span className={styles.arrow}>▼</span>
       </button>
 
       {open && (
-        <div
-          onClick={(e) => e.stopPropagation()}
-          style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            marginTop: '4px',
-            backgroundColor: '#fff',
-            border: '1px solid #e8e8e8',
-            borderRadius: '8px',
-            boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-            padding: '8px',
-            minWidth: '200px',
-            zIndex: 10001,
-          }}
-        >
-          <div
-            style={{
-              padding: '4px 8px',
-              fontSize: '12px',
-              color: '#999',
-              fontWeight: '600',
-              marginBottom: '8px',
-            }}
-          >
-            {t('colorPicker.fontColor')}
-          </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(9, 1fr)',
-              gap: '6px',
-              marginBottom: '12px',
-            }}
-          >
+        <div className={styles.panel} onClick={(e) => e.stopPropagation()}>
+          <div className={styles.sectionLabel}>{t('colorPicker.fontColor')}</div>
+          <div className={styles.grid}>
             {FONT_COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleTextColorClick(color);
-                }}
-                style={{
-                  width: '22px',
-                  height: '22px',
-                  borderRadius: '4px',
-                  backgroundColor: '#fff',
-                  border: '1px solid #d9d9d9',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '11px',
-                  fontWeight: '600',
-                  color: color,
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
+              <Tooltip
+                key={color.id}
+                title={t(`colorPicker.fontColorNames.${color.id}`)}
+                mouseLeaveDelay={0}
+                zIndex={Z_INDEX_HIGHEST}
+                placement="top"
               >
-                A
-              </button>
+                <button
+                  className={styles.fontSwatch}
+                  style={{ color: color.value }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTextColorClick(color.value);
+                  }}
+                >
+                  A
+                </button>
+              </Tooltip>
             ))}
           </div>
 
-          <div
-            style={{
-              padding: '4px 8px',
-              fontSize: '12px',
-              color: '#999',
-              fontWeight: '600',
-              marginBottom: '8px',
-            }}
-          >
+          <div className={styles.sectionLabel} style={{ marginTop: '12px' }}>
             {t('colorPicker.backgroundColor')}
           </div>
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(9, 1fr)',
-              gap: '6px',
-              marginBottom: '8px',
-            }}
-          >
-            {HIGHLIGHT_COLORS.map((color) => (
-              <button
-                key={color}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleBackgroundColorClick(color);
-                }}
-                style={{
-                  width: '20px',
-                  height: '20px',
-                  borderRadius: '4px',
-                  backgroundColor: color || '#fff',
-                  border: color ? '1px solid #e8e8e8' : '1px dashed #ccc',
-                  cursor: 'pointer',
-                }}
-                onMouseEnter={(e) => (e.currentTarget.style.transform = 'scale(1.2)')}
-                onMouseLeave={(e) => (e.currentTarget.style.transform = 'scale(1)')}
-              />
+          <div className={styles.grid}>
+            {BG_COLORS.map((color) => (
+              <Tooltip
+                key={color.id}
+                title={t(`colorPicker.bgColorNames.${color.id}`)}
+                mouseLeaveDelay={0}
+                zIndex={Z_INDEX_HIGHEST}
+                placement="top"
+              >
+                <button
+                  className={`${styles.bgSwatch} ${!color.value ? styles.bgSwatchEmpty : ''}`}
+                  style={{ backgroundColor: color.value || '#fff' }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleBackgroundColorClick(color.value);
+                  }}
+                />
+              </Tooltip>
             ))}
           </div>
 
           <button
+            className={styles.reset}
             onClick={(e) => {
               e.stopPropagation();
               handleReset();
             }}
-            style={{
-              width: '100%',
-              padding: '6px 12px',
-              textAlign: 'center',
-              border: 'none',
-              background: 'transparent',
-              cursor: 'pointer',
-              fontSize: '12px',
-              color: '#999',
-              borderRadius: '4px',
-            }}
-            onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#f5f5f5')}
           >
             {t('colorPicker.reset')}
           </button>
