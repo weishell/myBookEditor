@@ -402,4 +402,88 @@ export const initialValue: Descendant[] = [
       },
     ],
   },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '文本格式展示' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '这是一段包含' },
+      { text: '加粗', bold: true },
+      { text: '、' },
+      { text: '斜体', italic: true },
+      { text: '、' },
+      { text: '下划线', underline: true },
+      { text: '、' },
+      { text: '删除线', strikethrough: true },
+      { text: ' 的文字。还可以' },
+      { text: '组合样式', bold: true, italic: true, underline: true },
+      { text: '，或者设置' },
+      { text: '文字颜色', color: '#1890ff' },
+      { text: '和' },
+      { text: '高亮背景', highlight: '#fff5b1' },
+      { text: '。' },
+    ],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '不同' },
+      { text: '字体', fontFamily: 'Georgia, serif' },
+      { text: '也可以在同一行中' },
+      { text: '混合', fontFamily: 'Courier New, monospace', bold: true, color: '#e83e8c' },
+      { text: '展示。' },
+    ],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '艺术字效果' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '渐变文字',
+        artText: JSON.stringify({
+          type: 'gradient',
+          colors: ['#ff0000', '#8a2be2', '#0000ff'],
+          direction: 'left-to-right',
+        }),
+      },
+    ],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '发光文字',
+        artText: JSON.stringify({ type: 'glow', glowColor: '#ff6600', glowIntensity: 8 }),
+      },
+    ],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '阴影文字',
+        artText: JSON.stringify({
+          type: 'shadow',
+          shadowColor: '#333333',
+          shadowOffsetX: 3,
+          shadowOffsetY: 3,
+          shadowBlur: 4,
+        }),
+      },
+    ],
+  },
 ];
