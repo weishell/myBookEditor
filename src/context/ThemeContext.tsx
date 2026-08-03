@@ -7,7 +7,18 @@
 //
 // 主题色约定：所有颜色均避开 Ant Design 的语义色（error red / success green /
 //            warning yellow），避免出现视觉歧义。
+//
+// 同时设置 --theme-primary-rgb（R G B 三通道），供 rgba() 透明场景使用（如 ::selection 选区色）。
 import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+
+// 将 #1890ff 转为 "24 144 255"（供 rgba() 使用）
+// const hexToRgb = (hex: string): string => {
+//   const normalized = hex.replace('#', '');
+//   const r = parseInt(normalized.substring(0, 2), 16);
+//   const g = parseInt(normalized.substring(2, 4), 16);
+//   const b = parseInt(normalized.substring(4, 6), 16);
+//   return `${r} ${g} ${b}`;
+// };
 
 // 主题标识
 export type ThemeId =

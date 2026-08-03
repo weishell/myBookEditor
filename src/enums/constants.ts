@@ -3,6 +3,9 @@
 // 零宽空格 - 用于代码块空行占位，防止 Slate normalize 清理空节点
 export const ZERO_WIDTH_SPACE = '\u200B';
 
+// 回到顶部按钮出现阈值（单位 px）
+export const BACK_TO_TOP_THRESHOLD = 300;
+
 // 标准页面宽度
 export const PAGE_WIDTH_NORMAL = '1000px';
 // 较宽页面宽度

@@ -6,6 +6,7 @@ import ModeSwitcher from '@/components/ModeSwitcher';
 import ThemeSwitcher from '@/components/ThemeSwitcher';
 import FontSwitcher from '@/components/FontSwitcher';
 import { InlineToastHost } from '@/components/InlineToast';
+import { BackToTop } from '@/components/BackToTop/BackToTop';
 import { EditorProvider, useEditorMode } from '@/context/EditorContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
@@ -32,6 +33,7 @@ function AppLayout() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
+        <BackToTop />
       </div>
     </BrowserRouter>
   );

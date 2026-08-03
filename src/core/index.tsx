@@ -90,6 +90,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
               }}
             >
               <Editable
+                className="caret-theme"
                 renderElement={renderElement}
                 renderLeaf={renderLeaf}
                 placeholder="开始编写文档..."

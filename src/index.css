@@ -14,6 +14,23 @@
   --theme-primary: #1890ff;
 }
 
+/* 文本选区颜色 - 跟随主题色，使用 color-mix 实现透明度混合 */
+::selection {
+  background-color: color-mix(in srgb, var(--theme-primary) 28%, transparent);
+  color: inherit;
+}
+
+::-moz-selection {
+  background-color: color-mix(in srgb, var(--theme-primary) 28%, transparent);
+  color: inherit;
+}
+
+/* 光标颜色 - 跟随主题色 */
+.caret-theme,
+.caret-theme * {
+  caret-color: var(--theme-primary);
+}
+
 * {
   margin: 0;
   padding: 0;
