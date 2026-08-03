@@ -21,7 +21,12 @@ export interface CustomText extends BaseText {
   bold?: boolean;
   italic?: boolean;
   underline?: boolean;
+  strikethrough?: boolean;
   code?: boolean;
+  color?: string;
+  highlight?: string;
+  fontFamily?: string;
+  artText?: string;
 }
 
 declare module 'slate' {
