@@ -1,5 +1,6 @@
 import type { RenderElementProps } from 'slate-react';
 import {
+  HeadingTitle,
   Heading,
   Paragraph,
   Blockquote,
@@ -21,6 +22,10 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
   const el = element as { type?: BlockElementType; id?: string; children: unknown[]; attrs?: any };
 
   switch (el.type) {
+    case BlockElementType.HEADING_TITLE:
+      return (
+        <HeadingTitle attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
     case BlockElementType.HEADING:
       return <Heading attributes={attributes} children={children} pluginId={el.id} element={el} />;
     case BlockElementType.BLOCKQUOTE:

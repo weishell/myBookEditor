@@ -2,6 +2,7 @@ export * from './marks';
 export * from './blocks';
 export * from './paragraph';
 export * from './heading';
+export * from './heading-title';
 export * from './blockquote';
 export * from './code-block';
 export * from './bulleted-list';

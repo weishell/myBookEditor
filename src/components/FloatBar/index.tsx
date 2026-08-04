@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSlate } from 'slate-react';
+import { Element } from 'slate';
 import {
   toggleMark,
   toggleBlock,
@@ -14,6 +15,30 @@ import FontPicker from '@/components/FontPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
 import { insertTable } from '@/plugins/table/table-operations';
 import styles from './FloatBar.module.less';
+
+/**
+ * 判断当前选区是否位于 HEADING_TITLE 独立标题块中
+ * —— 独立标题中需要屏蔽全部 FloatBar 功能
+ */
+const isSelectionInHeadingTitle = (editor: any): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+  try {
+    const [match] = Array.from(
+      editor.nodes({
+        at: selection,
+        mode: 'lowest',
+        match: (n: unknown) =>
+          !editor.isEditor(n) &&
+          Element.isElement(n) &&
+          (n as any).type === BlockElementType.HEADING_TITLE,
+      }),
+    );
+    return !!match;
+  } catch {
+    return false;
+  }
+};
 
 export default function FloatBar() {
   const editor = useSlate();
@@ -78,7 +103,8 @@ export default function FloatBar() {
     };
   }, [calculatePosition]);
 
-  if (!visible) return null;
+  // 选区在 HEADING_TITLE 独立标题中：完全不显示 FloatBar（禁用所有格式化能力
+  if (!visible || isSelectionInHeadingTitle(editor)) return null;
 
   const handleFormatClick = (format: string, isMark: boolean, level?: number) => {
     const selection = window.getSelection();

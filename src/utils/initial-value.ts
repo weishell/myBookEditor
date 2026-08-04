@@ -12,9 +12,12 @@ const codeLines = codeText.split('\n').map((text, i) => ({
 
 export const initialValue: Descendant[] = [
   {
-    type: BlockElementType.HEADING,
+    type: BlockElementType.HEADING_TITLE,
     id: uuidv4(),
-    attrs: { level: 1 },
+    attrs: {
+      author: '青柠脉动',
+      date: new Date().toISOString().slice(0, 10),
+    },
     children: [{ text: '欢迎使用文档编辑器' }],
   },
   {

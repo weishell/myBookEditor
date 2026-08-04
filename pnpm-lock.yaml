@@ -32,6 +32,9 @@ importers:
       is-hotkey:
         specifier: ^0.2.0
         version: 0.2.0
+      lucide-react:
+        specifier: ^1.28.0
+        version: 1.28.0(react@19.2.7)
       prismjs:
         specifier: ^1.30.0
         version: 1.30.0
@@ -1623,6 +1626,11 @@ packages:
 
   lru-cache@5.1.1:
     resolution: {integrity: sha512-KpNARQA3Iwv+jTA0utUVVbrh+Jlrr1Fv0e56GGzAFOXN7dk/FviaDW8LHmK52DlcH4WP2n6gI8vN1aesBFgo9w==}
+
+  lucide-react@1.28.0:
+    resolution: {integrity: sha512-fARAFJULsGuDDydjp6+6blekG/sBIM29TerzLjc9bQUKAcEfrSc4ZQKb25KRz4OMKd87cZTb5dgq0w/T6KufVg==}
+    peerDependencies:
+      react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
   make-dir@5.1.0:
     resolution: {integrity: sha512-IfpFq6UM39dUNiphpA6uDezNx/AvWyhwfICWPR3t1VspkgkMZrL+Rk1RbN1bx+aeNYwOrqGJgEgV3yotk+ZUVw==}
@@ -3635,6 +3643,10 @@ snapshots:
   lru-cache@5.1.1:
     dependencies:
       yallist: 3.1.1
+
+  lucide-react@1.28.0(react@19.2.7):
+    dependencies:
+      react: 19.2.7
 
   make-dir@5.1.0:
     optional: true

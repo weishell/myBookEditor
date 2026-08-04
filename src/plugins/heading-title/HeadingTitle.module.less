@@ -1,0 +1,278 @@
+.headingTitle {
+  position: relative;
+  margin: 0 0 28px;
+  width: 100%;
+
+  // 当 HEADING_TITLE 是文档第一个块时，用负 margin 抵消外层容器的顶部 padding
+  // —— 让封面紧贴容器顶部，上方不留空白
+  &:first-child {
+    margin-top: -40px;
+  }
+
+  .coverArea {
+    position: relative;
+    width: calc(100% + 100px);
+    margin-left: -50px;
+    margin-bottom: 22px;
+    border-radius: 0;
+    overflow: hidden;
+    aspect-ratio: 3 / 1;
+    max-height: 320px;
+
+    .coverImg {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .coverActions {
+      position: absolute;
+      top: 12px;
+      right: 12px;
+      display: flex;
+      gap: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    &:hover .coverActions {
+      opacity: 1;
+    }
+
+    .actionBtn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      background: rgba(0, 0, 0, 0.5);
+      color: #fff;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      backdrop-filter: blur(4px);
+      transition: background 0.15s;
+
+      &:hover {
+        background: rgba(0, 0, 0, 0.7);
+      }
+    }
+  }
+
+  .coverPicker {
+    z-index: 10002;
+    background: #fff;
+    border: 1px solid #e8e8e8;
+    border-radius: 8px;
+    padding: 12px;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+    width: 420px;
+    box-sizing: border-box;
+
+    .pickerTitle {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 10px;
+      font-weight: 500;
+    }
+
+    .coverGrid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .coverItem {
+      cursor: pointer;
+      border-radius: 6px;
+      overflow: hidden;
+      border: 2px solid transparent;
+      transition: all 0.15s;
+      aspect-ratio: 3 / 1;
+
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      &:hover {
+        border-color: var(--theme-primary, #1890ff);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      &.active {
+        border-color: var(--theme-primary, #1890ff);
+      }
+    }
+
+    .coverName {
+      font-size: 11px;
+      color: #999;
+      margin-top: 6px;
+      text-align: center;
+    }
+
+    .pickerRemoveBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 12px;
+      color: #8c8c8c;
+      padding: 3px 10px;
+      border-radius: 6px;
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+
+      &:hover {
+        background: #fff1f0;
+        color: #ff4d4f;
+      }
+    }
+  }
+
+  /* 顶部按钮行：添加图标 / 添加封面 —— 默认隐藏，悬浮标题时展示 */
+  .actionRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 14px;
+    flex-wrap: wrap;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.18s ease, transform 0.18s ease;
+    pointer-events: none;
+  }
+
+  // 悬浮整个标题块时显示按钮
+  &:hover .actionRow {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .actionRow .actionPill {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 28px;
+    padding: 0 12px;
+    background: transparent;
+    border: none;
+    color: #8c8c8c;
+    font-size: 13px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: inherit;
+    position: relative;
+    user-select: none;
+
+    &:hover {
+      background: #f5f5f5;
+      color: #262626;
+    }
+
+    .pillRemove {
+      margin-left: 2px;
+      width: 16px;
+      height: 16px;
+      line-height: 14px;
+      border-radius: 50%;
+      text-align: center;
+      color: #bfbfbf;
+      font-size: 10px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.15s;
+
+      &:hover {
+        background: #fff1f0;
+        color: #ff4d4f;
+      }
+    }
+  }
+
+  .titleRow {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    position: relative;
+
+    .titleIcon {
+      flex-shrink: 0;
+      margin-top: 4px;
+      user-select: none;
+      cursor: default;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+      padding: 4px;
+    }
+
+    .titleContent {
+      flex: 1;
+      min-width: 0;
+
+      .titleMain {
+        font-size: 40px;
+        font-weight: 800;
+        line-height: 1.25;
+        color: #1a1a1a;
+        margin: 0 0 8px;
+        position: relative;
+        outline: none;
+        word-break: break-word;
+
+        &:empty::before {
+          content: attr(data-placeholder);
+          color: #d9d9d9;
+          font-weight: 500;
+        }
+      }
+
+      .metaRow {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #8c8c8c;
+        font-size: 13px;
+        line-height: 1.5;
+        user-select: none;
+        -webkit-user-select: none;
+        pointer-events: none; // 完全屏蔽点击，防止光标出现在作者/时间上
+
+        .metaItem {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+
+          .metaIco {
+            font-size: 13px;
+            opacity: 0.8;
+          }
+        }
+
+        .dotSep {
+          width: 3px;
+          height: 3px;
+          border-radius: 50%;
+          background: #d9d9d9;
+          flex-shrink: 0;
+        }
+      }
+    }
+  }
+}

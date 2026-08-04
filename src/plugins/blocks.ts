@@ -5,11 +5,35 @@ interface ToggleBlockOptions {
   level?: number;
 }
 
+/**
+ * 判断当前选区是否包含 HEADING_TITLE 独立标题块
+ * —— 独立标题块不能通过 FloatBar / DocBar 进行插件类型切换
+ */
+const hasHeadingTitle = (editor: Editor): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+  const nodes = Array.from(
+    (editor as any).nodes({
+      at: (editor as any).unhangRange(selection),
+      match: (n: unknown) =>
+        !(n as any).isEditor &&
+        Element.isElement(n) &&
+        (n as any).type === BlockElementType.HEADING_TITLE,
+    }),
+  );
+  return nodes.length > 0;
+};
+
 export const toggleBlock = (
   editor: Editor,
   format: BlockElementType,
   options?: ToggleBlockOptions,
 ) => {
+  // 规则1：目标是 HEADING_TITLE 时不允许（只能通过初始化或normalize保证唯一）
+  if (format === BlockElementType.HEADING_TITLE) return;
+  // 规则2：当前选区在 HEADING_TITLE 上时，禁止切换为其他块
+  if (hasHeadingTitle(editor)) return;
+
   const isActive = isBlockActive(editor, format, options);
 
   if (format === BlockElementType.HEADING && options?.level) {

@@ -1,4 +1,5 @@
 export const BlockElementType = {
+  HEADING_TITLE: 'heading-title',
   PARAGRAPH: 'paragraph',
   HEADING: 'heading',
   BLOCKQUOTE: 'blockquote',

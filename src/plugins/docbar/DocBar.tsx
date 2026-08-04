@@ -131,13 +131,28 @@ interface IconConfig {
   props?: { level?: number };
 }
 
+const TitleIcon = ({ color, size = 14 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+    <text x="12" y="17" fontSize="12" fill={color} textAnchor="middle" fontWeight="bold">
+      T
+    </text>
+  </svg>
+);
+
 const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean): IconConfig => {
   // 当标题或段落为空时，显示加号图标
-  if (isEmpty && (type === BlockElementType.HEADING || type === BlockElementType.PARAGRAPH)) {
+  if (
+    isEmpty &&
+    (type === BlockElementType.HEADING ||
+      type === BlockElementType.HEADING_TITLE ||
+      type === BlockElementType.PARAGRAPH)
+  ) {
     return { component: EmptyIcon };
   }
 
   switch (type) {
+    case BlockElementType.HEADING_TITLE:
+      return { component: TitleIcon };
     case BlockElementType.HEADING:
       return {
         component: HeadingIcon,
