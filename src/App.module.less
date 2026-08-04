@@ -29,5 +29,12 @@
 
 .main {
   flex: 1;
-  padding: 24px;
+  padding: 24px 24px 24px 240px; // 左侧为目录留出空间
+}
+
+// 小屏幕时恢复默认 padding
+@media (max-width: 1199px) {
+  .main {
+    padding: 24px;
+  }
 }

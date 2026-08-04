@@ -1,19 +1,16 @@
-// 回到顶部按钮 - 可爱熊猫风格
+// 回到顶部按钮 - 简洁风格
 
 .button {
   position: fixed;
   right: 32px;
   bottom: 32px;
-  width: 64px;
-  height: 64px;
-  border: none;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 
-    0 4px 20px rgba(0, 0, 0, 0.12),
-    0 0 0 1px rgba(255, 255, 255, 0.8) inset;
+  width: 40px;
+  height: 40px;
+  border: 1px solid @border-color;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: @shadow-sm;
+  color: @text-secondary;
   cursor: pointer;
   display: flex;
   align-items: center;
@@ -22,28 +19,24 @@
   padding: 0;
   outline: none;
 
-  // 初始状态
   opacity: 0;
-  transform: scale(0.5) translateY(30px);
+  transform: scale(0.6) translateY(10px);
   pointer-events: none;
   transition: 
-    opacity 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94),
-    transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1),
-    box-shadow 0.25s ease;
+    opacity 0.25s ease,
+    transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
 
   &:hover {
-    box-shadow: 
-      0 8px 28px rgba(0, 0, 0, 0.18),
-      0 0 0 1px rgba(255, 255, 255, 0.8) inset;
-    transform: scale(1.08) translateY(-5px);
-
-    .panda {
-      animation: panda-idle 2.5s ease infinite;
-    }
+    color: var(--theme-primary);
+    border-color: var(--theme-primary);
+    box-shadow: @shadow-md;
   }
 
   &:active {
-    transform: scale(0.92) translateY(2px);
+    transform: scale(0.95);
   }
 }
 
@@ -51,64 +44,4 @@
   opacity: 1;
   transform: scale(1) translateY(0);
   pointer-events: auto;
-}
-
-.scrolling {
-  .panda {
-    animation: panda-wave 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-  }
-
-  .pupilLeft,
-  .pupilRight {
-    animation: pupil-up 0.6s ease;
-  }
-}
-
-.panda {
-  transition: transform 0.2s ease;
-  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.08));
-}
-
-.pupilLeft,
-.pupilRight {
-  transition: cy 0.2s ease;
-}
-
-// 悬停时熊猫轻微呼吸
-@keyframes panda-idle {
-  0%, 100% {
-    transform: translateY(0) scale(1);
-  }
-  50% {
-    transform: translateY(-1.5px) scale(1.02);
-  }
-}
-
-// 点击时熊猫挥手/飞起来
-@keyframes panda-wave {
-  0% {
-    transform: translateY(0) scale(1);
-  }
-  25% {
-    transform: translateY(-14px) scale(1.08);
-  }
-  50% {
-    transform: translateY(-6px) scale(1.04);
-  }
-  75% {
-    transform: translateY(-10px) scale(1.06);
-  }
-  100% {
-    transform: translateY(0) scale(1);
-  }
-}
-
-// 瞳孔向上
-@keyframes pupil-up {
-  0%, 100% {
-    cy: 52;
-  }
-  50% {
-    cy: 49;
-  }
 }
