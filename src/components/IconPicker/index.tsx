@@ -1,23 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { Search, X } from 'lucide-react';
-import * as LUCIDE from 'lucide-react';
-import {
-  EMOJI_ITEMS,
-  EMOJI_CATEGORIES,
-  LUCIDE_ITEMS,
-  LUCIDE_CATEGORIES,
-  LUCIDE_KEYS,
-  type IconItem,
-  type IconKind,
-} from './icon-lib';
+import Picker from '@emoji-mart/react';
+import data from '@emoji-mart/data';
 import styles from './IconPicker.module.less';
 
-export type { IconKind, IconItem };
+// ============================================================
+// IconPicker - 基于 @emoji-mart v5 的表情图标选择器
+// 对外接口保持 { kind, value } 结构以兼容旧数据
+// ============================================================
+
+export type IconKind = 'emoji';
 
 export interface IconPickerValue {
-  kind: IconKind;
-  /** emoji: 原字符；lucide: 组件名（如 Home） */
+  kind: 'emoji';
+  /** emoji 字符（native） */
   value: string;
 }
 
@@ -38,73 +34,70 @@ export interface IconPickerProps {
   zIndex?: number;
 }
 
-// ---------- 最近使用（localStorage） ----------
-const readRecent = (storageKey: string): IconPickerValue[] => {
+// ---------- 最近使用（localStorage，按 emoji id 存储） ----------
+const RECENT_MAX = 16;
+
+const readRecent = (storageKey?: string): string[] => {
+  if (!storageKey) return [];
   try {
     const raw = localStorage.getItem(storageKey);
     if (!raw) return [];
     const arr = JSON.parse(raw);
-    return Array.isArray(arr) ? arr.slice(0, 16) : [];
+    return Array.isArray(arr) ? arr.slice(0, RECENT_MAX) : [];
   } catch {
     return [];
   }
 };
-const writeRecent = (storageKey: string, v: IconPickerValue[]) => {
+
+const writeRecent = (storageKey: string | undefined, list: string[]) => {
+  if (!storageKey) return;
   try {
-    localStorage.setItem(storageKey, JSON.stringify(v.slice(0, 16)));
+    localStorage.setItem(storageKey, JSON.stringify(list.slice(0, RECENT_MAX)));
   } catch {
     /* ignore */
   }
 };
-const matchesValue = (a: IconPickerValue, b: IconPickerValue) =>
-  a.kind === b.kind && a.value === b.value;
-const pushRecent = (
-  list: IconPickerValue[],
-  item: IconPickerValue,
-  max = 16,
-): IconPickerValue[] => {
-  const filtered = list.filter((x) => !matchesValue(x, item));
-  return [item, ...filtered].slice(0, max);
+
+// ---------- 颜色转换 ----------
+/** hex (#1890ff) → rgb triplet "24 144 255" */
+const hexToRgb = (hex: string): string => {
+  const h = hex.replace('#', '');
+  const r = parseInt(h.substring(0, 2), 16);
+  const g = parseInt(h.substring(2, 4), 16);
+  const b = parseInt(h.substring(4, 6), 16);
+  return `${r}, ${g}, ${b}`;
 };
 
 // ---------- 渲染工具 ----------
-function LucideIconByName({
-  name,
-  size = 20,
-  color,
-}: {
-  name: string;
-  size?: number;
-  color?: string;
-}) {
-  const Comp = (LUCIDE as unknown as Record<string, React.ComponentType<any>>)[name];
-  if (!Comp || typeof Comp !== 'function') return null;
-  return <Comp width={size} height={size} color={color} />;
+export function renderIconValue(val: IconPickerValue | null | undefined, size = 20) {
+  if (!val || val.kind !== 'emoji' || !val.value) return null;
+  return (
+    <span
+      style={{
+        fontSize: Math.round(size * 1.1),
+        lineHeight: 1,
+        display: 'inline-flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      {val.value}
+    </span>
+  );
 }
 
-export function renderIconValue(val: IconPickerValue, size = 20, color = '#434343') {
-  if (val.kind === 'emoji') {
-    return (
-      <span
-        style={{
-          fontSize: Math.round(size * 1.1),
-          lineHeight: 1,
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        }}
-      >
-        {val.value}
-      </span>
-    );
-  }
-  return <LucideIconByName name={val.value} size={size} color={color} />;
-}
+// ---------- 布局常量（与 less 中容器宽度匹配） ----------
+const EMOJI_BUTTON_SIZE = 36;
+const PER_LINE = 7;
+/** 容器宽度 = 网格宽 + 内边距(24) + 侧边导航宽(16) = 7*36+24+16 = 292 */
+const PICKER_WIDTH = PER_LINE * EMOJI_BUTTON_SIZE + 24 + 16;
+const PICKER_HEIGHT = 440;
 
+// ---------- 定位 ----------
 const calcPosition = (
   anchor: HTMLElement | null,
-  width = 320,
-  height = 360,
+  width = PICKER_WIDTH,
+  height = PICKER_HEIGHT,
 ): { top: number; left: number } => {
   if (!anchor) return { top: 0, left: 0 };
   const rect = anchor.getBoundingClientRect();
@@ -117,18 +110,14 @@ const calcPosition = (
   if (left + width > window.innerWidth + window.scrollX - 12) {
     left = window.innerWidth + window.scrollX - width - 12;
   }
+  if (left < 12) left = 12;
   return { top, left };
 };
 
 export default function IconPicker(props: IconPickerProps) {
   const { anchorEl, value, onSelect, onRemove, onClose, recentStorageKey, zIndex = 10002 } = props;
 
-  const [tab, setTab] = useState<IconKind>('emoji');
-  const [keyword, setKeyword] = useState('');
-  const [category, setCategory] = useState<string>('all');
-  const [recent, setRecent] = useState<IconPickerValue[]>(() =>
-    recentStorageKey ? readRecent(recentStorageKey) : [],
-  );
+  const [recent, setRecent] = useState<string[]>(() => readRecent(recentStorageKey));
   const [pos, setPos] = useState(() => calcPosition(anchorEl));
   const pickerRef = useRef<HTMLDivElement>(null);
 
@@ -143,8 +132,7 @@ export default function IconPicker(props: IconPickerProps) {
     };
   }, [anchorEl]);
 
-  // 点击外部关闭：使用 click 事件，而非 mousedown
-  // —— mousedown 可能被按钮的 preventDefault + stopPropagation 阻断
+  // 点击外部关闭
   useEffect(() => {
     if (!pickerRef.current) return;
     const onClick = (e: MouseEvent) => {
@@ -173,155 +161,111 @@ export default function IconPicker(props: IconPickerProps) {
     return () => document.removeEventListener('keydown', onKey);
   }, [onClose]);
 
-  const categories = useMemo(() => (tab === 'emoji' ? EMOJI_CATEGORIES : LUCIDE_CATEGORIES), [tab]);
-  const rawItems = useMemo(() => (tab === 'emoji' ? EMOJI_ITEMS : LUCIDE_ITEMS), [tab]);
-
-  const items = useMemo(() => {
-    const kw = keyword.trim().toLowerCase();
-    let list = rawItems;
-    if (category !== 'all') list = list.filter((it) => it.category === category);
-    if (kw) list = list.filter((it) => it.searchable.includes(kw));
-    return list;
-  }, [rawItems, keyword, category]);
-
+  // 主题色联动：将 --theme-primary (hex) 转为 --rgb-accent (rgb triplet) 供 emoji-mart 使用
   useEffect(() => {
-    setCategory('all');
-    setKeyword('');
-  }, [tab]);
+    const onThemeChange = () => {
+      const hex = getComputedStyle(document.documentElement)
+        .getPropertyValue('--theme-primary')
+        .trim();
+      if (!hex) return;
+      const rgb = hexToRgb(hex);
+      if (pickerRef.current) {
+        pickerRef.current.style.setProperty('--rgb-accent', rgb);
+      }
+    };
+    onThemeChange();
+    // 监听主题色变化
+    const observer = new MutationObserver(onThemeChange);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['style'] });
+    return () => observer.disconnect();
+  }, []);
 
-  const handleSelect = (it: IconItem) => {
-    const v: IconPickerValue = { kind: it.kind, value: it.key };
+  // 自定义 data：插入"最近"分类，过滤掉 flags
+  const customData = useMemo(() => {
+    if (recent.length === 0) return data;
+    const newData: any = { ...(data as any) };
+    const allEmojis = (data as any).emojis as Record<string, { id: string }>;
+    const recentIds = recent
+      .map((native) => {
+        const found = Object.values(allEmojis).find((e: any) => e.native === native);
+        return found ? found.id : null;
+      })
+      .filter(Boolean);
+    if (recentIds.length === 0) return data;
+    newData.categories = [
+      { id: 'recent', name: '最近', emojis: recentIds },
+      ...(data as any).categories.filter((c: any) => c.id !== 'flags'),
+    ];
+    return newData;
+  }, [recent]);
+
+  const handleEmojiSelect = (emoji: any) => {
+    const v: IconPickerValue = { kind: 'emoji', value: emoji.native };
     onSelect(v);
-    if (recentStorageKey) {
-      const next = pushRecent(recent, v, 16);
-      setRecent(next);
-      writeRecent(recentStorageKey, next);
-    }
-  };
-
-  const pickerActive = (it: IconItem) =>
-    !!value && value.kind === it.kind && value.value === it.key;
-
-  const showRecent = tab === 'emoji' && category === 'all' && !keyword && recent.length > 0;
-
-  const renderItem = (it: IconItem) => {
-    const active = pickerActive(it);
-    return (
-      <button
-        key={`${it.kind}-${it.key}`}
-        type="button"
-        className={`${styles.iconItem} ${active ? styles.active : ''}`}
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={() => handleSelect(it)}
-      >
-        <span className={styles.tooltip}>
-          {it.kind === 'lucide' ? it.key : it.searchable.split(' ')[0]}
-        </span>
-        {it.kind === 'emoji' ? (
-          <span style={{ fontSize: 18, lineHeight: 1 }}>{it.key}</span>
-        ) : (
-          <LucideIconByName name={it.key} size={20} />
-        )}
-      </button>
-    );
+    const next = [emoji.native, ...recent.filter((e) => e !== emoji.native)].slice(0, RECENT_MAX);
+    setRecent(next);
+    writeRecent(recentStorageKey, next);
   };
 
   const node = (
     <div
       ref={pickerRef}
       className={styles.iconPicker}
-      style={{ position: 'absolute', top: pos.top, left: pos.left, zIndex }}
+      style={{
+        position: 'absolute',
+        top: pos.top,
+        left: pos.left,
+        zIndex,
+        width: PICKER_WIDTH,
+      }}
+      onMouseDown={(e) => e.stopPropagation()}
     >
-      {/* Tab + 移除 */}
-      <div className={styles.tabBar}>
-        <div className={styles.tabGroup}>
-          <div
-            className={`${styles.tabBtn} ${tab === 'emoji' ? styles.tabBtnActive : ''}`}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setTab('emoji')}
-          >
-            表情符号
-          </div>
-          <div
-            className={`${styles.tabBtn} ${tab === 'lucide' ? styles.tabBtnActive : ''}`}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setTab('lucide')}
-          >
-            图标
-          </div>
-        </div>
+      <div className={styles.header}>
+        <span className={styles.title}>选择图标</span>
         {!!value && !!onRemove && (
           <button
             type="button"
             className={styles.removeBtn}
             onMouseDown={(e) => e.preventDefault()}
-            onClick={onRemove}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove();
+            }}
           >
-            <X size={14} />
             移除
           </button>
         )}
       </div>
-
-      {/* 搜索 */}
-      <div className={styles.searchBar}>
-        <Search className={styles.searchIcon} size={16} />
-        <input placeholder="搜索" value={keyword} onChange={(e) => setKeyword(e.target.value)} />
-      </div>
-
-      {/* 分类 */}
-      <div className={styles.categoryTabs}>
-        {categories.map((c) => (
-          <span
-            key={c.key}
-            className={`${styles.tab} ${category === c.key ? styles.active : ''}`}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => setCategory(c.key)}
-          >
-            {c.label}
-          </span>
-        ))}
-      </div>
-
-      {/* 最近使用 */}
-      {showRecent && (
-        <>
-          <div className={styles.sectionTitle}>最近</div>
-          <div className={styles.iconGrid}>
-            {recent.slice(0, 7).map((v) => {
-              const active = !!value && value.kind === v.kind && value.value === v.value;
-              return (
-                <button
-                  key={`recent-${v.kind}-${v.value}`}
-                  type="button"
-                  className={`${styles.iconItem} ${active ? styles.active : ''}`}
-                  onMouseDown={(e) => e.preventDefault()}
-                  onClick={() => onSelect(v)}
-                >
-                  {v.kind === 'emoji' ? (
-                    <span style={{ fontSize: 18, lineHeight: 1 }}>{v.value}</span>
-                  ) : (
-                    <LucideIconByName name={v.value} size={20} />
-                  )}
-                </button>
-              );
-            })}
-          </div>
-          <div className={styles.sectionTitle}>表情符号</div>
-        </>
-      )}
-
-      {/* 网格 */}
-      {items.length > 0 ? (
-        <div className={styles.iconGrid}>{items.map(renderItem)}</div>
-      ) : (
-        <div className={styles.empty}>未找到匹配项</div>
-      )}
+      <Picker
+        data={customData}
+        onEmojiSelect={handleEmojiSelect}
+        theme="light"
+        previewPosition="none"
+        skinTonePosition="none"
+        searchPosition="sticky"
+        maxFrequentRows={0}
+        emojiButtonSize={EMOJI_BUTTON_SIZE}
+        emojiSize={24}
+        navPosition="bottom"
+        perLine={PER_LINE}
+        i18n={{
+          search: '搜索',
+          notfound: '未找到',
+          categories: {
+            recent: '最近',
+            people: '表情与人物',
+            nature: '动物与自然',
+            foods: '食物与饮料',
+            activity: '活动',
+            places: '旅行与地点',
+            objects: '物体',
+            symbols: '符号',
+            flags: '旗帜',
+          },
+        }}
+      />
     </div>
   );
-
-  // 避免未使用警告
-  void LUCIDE_KEYS.length;
 
   return createPortal(node, document.body);
 }

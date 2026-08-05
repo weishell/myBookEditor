@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Transforms } from 'slate';
 import { useSlateStatic, ReactEditor } from 'slate-react';
-import { FileImage } from 'lucide-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { BuiltInCovers, type CoverItem } from './covers';
@@ -208,7 +207,7 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <FileImage size={16} />
+          <span style={{ fontSize: 16, lineHeight: 1, display: 'inline-flex' }}>🖼️</span>
           <span>{attrs.coverUrl ? '更换封面' : '添加封面'}</span>
           {attrs.coverUrl && (
             <span

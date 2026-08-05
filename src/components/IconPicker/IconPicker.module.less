@@ -1,238 +1,127 @@
+// IconPicker 组件样式（基于 @emoji-mart v5）
+// emoji-mart v5 使用 CSS 变量 --rgb-accent 控制主题色
+// 通过 MutationObserver 监听 --theme-primary 变化并同步到 --rgb-accent
+
 .iconPicker {
   background: #fff;
-  border: 1px solid #e8e8e8;
   border-radius: 10px;
   box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
-  padding: 6px 8px 8px;
-  width: 320px;
+  padding: 0;
+  width: 292px;
   z-index: 10002;
   box-sizing: border-box;
+  overflow: hidden;
 
-  .tabBar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 4px 4px 8px;
-    border-bottom: 1px solid #f0f0f0;
-    margin-bottom: 10px;
+  // emoji-mart v5 的 #root 是主容器，使用 flex 布局
+  :global(#root) {
+    width: 100% !important;
+  }
 
-    .tabGroup {
-      display: inline-flex;
-      gap: 2px;
+  // 覆盖 emoji-mart 默认内边距，让网格填满容器
+  :global(.padding) {
+    padding: 10px !important;
+  }
 
-      .tabBtn {
-        padding: 4px 12px;
-        border-radius: 6px;
-        font-size: 13px;
-        color: #595959;
-        cursor: pointer;
-        user-select: none;
-        transition: background 0.15s;
-        position: relative;
+  // 网格容器零边距，消除右侧空白
+  :global(.scroll) {
+    padding-right: 0 !important;
+  }
 
-        &:hover {
-          background: #f5f5f5;
-          color: #262626;
-        }
-      }
+  // 行容器零右边距
+  :global(.row) {
+    width: 100% !important;
+  }
 
-      .tabBtnActive {
-        color: var(--theme-primary, #1890ff);
-        font-weight: 600;
-
-        &::after {
-          content: '';
-          position: absolute;
-          left: 12px;
-          right: 12px;
-          bottom: -9px;
-          height: 2px;
-          background: var(--theme-primary, #1890ff);
-          border-radius: 2px;
-        }
-      }
+  // emoji 按钮背景色：hover/选中态跟随主题色
+  :global(.category button) {
+    .background {
+      background-color: var(--em-color-border) !important;
+      transition: opacity 0.12s ease;
     }
 
-    .removeBtn {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 12px;
-      color: #8c8c8c;
-      padding: 3px 8px;
-      border-radius: 6px;
-      background: transparent;
-      border: none;
-      cursor: pointer;
-      transition: all 0.15s;
+    &:hover .background {
+      background-color: color-mix(in srgb, rgb(var(--em-rgb-accent)) 15%, transparent) !important;
+      opacity: 1 !important;
+    }
 
-      &:hover {
-        background: #fff1f0;
-        color: #ff4d4f;
-      }
+    &[aria-selected] .background {
+      background-color: color-mix(in srgb, rgb(var(--em-rgb-accent)) 25%, transparent) !important;
+      opacity: 1 !important;
     }
   }
 
-  .searchBar {
-    position: relative;
-    margin-bottom: 10px;
-
-    .searchIcon {
-      position: absolute;
-      left: 10px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: #bfbfbf;
-      pointer-events: none;
-    }
-
-    input {
-      width: 100%;
-      height: 32px;
-      padding: 0 10px 0 32px;
-      border: 1px solid #e8e8e8;
-      border-radius: 6px;
-      font-size: 13px;
-      outline: none;
-      transition: border-color 0.15s;
-      box-sizing: border-box;
-      background: #fafafa;
-
-      &:focus {
-        border-color: var(--theme-primary, #1890ff);
-        background: #fff;
-      }
-
-      &::placeholder {
-        color: #bfbfbf;
-      }
-    }
+  // 分类标题
+  :global(.sticky) {
+    background-color: rgba(var(--em-rgb-background), 0.95) !important;
+    color: var(--color-b) !important;
+    font-weight: 600;
+    padding: 6px 10px !important;
+    font-size: 12px;
   }
 
-  .categoryTabs {
-    display: flex;
-    gap: 6px;
-    overflow-x: auto;
-    margin-bottom: 10px;
-    padding-bottom: 4px;
-
-    .tab {
-      flex-shrink: 0;
-      padding: 3px 10px;
-      font-size: 12px;
-      border-radius: 12px;
-      cursor: pointer;
-      color: #666;
-      background: #f5f5f5;
-      white-space: nowrap;
-      transition: all 0.15s;
-      user-select: none;
-
-      &:hover {
-        background: #e6f4ff;
-        color: var(--theme-primary, #1890ff);
-      }
-
-      &.active {
-        background: var(--theme-primary, #1890ff);
-        color: #fff;
-      }
-    }
-
-    &::-webkit-scrollbar {
-      height: 3px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: #d9d9d9;
-      border-radius: 3px;
-    }
+  // 导航栏（底部）：激活指示器用主题色
+  :global(#nav .bar) {
+    background-color: rgb(var(--em-rgb-accent)) !important;
   }
 
-  .sectionTitle {
-    font-size: 11px;
-    color: #8c8c8c;
-    margin: 4px 2px 6px;
-    padding-left: 4px;
-    font-weight: 500;
+  :global(#nav button[aria-selected]) {
+    color: rgb(var(--em-rgb-accent)) !important;
   }
 
-  .iconGrid {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 4px;
-    max-height: 220px;
-    overflow-y: auto;
-    padding: 2px;
-
-    &::-webkit-scrollbar {
-      width: 6px;
-    }
-    &::-webkit-scrollbar-thumb {
-      background: #d9d9d9;
-      border-radius: 3px;
-    }
-
-    .iconItem {
-      position: relative;
-      width: 100%;
-      aspect-ratio: 1 / 1;
-      border-radius: 6px;
-      border: 1.5px solid transparent;
-      background: #fafafa;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.15s;
-      color: #434343;
-      padding: 0;
-      outline: none;
-
-      svg {
-        width: 20px;
-        height: 20px;
-      }
-
-      &:hover {
-        background: #e6f4ff;
-        border-color: var(--theme-primary, #1890ff);
-        color: var(--theme-primary, #1890ff);
-        transform: translateY(-1px);
-      }
-
-      &.active {
-        background: #e6f4ff;
-        border-color: var(--theme-primary, #1890ff);
-        color: var(--theme-primary, #1890ff);
-      }
-
-      .tooltip {
-        position: absolute;
-        bottom: calc(100% + 4px);
-        left: 50%;
-        transform: translateX(-50%);
-        padding: 2px 8px;
-        background: rgba(0, 0, 0, 0.75);
-        color: #fff;
-        font-size: 11px;
-        border-radius: 4px;
-        white-space: nowrap;
-        opacity: 0;
-        pointer-events: none;
-        transition: opacity 0.15s;
-        z-index: 2;
-      }
-
-      &:hover .tooltip {
-        opacity: 1;
-      }
-    }
+  :global(#nav button:hover) {
+    color: var(--color-a) !important;
   }
 
-  .empty {
-    padding: 30px 0;
-    text-align: center;
-    color: #bfbfbf;
-    font-size: 13px;
+  // 搜索框：聚焦态主题色
+  :global(.search input[type="search"]:focus) {
+    box-shadow: inset 0 0 0 1px rgb(var(--em-rgb-accent)) !important;
+  }
+
+  // 皮肤色调选中态
+  :global(.skin-tone-button[aria-selected]) {
+    background-color: rgb(var(--em-rgb-accent)) !important;
+  }
+
+  // 滚动条
+  :global(.scroll::-webkit-scrollbar-thumb) {
+    background-color: var(--em-color-border) !important;
+    border-radius: 4px;
+  }
+
+  :global(.scroll::-webkit-scrollbar-thumb:hover) {
+    background-color: var(--em-color-border-over) !important;
+  }
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px 6px;
+  border-bottom: 1px solid #f0f0f0;
+  background: #fff;
+}
+
+.title {
+  font-size: 13px;
+  font-weight: 600;
+  color: #262626;
+}
+
+.removeBtn {
+  display: inline-flex;
+  align-items: center;
+  font-size: 12px;
+  color: #8c8c8c;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+
+  &:hover {
+    background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
+    color: var(--theme-primary);
   }
 }
