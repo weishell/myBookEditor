@@ -1,16 +1,22 @@
-// 删除/退格劫持插件（withDelete）
+// 删除劫持插件（withDelete）
 //
-// 用途：
-// 1. 拦截删除行为，保证文档始终至少保留一个 HEADING_TITLE 独立标题块
-//    —— 如果最后删除的是唯一剩下的标题块，则取消删除，保留空标题
-// 2. 保留后续自定义删除逻辑接入点
-import { Transforms, Node, Element, type Editor } from 'slate';
+// 两层防护（HEADING_TITLE 绝对不能被移除，只能清空文本）：
+//  1. apply 层（最底层 op 拦截）：所有 `remove_node` / `merge_node` / `split_node`
+//     只要触碰到"最后一个 HEADING_TITLE"就改写/跳过/清空内容，绝不真的把节点从 children 移除
+//  2. deleteBackward / deleteForward + 自定义 expanded 删除：上层精确控制
+//
+// 保证结果：
+//  - 全选删除 → 其他内容全部删除，标题清空 children 但 attrs(cover/author/icon/date) 保留
+//  - 标题内删字符 → 正常删单个字符，删空了节点还在（attrs 全在）
+//  - 局部选中删除 → 标题最多清空 children，不会被 remove
+import { Transforms, Node, Element, type Editor, type Path, Range } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 
-/**
- * 统计文档中 HEADING_TITLE 独立标题块的数量
- */
+const DEFAULT_TITLE_ATTRS = {
+  date: new Date().toISOString().slice(0, 10),
+};
+
 const countHeadingTitles = (editor: Editor): number => {
   let count = 0;
   try {
@@ -23,140 +29,280 @@ const countHeadingTitles = (editor: Editor): number => {
   return count;
 };
 
-/**
- * 判断当前即将被 backward / forward 删除的块是否是 HEADING_TITLE，
- * 并且它是整个文档中唯一的一个。
- *
- * 方法：在执行删除之前，尝试计算删除后文档中 HEADING_TITLE 数量是否会变成 0。
- * 如果会 → 直接取消删除（不执行原行为），必要时把该标题重置为空标题。
- */
-const wouldRemoveLastHeadingTitle = (
-  editor: Editor,
-  direction: 'backward' | 'forward',
-): boolean => {
-  const { selection } = editor;
-  if (!selection) return false;
-  const titleCount = countHeadingTitles(editor);
-  if (titleCount !== 1) return false;
-
-  // 找到当前位置所在/相邻的 HEADING_TITLE
+const findHeadingTitle = (editor: Editor): [any, Path] | null => {
   try {
-    const [currentNode] = Array.from(
-      (editor as any).nodes({
-        at: selection,
-        mode: 'lowest',
-        match: (n: any) =>
-          !(n as any).isEditor &&
-          Element.isElement(n) &&
-          (n as any).type === BlockElementType.HEADING_TITLE,
-      }),
-    );
-    if (!currentNode) {
-      // 不在标题上：检查 collapse 且在开头时 backward 会删除前一个元素，或末尾 forward 删除下一个
-      if (editor.selection && (editor.selection as any).isCollapsed) {
-        const [start] = (editor as any).edges(selection);
-        const prevEntry =
-          direction === 'backward'
-            ? (editor as any).previous({ at: start.path, mode: 'block' })
-            : (editor as any).next({ at: start.path, mode: 'block' });
-        if (
-          prevEntry &&
-          prevEntry[0] &&
-          (prevEntry[0] as any).type === BlockElementType.HEADING_TITLE
-        ) {
-          // 且空，可能会合并掉该标题
-          const block = prevEntry[0];
-          const text = Node.string(block);
-          const isStartOfBlock = (() => {
-            if (direction !== 'backward') return false;
-            try {
-              const [first] = (editor as any).positions(start.path, { at: start.path });
-              return first.offset === start.offset && start.path[start.path.length - 1] === 0;
-            } catch {
-              return false;
-            }
-          })();
-          if (text.length === 0 || isStartOfBlock) return true;
-        }
-      }
-      return false;
-    }
-
-    const node = (currentNode as any)[0];
-    const text = Node.string(node as any);
-
-    // 选区跨选时直接判定会删
-    if (!(editor.selection as any).isCollapsed) return true;
-
-    // 空标题下按 backspace / delete → 即将合并或移除
-    if (text.length === 0) return true;
-
-    // 光标在文本 0 偏移按 backspace → 即将与上一块合并（若上一块也空，可能删到）
-    if (direction === 'backward') {
-      const [start] = (editor as any).edges(selection);
-      if (start.offset === 0) return true;
-    }
-    // 光标在末尾按 delete → 与下一块合并
-    if (direction === 'forward') {
-      const [, end] = (editor as any).edges(selection);
-      if (end.offset === text.length) return true;
+    for (const entry of (editor as any).nodes({
+      at: [],
+      match: (n: any) => Element.isElement(n) && (n as any).type === BlockElementType.HEADING_TITLE,
+    })) {
+      return entry as [any, Path];
     }
   } catch {
-    return false;
+    /* ignore */
   }
-  return false;
+  return null;
 };
 
 /**
- * 兜底：归一化文档 —— 若文档中完全没有 HEADING_TITLE，则在最前面插入一个空标题
- * 用于：粘贴、全选删除、外部 JSON 导入后等场景
+ * 清空指定 HEADING_TITLE 的文本内容 → children: [{ text: '' }]
+ * 节点本身（Element 结构、id、attrs、type）一丝不动。
  */
-export const ensureHeadingTitle = (editor: Editor) => {
+const clearTitleChildren = (editor: Editor, path: Path) => {
+  try {
+    // 优先用 range(path) 删除文字；失败就直接 setNodes 重写 children
+    const r: any = (editor as any).range(path);
+    Transforms.delete(editor, { at: r });
+  } catch {
+    try {
+      Transforms.setNodes(editor, { children: [{ text: '' }] } as any, { at: path, voids: true });
+    } catch {
+      /* ignore */
+    }
+  }
+};
+
+/**
+ * 判断一个 path 是否指向 HEADING_TITLE 或其内部。
+ * 注意：remove_node 只在 path.length === 1 时移除顶层 block。
+ * 其他嵌套删除正常放行。
+ */
+// const isHeadingTitlePath = (editor: Editor, path: Path): boolean => {
+//   if (!path || path.length === 0) return false;
+//   const entry = findHeadingTitle(editor);
+//   if (!entry) return false;
+//   const titlePath = entry[1];
+//   return path[0] === titlePath[0];
+// };
+
+interface TitleInfo {
+  id: string;
+  attrs: any;
+}
+
+const saveTitleInfo = (editor: Editor): TitleInfo | null => {
+  const entry = findHeadingTitle(editor);
+  if (!entry) return null;
+  const [node] = entry;
+  return {
+    id: (node as any).id || uuidv4(),
+    attrs: { ...DEFAULT_TITLE_ATTRS, ...((node as any).attrs || {}) },
+  };
+};
+
+const restoreTitleIfMissing = (editor: Editor, saved: TitleInfo | null) => {
   if (countHeadingTitles(editor) > 0) return;
   try {
-    const emptyTitle: any = {
-      type: BlockElementType.HEADING_TITLE,
-      id: uuidv4(),
-      attrs: { date: new Date().toISOString().slice(0, 10) },
-      children: [{ text: '' }],
-    };
-    Transforms.insertNodes(editor, emptyTitle, { at: [0] });
+    Transforms.insertNodes(
+      editor,
+      {
+        type: BlockElementType.HEADING_TITLE,
+        id: saved?.id || uuidv4(),
+        attrs: saved?.attrs || { ...DEFAULT_TITLE_ATTRS },
+        children: [{ text: '' }],
+      } as any,
+      { at: [0] },
+    );
   } catch {
     /* ignore */
   }
 };
 
-export const withDelete = (editor: Editor) => {
-  const { deleteBackward, deleteForward, apply } = editor;
+export const ensureHeadingTitle = (editor: Editor) => {
+  restoreTitleIfMissing(editor, null);
+};
 
-  // 归一化：任何应用操作之后检查是否仍保留至少一个标题
+export const withDelete = (editor: Editor) => {
+  const { apply, deleteBackward, deleteForward } = editor;
+
+  // =========================================================
+  // apply 层：根拦截！所有 Slate 操作都走 apply，这里保证最后一个 HEADING_TITLE 不被删
+  // =========================================================
   editor.apply = (op: any) => {
+    const titleCount = countHeadingTitles(editor);
+    const hasOnlyOneTitle = titleCount === 1;
+    const titleEntry = hasOnlyOneTitle ? findHeadingTitle(editor) : null;
+    const titleIdx = titleEntry ? titleEntry[1][0] : -1;
+
+    switch (op.type) {
+      // ----------------- remove_node：最常见的删标题 op -----------------
+      case 'remove_node': {
+        // 只关心顶层 block（path.length === 1）
+        if (op.path && op.path.length === 1 && titleIdx >= 0 && op.path[0] === titleIdx) {
+          // ！！即将 remove 的就是最后一个 HEADING_TITLE！！
+          // 不执行 apply，而是清空它的 children（保留 attrs/id）
+          try {
+            clearTitleChildren(editor, titleEntry![1]);
+          } catch {
+            /* ignore */
+          }
+          return; // 跳过原 op
+        }
+        break;
+      }
+
+      // ----------------- merge_node：两个块合并 -----------------
+      // 如果位置在 titleIdx（即要把"标题"合并到下一块，或下一块合并到标题）→ 清空标题文本
+      case 'merge_node': {
+        if (op.path && op.path.length === 1 && titleIdx >= 0) {
+          // merge_node 的语义不直观，最保险：只要 merge 涉及标题，就取消合并，把标题清空为空
+          // 判断方式：path[0] === titleIdx 或 path[0] === titleIdx - 1
+          const i = op.path[0];
+          if (i === titleIdx || i === titleIdx - 1) {
+            try {
+              clearTitleChildren(editor, titleEntry![1]);
+            } catch {
+              /* ignore */
+            }
+            return; // 跳过 merge_node，避免标题被合并进其他节点
+          }
+        }
+        break;
+      }
+
+      // ----------------- split_node：拆分节点（标题末尾 Enter 可能触发）-----------------
+      // 一般不会删标题，但如果 split 触发后会导致后面 remove，我们也做轻量防护
+      case 'split_node': {
+        // 如果拆分的是 HEADING_TITLE 顶层节点：不拆（避免标题变成两个标题/段落，attrs 丢失）
+        if (op.path && op.path.length === 1 && titleIdx >= 0 && op.path[0] === titleIdx) {
+          // Enter 在标题末尾：正常 Slate 会 split 成第二段段落。
+          // 我们允许 split，但 split 后新的块不能是 HEADING_TITLE
+          // → 这里不拦截 split，让 withHistory/Enter 正常处理，
+          //   再通过 ensureHeadingTitle 把第一个块（如果被改成别的）纠正回来
+          // 只做简单保护：如果 properties 里 type === HEADING_TITLE，就不允许 split
+          if (op.properties && (op.properties as any).type === BlockElementType.HEADING_TITLE) {
+            // 一般 split_node.properties 是 { type: ... } 如果强行把标题一分为二为两个标题，就阻止
+            return;
+          }
+        }
+        break;
+      }
+    }
+
+    // 正常执行 op
     apply(op);
-    // 仅在可能影响结构的操作后兜底检查（插入节点 / 移除节点 / 合并节点 / 拆分节点 / 替换节点）
-    const structuralOps = new Set(['insert_node', 'remove_node', 'merge_node', 'split_node']);
-    if (structuralOps.has(op.type)) {
+  };
+
+  // =========================================================
+  // 自定义 expanded 删除（Ctrl+A / 鼠标多选）
+  // 精确控制：HEADING_TITLE 只清空文本，其他块整段移除
+  // =========================================================
+  const isBlockFullyInsideSelection = (blockIndex: number, sel: Range): boolean => {
+    const { anchor, focus } = sel as any;
+    const s = anchor.path[0] <= focus.path[0] ? anchor : focus;
+    const e = anchor.path[0] <= focus.path[0] ? focus : anchor;
+    const sIdx = s.path[0];
+    const eIdx = e.path[0];
+    if (blockIndex < sIdx || blockIndex > eIdx) return false;
+    if (blockIndex > sIdx && blockIndex < eIdx) return true;
+    if (blockIndex === sIdx && sIdx === eIdx) {
+      // 同一块 expanded 就认为覆盖整个 block
+      return true;
+    }
+    if (blockIndex === sIdx) {
+      return true;
+    }
+    return true;
+  };
+
+  const tryExpandedDelete = (): boolean => {
+    const { selection } = editor;
+    if (!selection) return false;
+    if (Range.isCollapsed(selection as any)) return false;
+
+    const titleEntry = findHeadingTitle(editor);
+    if (!titleEntry) {
       try {
-        ensureHeadingTitle(editor);
+        Transforms.delete(editor);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+    const [, titlePath] = titleEntry;
+    const titleIdx = titlePath[0];
+
+    const { anchor, focus } = selection as any;
+    const s = anchor.path[0] <= focus.path[0] ? anchor : focus;
+    const e = anchor.path[0] <= focus.path[0] ? focus : anchor;
+    const touchesTitle = s.path[0] <= titleIdx && e.path[0] >= titleIdx;
+
+    if (!touchesTitle) {
+      try {
+        Transforms.delete(editor);
+        return true;
+      } catch {
+        return false;
+      }
+    }
+
+    try {
+      const children = (editor as any).children as any[];
+      if (!children || children.length === 0) return false;
+
+      // 从后往前，移除所有"非标题 + 完全在选区内"的 block
+      // 即使 removeNodes 想把标题也带进来，下层 apply 的拦截也会兜住，但这里直接跳过更稳
+      for (let i = children.length - 1; i >= 0; i--) {
+        if (i === titleIdx) continue;
+        if (!isBlockFullyInsideSelection(i, selection as any)) continue;
+        try {
+          Transforms.removeNodes(editor, { at: [i], voids: true } as any);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      // 单独处理标题：清空到空文本
+      const titleNode = (editor as any).children[titleIdx];
+      const titleStr = titleNode ? Node.string(titleNode as any) : '';
+      const coversWholeTitle =
+        s.path[0] < titleIdx ||
+        e.path[0] > titleIdx ||
+        (s.path[0] === titleIdx &&
+          e.path[0] === titleIdx &&
+          s.offset === 0 &&
+          e.offset >= titleStr.length);
+
+      if (coversWholeTitle) {
+        clearTitleChildren(editor, titlePath);
+      } else {
+        try {
+          Transforms.delete(editor, { at: selection } as any);
+        } catch {
+          /* ignore */
+        }
+      }
+      return true;
+    } catch {
+      // fallback
+      const saved = saveTitleInfo(editor);
+      try {
+        Transforms.delete(editor);
       } catch {
         /* ignore */
       }
+      restoreTitleIfMissing(editor, saved);
+      return true;
     }
   };
 
-  editor.deleteBackward = (unit) => {
-    if (wouldRemoveLastHeadingTitle(editor, 'backward')) {
-      return; // 拒绝删除最后的独立标题
+  editor.deleteBackward = (unit: any) => {
+    const saved = saveTitleInfo(editor);
+    if (tryExpandedDelete()) {
+      restoreTitleIfMissing(editor, saved);
+      return;
     }
     deleteBackward(unit);
-    ensureHeadingTitle(editor);
+    restoreTitleIfMissing(editor, saved);
   };
 
-  editor.deleteForward = (unit) => {
-    if (wouldRemoveLastHeadingTitle(editor, 'forward')) {
-      return; // 拒绝删除最后的独立标题
+  editor.deleteForward = (unit: any) => {
+    const saved = saveTitleInfo(editor);
+    if (tryExpandedDelete()) {
+      restoreTitleIfMissing(editor, saved);
+      return;
     }
     deleteForward(unit);
-    ensureHeadingTitle(editor);
+    restoreTitleIfMissing(editor, saved);
   };
 
   return editor;
