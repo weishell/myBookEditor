@@ -50,6 +50,16 @@
   &:hover {
     background: #40a9ff;
   }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    background: @text-tertiary;
+
+    &:hover {
+      background: @text-tertiary;
+    }
+  }
 }
 
 .btnTool {
@@ -68,6 +78,16 @@
 
   &:hover {
     background-color: @bg-hover;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    color: @text-tertiary;
+
+    &:hover {
+      background-color: transparent;
+    }
   }
 }
 
@@ -99,6 +119,16 @@
 
   &:hover {
     background-color: @bg-hover;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    color: @text-tertiary;
+
+    &:hover {
+      background-color: transparent;
+    }
   }
 }
 

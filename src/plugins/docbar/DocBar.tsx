@@ -270,9 +270,14 @@ export const DocBar = () => {
       <div className={styles.iconButton}>
         <IconComponent color={iconColor} {...props} />
       </div>
-      <div className={styles.dragButton}>
+      <button
+        className={styles.dragButton}
+        disabled
+        title="拖拽排序功能开发中"
+        onClick={(e) => e.stopPropagation()}
+      >
         <DragIcon color="#999" />
-      </div>
+      </button>
     </div>
   );
 };

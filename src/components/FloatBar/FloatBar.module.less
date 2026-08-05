@@ -37,6 +37,17 @@
   &:hover {
     background-color: @bg-hover;
   }
+
+  &.disabled,
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    color: @text-tertiary;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
 }
 
 // 按钮文字标签

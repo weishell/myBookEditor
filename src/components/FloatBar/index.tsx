@@ -124,19 +124,22 @@ export default function FloatBar() {
     onClick,
     hasDropdown,
     className,
+    disabled,
   }: {
     icon: React.ReactNode;
     label?: string;
     onClick: () => void;
     hasDropdown?: boolean;
     className?: string;
+    disabled?: boolean;
   }) => (
     <button
       onClick={(e) => {
         e.stopPropagation();
-        onClick();
+        if (!disabled) onClick();
       }}
-      className={`${styles.toolButton} ${className || ''}`}
+      className={`${styles.toolButton} ${className || ''} ${disabled ? styles.disabled : ''}`}
+      disabled={disabled}
     >
       {icon}
       {label && <span className={styles.toolButtonLabel}>{label}</span>}
@@ -328,8 +331,8 @@ export default function FloatBar() {
             setVisible(false);
           }}
         />
-        <ToolButton icon="🔗" onClick={() => {}} />
-        <ToolButton icon="💬" onClick={() => {}} />
+        <ToolButton icon="🔗" onClick={() => {}} disabled />
+        <ToolButton icon="💬" onClick={() => {}} disabled />
       </div>
     </div>
   );

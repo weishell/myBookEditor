@@ -29,6 +29,7 @@
 .dragButton {
   width: 24px;
   height: 24px;
+  border: none;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -37,4 +38,9 @@
   box-shadow: @shadow-sm;
   transition: all 0.15s ease;
   cursor: move;
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+  }
 }

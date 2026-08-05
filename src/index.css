@@ -31,4 +31,14 @@ body {
   min-height: 100vh;
 }
 
+/* 选区颜色 - 跟随主题色，透明度较低保证可读性 */
+::selection {
+  background-color: color-mix(in srgb, var(--theme-primary) 28%, transparent);
+}
+
+/* 光标颜色 - 跟随主题色 */
+.caret-theme {
+  caret-color: var(--theme-primary);
+}
+
 
