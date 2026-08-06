@@ -1,11 +1,16 @@
 .container {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  // background-color: @bg-page;
+  background-color: @bg-page;
+  color: @text-primary;
+  transition: background-color 0.2s, color 0.2s;
 }
 
 .header {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -13,12 +18,14 @@
   background-color: @bg-base;
   border-bottom: 1px solid @border-color-light;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
 }
 
 .logo {
   font-size: 18px;
   font-weight: 600;
   color: @text-primary;
+  transition: color 0.2s;
 }
 
 .controls {
@@ -28,8 +35,11 @@
 }
 
 .main {
+  position: relative;
+  z-index: 1;
   flex: 1;
-  padding: 24px 240px; // 左右对称，内容区真正居中，左侧 240px 足够容纳目录(200px+24px间距)
+  padding: 24px 240px;
+  transition: background-color 0.2s;
 }
 
 // 小屏幕时恢复默认 padding
@@ -37,4 +47,9 @@
   .main {
     padding: 24px;
   }
+}
+
+// 暗黑模式下页面级额外背景
+:global(.dark-mode) .container {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
 }

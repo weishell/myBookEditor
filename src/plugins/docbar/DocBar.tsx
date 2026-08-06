@@ -188,8 +188,29 @@ export const DocBar = () => {
   const { openMenu, closeMenu, hoveringMenu } = useMenu();
   const { hasSelection } = useSelection();
   const [iconHovered, setIconHovered] = useState(false);
+  const [isScrolling, setIsScrolling] = useState(false);
   const timerRef = useRef<number | null>(null);
+  const scrollTimerRef = useRef<number | null>(null);
   const lastElementRef = useRef<typeof activeElement>(null);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolling(true);
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+      scrollTimerRef.current = window.setTimeout(() => {
+        setIsScrolling(false);
+      }, 200);
+    };
+    window.addEventListener('scroll', handleScroll, true);
+    return () => {
+      window.removeEventListener('scroll', handleScroll, true);
+      if (scrollTimerRef.current) {
+        clearTimeout(scrollTimerRef.current);
+      }
+    };
+  }, []);
 
   useEffect(() => {
     return () => {
@@ -241,7 +262,8 @@ export const DocBar = () => {
     };
   }, [activeElement, iconHovered, hoveringMenu, closeMenu]);
 
-  const shouldShow = (activeElement || iconHovered || hoveringMenu) && !hasSelection;
+  const shouldShow =
+    !isScrolling && (activeElement || iconHovered || hoveringMenu) && !hasSelection;
 
   const currentElement = activeElement || lastElementRef.current;
 

@@ -25,8 +25,9 @@ import { createKeyboardHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
 import { useEditorMode } from '@/context/EditorContext';
+import { useTheme } from '@/context/ThemeContext';
 import { renderElement } from './renderElement';
-import { renderLeaf } from './renderLeaf';
+import { RenderLeaf } from './renderLeaf';
 import { PAGE_WIDTH_NORMAL } from '@/enums';
 
 interface EditorProps {
@@ -35,6 +36,7 @@ interface EditorProps {
 
 export default function BookEditor({ readOnly = false }: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
+  const { isDarkMode } = useTheme();
   const editor = useMemo(
     () =>
       withDelete(
@@ -81,18 +83,19 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 maxWidth: PAGE_WIDTH_NORMAL,
                 margin: '0 auto',
                 padding: '40px 50px',
-                border: '1px solid #e8e8e8',
+                border: isDarkMode ? '1px solid var(--dm-border, #2b3240)' : '1px solid #e8e8e8',
                 borderRadius: '8px',
-                backgroundColor: '#fff',
+                backgroundColor: isDarkMode ? 'var(--dm-bg-base, #121721)' : '#fff',
                 minHeight: '500px',
                 pointerEvents: readOnly ? 'none' : 'auto',
                 fontFamily: globalFont,
+                transition: 'background-color 0.2s, border-color 0.2s',
               }}
             >
               <Editable
                 className="caret-theme"
                 renderElement={renderElement}
-                renderLeaf={renderLeaf}
+                renderLeaf={RenderLeaf}
                 placeholder="开始编写文档..."
                 style={{
                   minHeight: '500px',

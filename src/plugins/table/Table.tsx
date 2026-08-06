@@ -6,6 +6,8 @@ import type { CustomElement } from '@/core/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
 import { insertRow, insertColumn } from './table-operations';
+import { useTheme } from '@/context/ThemeContext';
+import { LIGHT_BG_PATTERN } from '@/core/renderLeaf';
 import styles from './Table.module.less';
 
 interface TableProps extends RenderElementProps {
@@ -33,6 +35,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     ref?: React.RefCallback<HTMLDivElement>;
   };
   const editor = useSlateStatic();
+  const { isDarkMode } = useTheme();
   const wrapperRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -57,7 +60,21 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   }, [isPinned]);
 
   const attrs = element.attrs as TableAttrs;
-  const { borderColor = '#d9d9d9', borderWidth = '1px' } = attrs || {};
+  const { borderColor: rawBorderColor = '#d9d9d9', borderWidth = '1px' } = attrs || {};
+  // 暗黑模式：默认浅色边框 → 柔和深色边框（LIGHT_BG_PATTERN 覆盖白→米白范围，额外兜底 #d9d9d9 等浅灰）
+  const borderColor = (() => {
+    if (!isDarkMode) return rawBorderColor;
+    const c = rawBorderColor.trim();
+    if (LIGHT_BG_PATTERN.test(c)) return '#2b3240';
+    if (
+      /^#(?:d9d9d9|dadada|dbdbdb|dcdcdc|dddddd|dedede|dfdfdf|e0e0e0|e1e1e1|e2e2e2|e3e3e3|e4e4e4|e5e5e5|e6e6e6|e7e7e7|e8e8e8|e9e9e9|eaeaea|ebebeb|ececec|ededed|eeeeee)$/i.test(
+        c,
+      )
+    ) {
+      return '#2b3240';
+    }
+    return rawBorderColor;
+  })();
 
   const rowCount = React.Children.count(children);
   const firstRow = React.Children.toArray(children)[0];

@@ -63,6 +63,7 @@ const DEFAULT_THEME: ThemeId = 'blue';
 interface ThemeContextType {
   theme: ThemeId;
   themeColor: string;
+  isDarkMode: boolean;
   setTheme: (theme: ThemeId) => void;
 }
 
@@ -75,11 +76,47 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     return THEME_PRESETS.find((t) => t.id === theme)?.color ?? '#1890ff';
   }, [theme]);
 
+  // 当 theme === 'black' 时进入暗黑模式
+  const isDarkMode = theme === 'black';
+
   useEffect(() => {
     document.documentElement.style.setProperty('--theme-primary', themeColor);
   }, [themeColor]);
 
-  const value = useMemo(() => ({ theme, themeColor, setTheme }), [theme, themeColor]);
+  // 暗黑模式：给 html 加 class，同步切换全局 CSS 变量（文字/背景/边框）
+  useEffect(() => {
+    const htmlEl = document.documentElement;
+    if (isDarkMode) {
+      htmlEl.classList.add('dark-mode');
+      htmlEl.style.setProperty('--dm-text-primary', '#e5e7eb');
+      htmlEl.style.setProperty('--dm-text-secondary', '#9ca3af');
+      htmlEl.style.setProperty('--dm-text-tertiary', '#6b7280');
+      htmlEl.style.setProperty('--dm-text-placeholder', '#4b5563');
+      htmlEl.style.setProperty('--dm-bg-base', '#121721');
+      htmlEl.style.setProperty('--dm-bg-subtle', '#0f141d');
+      htmlEl.style.setProperty('--dm-bg-hover', '#1e2532');
+      htmlEl.style.setProperty('--dm-bg-page', '#080b13');
+      htmlEl.style.setProperty('--dm-border', '#2b3240');
+      htmlEl.style.setProperty('--dm-border-light', '#202837');
+    } else {
+      htmlEl.classList.remove('dark-mode');
+      htmlEl.style.removeProperty('--dm-text-primary');
+      htmlEl.style.removeProperty('--dm-text-secondary');
+      htmlEl.style.removeProperty('--dm-text-tertiary');
+      htmlEl.style.removeProperty('--dm-text-placeholder');
+      htmlEl.style.removeProperty('--dm-bg-base');
+      htmlEl.style.removeProperty('--dm-bg-subtle');
+      htmlEl.style.removeProperty('--dm-bg-hover');
+      htmlEl.style.removeProperty('--dm-bg-page');
+      htmlEl.style.removeProperty('--dm-border');
+      htmlEl.style.removeProperty('--dm-border-light');
+    }
+  }, [isDarkMode]);
+
+  const value = useMemo(
+    () => ({ theme, themeColor, isDarkMode, setTheme }),
+    [theme, themeColor, isDarkMode],
+  );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
 }

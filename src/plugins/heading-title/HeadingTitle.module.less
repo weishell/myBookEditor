@@ -68,22 +68,47 @@
     background: #fff;
     border: 1px solid #e8e8e8;
     border-radius: 8px;
-    padding: 12px;
+    padding: 14px 16px;
     box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
-    width: 420px;
+    width: 500px;
+    max-height: 480px;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 
     .pickerTitle {
       font-size: 13px;
       color: #666;
       margin-bottom: 10px;
       font-weight: 500;
+      flex-shrink: 0;
     }
 
     .coverGrid {
       display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      overflow-y: auto;
+      flex: 1;
+      min-height: 0;
+      padding-right: 4px;
+
+      &::-webkit-scrollbar {
+        width: 5px;
+      }
+      &::-webkit-scrollbar-thumb {
+        background: #d9d9d9;
+        border-radius: 3px;
+      }
+      &::-webkit-scrollbar-track {
+        background: transparent;
+      }
+    }
+
+    .coverItemWrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
     }
 
     .coverItem {
@@ -93,6 +118,7 @@
       border: 2px solid transparent;
       transition: all 0.15s;
       aspect-ratio: 3 / 1;
+      width: 100%;
 
       img {
         width: 100%;
@@ -117,7 +143,7 @@
     .coverName {
       font-size: 11px;
       color: #999;
-      margin-top: 6px;
+      margin-top: 5px;
       text-align: center;
     }
 

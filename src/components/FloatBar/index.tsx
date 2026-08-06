@@ -89,19 +89,37 @@ export default function FloatBar() {
       }
     };
 
+    let scrollRafId: number | null = null;
+    const handleScroll = () => {
+      if (scrollRafId !== null) return;
+      scrollRafId = window.requestAnimationFrame(() => {
+        scrollRafId = null;
+        if (visible) {
+          calculatePosition();
+        }
+      });
+    };
+
     document.addEventListener('mouseup', handleMouseUp);
     document.addEventListener('selectionchange', handleSelectionChange);
     document.addEventListener('click', handleClick);
+    window.addEventListener('scroll', handleScroll, true);
+    window.addEventListener('resize', handleScroll);
 
     return () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('selectionchange', handleSelectionChange);
       document.removeEventListener('click', handleClick);
+      window.removeEventListener('scroll', handleScroll, true);
+      window.removeEventListener('resize', handleScroll);
       if (timerRef.current) {
         clearTimeout(timerRef.current);
       }
+      if (scrollRafId !== null) {
+        window.cancelAnimationFrame(scrollRafId);
+      }
     };
-  }, [calculatePosition]);
+  }, [calculatePosition, visible]);
 
   // 选区在 HEADING_TITLE 独立标题中：完全不显示 FloatBar（禁用所有格式化能力
   if (!visible || isSelectionInHeadingTitle(editor)) return null;

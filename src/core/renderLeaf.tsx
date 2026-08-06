@@ -1,5 +1,6 @@
 import type { RenderLeafProps } from 'slate-react';
 import { CODE_TOKEN_COLORS } from '@/utils/code-decoration';
+import { useTheme } from '@/context/ThemeContext';
 
 const TOKEN_COLOR_ENTRIES = Object.entries(CODE_TOKEN_COLORS).map(([tokenType, color]) => ({
   color,
@@ -23,8 +24,26 @@ const getArtTextStyle = (artTextData: string) => {
   }
 };
 
-export const renderLeaf = (props: RenderLeafProps) => {
+// 判断是否是"接近黑"的深色（暗黑模式下需要柔和化，避免黑底黑字）
+const DARK_TEXT_PATTERN =
+  /^#(?:000000|010101|020202|030303|040404|050505|060606|070707|080808|090909|0a0a0a|0b0b0b|0c0c0c|0d0d0d|0e0e0e|0f0f0f|101010|111111|121212|131313|141414|151515|161616|171717|181818|191919|1a1a1a|1b1b1b|1c1c1c|1d1d1d|1e1e1e|1f1f1f|202020|212121|222222|232323|242424|252525|262626|272727|282828|292929|2a2a2a|2b2b2b|2c2c2c|2d2d2d|2e2e2e|2f2f2f|303030|313131|323232|333333|343434|353535|363636|373737|383838|393939|3a3a3a|3b3b3b|3c3c3c|3d3d3d|3e3e3e|3f3f3f)$/i;
+
+// 判断是否是浅色背景（暗黑模式下和页面不协调的浅表头/白底单元格）
+const LIGHT_BG_PATTERN =
+  /^#(?:fff|fffff|ffffff|fefefe|fdfdfd|fcfcfc|fbfbfb|fafafa|f9f9f9|f8f8f8|f7f7f7|f6f6f6|f5f5f5|f4f4f4|f3f3f3|f2f2f2|f1f1f1|f0f0f0|efefef|eeeeee|ededed|ececec|ebebeb|eaeaea|e9e9e9|e8e8e8|e7e7e7|e6e6e6|e5e5e5)$/i;
+
+// 柔和白：暗黑模式下替换原深色/黑色文字
+const SOFT_WHITE = '#e5e7eb';
+// 柔和浅白：次一级（对应原 #333 这种默认字色）
+const SOFT_WHITE_SECONDARY = '#c8cdd6';
+// 暗黑模式下表头/白底单元格的深色柔和背景
+const DARK_CELL_BG = '#181f2c';
+
+export { DARK_TEXT_PATTERN, LIGHT_BG_PATTERN, SOFT_WHITE, SOFT_WHITE_SECONDARY, DARK_CELL_BG };
+
+export const RenderLeaf = (props: RenderLeafProps) => {
   const { attributes, children, leaf } = props;
+  const { isDarkMode } = useTheme();
 
   let codeColor: string | undefined;
   for (const entry of TOKEN_COLOR_ENTRIES) {
@@ -40,12 +59,19 @@ export const renderLeaf = (props: RenderLeafProps) => {
     style.fontFamily = (leaf as any).fontFamily;
   }
   // 用户手动设置的颜色优先级高于代码高亮
-  if ((leaf as any).color) {
-    style.color = (leaf as any).color;
+  const userColor = (leaf as any).color as string | undefined;
+  if (userColor) {
+    // 暗黑模式下：若用户选的是黑色/近黑色 → 换成柔和白，避免黑底黑字
+    if (isDarkMode && DARK_TEXT_PATTERN.test(userColor.trim())) {
+      style.color = SOFT_WHITE;
+    } else {
+      style.color = userColor;
+    }
   } else if (codeColor) {
     style.color = codeColor;
   } else {
-    style.color = '#333';
+    // 默认字色（非用户指定）——暗黑模式下柔和浅白
+    style.color = isDarkMode ? SOFT_WHITE_SECONDARY : '#333';
   }
   // 高亮背景色
   if ((leaf as any).highlight) {

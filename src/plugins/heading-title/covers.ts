@@ -179,7 +179,222 @@ const galaxySvg = `<?xml version="1.0" encoding="UTF-8"?>
   <text x="100" y="380" font-family="Arial, sans-serif" font-size="20" fill="#a5b4fc" opacity="0.8">记录每一个闪耀的灵感</text>
 </svg>`;
 
+// ===== 飞书风格封面 =====
+
+// 飞书蓝 - 几何线条
+const feishuBlueSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#3370FF;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#4E83FD;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsBlue)"/>
+  <g opacity="0.12" stroke="#fff" stroke-width="1.5" fill="none">
+    <path d="M0,320 Q300,200 600,280 T1200,240"/>
+    <path d="M0,280 Q300,160 600,240 T1200,200"/>
+    <path d="M0,240 Q300,120 600,200 T1200,160"/>
+  </g>
+  <g opacity="0.2">
+    <circle cx="950" cy="120" r="80" fill="#fff"/>
+    <circle cx="950" cy="120" r="60" fill="none" stroke="#fff" stroke-width="2"/>
+  </g>
+  <rect x="80" y="330" width="220" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="350" width="160" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书紫 - 流动渐变
+const feishuPurpleSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#7C3AED;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#A855F7;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EC4899;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsPurple)"/>
+  <g opacity="0.15" fill="#fff">
+    <circle cx="200" cy="80" r="120"/>
+    <circle cx="400" cy="200" r="90"/>
+    <circle cx="1050" cy="300" r="100"/>
+    <circle cx="900" cy="100" r="60"/>
+  </g>
+  <g opacity="0.1" stroke="#fff" stroke-width="1" fill="none">
+    <ellipse cx="600" cy="200" rx="500" ry="120"/>
+    <ellipse cx="600" cy="200" rx="500" ry="80"/>
+    <ellipse cx="600" cy="200" rx="500" ry="40"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="120" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书青 - 极简几何
+const feishuTealSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsTeal" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#0D9488;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#14B8A6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsTeal)"/>
+  <g opacity="0.1" fill="#fff">
+    <rect x="700" y="50" width="200" height="200" rx="16" transform="rotate(15 800 150)"/>
+    <rect x="850" y="100" width="120" height="120" rx="12" transform="rotate(-20 910 160)"/>
+  </g>
+  <g opacity="0.08" stroke="#fff" stroke-width="2" fill="none">
+    <circle cx="900" cy="180" r="100"/>
+    <circle cx="900" cy="180" r="70"/>
+    <circle cx="900" cy="180" r="40"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书橙 - 活力渐变
+const feishuOrangeSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsOrange" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#F97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#FB923C;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsOrange)"/>
+  <g opacity="0.15">
+    <path d="M800,50 L1000,200 L900,350 L700,200 Z" fill="#fff"/>
+  </g>
+  <g opacity="0.1" stroke="#fff" stroke-width="2" fill="none">
+    <path d="M800,50 L1000,200 L900,350 L700,200 Z"/>
+  </g>
+  <g opacity="0.2" fill="#fff">
+    <polygon points="950,100 970,140 1010,140 980,165 990,210 950,185 910,210 920,165 890,140 930,140"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书粉 - 柔和渐变
+const feishuPinkSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsPink" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#EC4899;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#F472B6;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsPink)"/>
+  <g opacity="0.12" fill="#fff">
+    <circle cx="950" cy="100" r="8"/>
+    <circle cx="1000" cy="150" r="12"/>
+    <circle cx="920" cy="180" r="6"/>
+    <circle cx="1050" cy="120" r="5"/>
+    <circle cx="980" cy="250" r="10"/>
+    <circle cx="930" cy="300" r="7"/>
+    <circle cx="1020" cy="280" r="4"/>
+  </g>
+  <g opacity="0.1" stroke="#fff" stroke-width="1" fill="none">
+    <path d="M850,80 Q950,120 900,200 Q850,280 950,320"/>
+    <path d="M1000,60 Q1100,120 1050,200 Q1000,280 1100,320"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书灰 - 科技质感
+const feishuDarkSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1F2937;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#374151;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsDark)"/>
+  <g opacity="0.15" stroke="#60A5FA" stroke-width="1" fill="none">
+    <line x1="0" y1="100" x2="1200" y2="100"/>
+    <line x1="0" y1="150" x2="1200" y2="150"/>
+    <line x1="0" y1="200" x2="1200" y2="200"/>
+    <line x1="0" y1="250" x2="1200" y2="250"/>
+    <line x1="0" y1="300" x2="1200" y2="300"/>
+  </g>
+  <g opacity="0.2" fill="#60A5FA">
+    <rect x="850" y="120" width="30" height="30" rx="4"/>
+    <rect x="900" y="160" width="30" height="30" rx="4"/>
+    <rect x="950" y="140" width="30" height="30" rx="4"/>
+    <rect x="1000" y="180" width="30" height="30" rx="4"/>
+    <rect x="920" y="200" width="30" height="30" rx="4"/>
+    <rect x="970" y="220" width="30" height="30" rx="4"/>
+  </g>
+  <g opacity="0.3" fill="#22D3EE">
+    <circle cx="1050" cy="100" r="3"/>
+    <circle cx="1080" cy="130" r="2"/>
+    <circle cx="1100" cy="80" r="2"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.4"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.25"/>
+</svg>`;
+
+// 飞书绿 - 自然清新
+const feishuGreenSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsGreen" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#10B981;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#34D399;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsGreen)"/>
+  <g opacity="0.12" stroke="#fff" stroke-width="1.5" fill="none">
+    <path d="M0,350 Q200,250 400,300 Q600,350 800,250 Q1000,150 1200,200"/>
+    <path d="M0,300 Q200,200 400,250 Q600,300 800,200 Q1000,100 1200,150"/>
+  </g>
+  <g opacity="0.15" fill="#fff">
+    <circle cx="200" cy="80" r="4"/>
+    <circle cx="350" cy="120" r="3"/>
+    <circle cx="500" cy="70" r="5"/>
+    <circle cx="700" cy="100" r="3"/>
+    <circle cx="850" cy="60" r="4"/>
+  </g>
+  <g opacity="0.1" stroke="#fff" stroke-width="1" fill="none">
+    <path d="M900,50 Q1050,100 1000,200 Q950,300 1100,350"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
+// 飞书彩虹 - 渐变多彩
+const feishuRainbowSvg = `<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 400">
+  <defs>
+    <linearGradient id="fsRb" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#6366F1;stop-opacity:1" />
+      <stop offset="25%" style="stop-color:#8B5CF6;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#EC4899;stop-opacity:1" />
+      <stop offset="75%" style="stop-color:#F97316;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#EAB308;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="400" fill="url(#fsRb)"/>
+  <g opacity="0.1" fill="#fff">
+    <path d="M0,200 Q300,100 600,200 T1200,200 L1200,400 L0,400 Z"/>
+    <path d="M0,250 Q300,150 600,250 T1200,250 L1200,400 L0,400 Z"/>
+  </g>
+  <g opacity="0.15" fill="#fff">
+    <circle cx="150" cy="80" r="6"/>
+    <circle cx="400" cy="100" r="4"/>
+    <circle cx="650" cy="70" r="8"/>
+    <circle cx="900" cy="110" r="5"/>
+    <circle cx="1100" cy="60" r="7"/>
+  </g>
+  <rect x="80" y="340" width="180" height="4" rx="2" fill="#fff" opacity="0.5"/>
+  <rect x="80" y="360" width="140" height="4" rx="2" fill="#fff" opacity="0.3"/>
+</svg>`;
+
 export const BuiltInCovers: CoverItem[] = [
+  // 原有封面
   {
     id: 'cover-vue',
     name: 'Vue',
@@ -227,6 +442,55 @@ export const BuiltInCovers: CoverItem[] = [
     name: '星空',
     url: svgToDataUrl(galaxySvg),
     tags: ['通用', '灵感'],
+  },
+  // 飞书风格封面
+  {
+    id: 'cover-feishu-blue',
+    name: '飞书蓝',
+    url: svgToDataUrl(feishuBlueSvg),
+    tags: ['飞书', '科技'],
+  },
+  {
+    id: 'cover-feishu-purple',
+    name: '飞书紫',
+    url: svgToDataUrl(feishuPurpleSvg),
+    tags: ['飞书', '创意'],
+  },
+  {
+    id: 'cover-feishu-teal',
+    name: '飞书青',
+    url: svgToDataUrl(feishuTealSvg),
+    tags: ['飞书', '极简'],
+  },
+  {
+    id: 'cover-feishu-orange',
+    name: '飞书橙',
+    url: svgToDataUrl(feishuOrangeSvg),
+    tags: ['飞书', '活力'],
+  },
+  {
+    id: 'cover-feishu-pink',
+    name: '飞书粉',
+    url: svgToDataUrl(feishuPinkSvg),
+    tags: ['飞书', '柔和'],
+  },
+  {
+    id: 'cover-feishu-dark',
+    name: '飞书灰',
+    url: svgToDataUrl(feishuDarkSvg),
+    tags: ['飞书', '科技'],
+  },
+  {
+    id: 'cover-feishu-green',
+    name: '飞书绿',
+    url: svgToDataUrl(feishuGreenSvg),
+    tags: ['飞书', '自然'],
+  },
+  {
+    id: 'cover-feishu-rainbow',
+    name: '飞书彩虹',
+    url: svgToDataUrl(feishuRainbowSvg),
+    tags: ['飞书', '多彩'],
   },
 ];
 

@@ -297,17 +297,77 @@ interface CoverPickerProps {
 
 function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPickerProps) {
   const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState(() => calcCoverPickerPos(anchorEl));
+  const [pos] = useState(() => calcCoverPickerPos(anchorEl));
+  const scrollStartRef = useRef({ x: 0, y: 0 });
 
+  // 锁定 body 滚动
   useEffect(() => {
-    const onScrollOrResize = () => setPos(calcCoverPickerPos(anchorEl));
-    window.addEventListener('scroll', onScrollOrResize, true);
-    window.addEventListener('resize', onScrollOrResize);
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
     return () => {
-      window.removeEventListener('scroll', onScrollOrResize, true);
-      window.removeEventListener('resize', onScrollOrResize);
+      document.body.style.overflow = prev;
     };
-  }, [anchorEl]);
+  }, []);
+
+  // 滚动监听：只阻止 body 上的 wheel/touchmove，允许弹框内部滚动
+  useEffect(() => {
+    const onWheel = (e: WheelEvent) => {
+      if (ref.current && ref.current.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    const onTouchMove = (e: TouchEvent) => {
+      if (ref.current && ref.current.contains(e.target as Node)) return;
+      e.preventDefault();
+    };
+    const onScrollCapture = (e: Event) => {
+      // 只有 scroll 发生在 window / document.body（页面滚）才关闭，
+      // 发生在弹框内部元素（coverGrid）上就不管
+      const target = e.target as HTMLElement | null;
+      if (!target) return;
+      if (ref.current && ref.current.contains(target)) return;
+      // 目标是根节点才触发关闭（即拖滚动条滚的是整页）
+      if (target === document.documentElement || target === document.body || target === window) {
+        onClose();
+      }
+    };
+    const onMouseDown = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (target === document.documentElement || target === document.body) {
+        const atRight = e.clientX >= window.innerWidth - 20;
+        const atBottom = e.clientY >= window.innerHeight - 20;
+        if (atRight || atBottom) {
+          scrollStartRef.current = { x: e.clientX, y: e.clientY };
+          const onMove = (ev: MouseEvent) => {
+            const dx = Math.abs(ev.clientX - scrollStartRef.current.x);
+            const dy = Math.abs(ev.clientY - scrollStartRef.current.y);
+            if (dx > 3 || dy > 3) {
+              onClose();
+              document.removeEventListener('mousemove', onMove);
+              document.removeEventListener('mouseup', onUp);
+            }
+          };
+          const onUp = () => {
+            document.removeEventListener('mousemove', onMove);
+            document.removeEventListener('mouseup', onUp);
+          };
+          document.addEventListener('mousemove', onMove);
+          document.addEventListener('mouseup', onUp);
+        }
+      }
+    };
+
+    window.addEventListener('wheel', onWheel, { passive: false });
+    window.addEventListener('touchmove', onTouchMove, { passive: false });
+    window.addEventListener('scroll', onScrollCapture, true);
+    document.addEventListener('mousedown', onMouseDown);
+
+    return () => {
+      window.removeEventListener('wheel', onWheel);
+      window.removeEventListener('touchmove', onTouchMove);
+      window.removeEventListener('scroll', onScrollCapture, true);
+      document.removeEventListener('mousedown', onMouseDown);
+    };
+  }, [onClose]);
 
   useEffect(() => {
     const onClick = (e: MouseEvent) => {
@@ -361,9 +421,14 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
           </button>
         )}
       </div>
-      <div className={styles.coverGrid}>
+      <div
+        className={styles.coverGrid}
+        ref={() => {
+          /* allow ref for grid scroll if needed */
+        }}
+      >
         {BuiltInCovers.map((cover) => (
-          <div key={cover.id}>
+          <div key={cover.id} className={styles.coverItemWrapper}>
             <div
               className={`${styles.coverItem} ${value === cover.id ? styles.active : ''}`}
               onMouseDown={(e) => e.preventDefault()}
@@ -384,8 +449,8 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
 
 function calcCoverPickerPos(anchor: HTMLElement): { top: number; left: number } {
   const rect = anchor.getBoundingClientRect();
-  const w = 420;
-  const h = 360;
+  const w = 500;
+  const h = 480;
   let top = rect.bottom + 8 + window.scrollY;
   let left = rect.left + window.scrollX;
   if (rect.bottom + 8 + h > window.innerHeight + window.scrollY) {

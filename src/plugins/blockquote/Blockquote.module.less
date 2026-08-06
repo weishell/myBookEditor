@@ -1,9 +1,81 @@
-// Blockquote 组件样式
+// Blockquote 组件样式 - 支持4种状态
 .blockquote {
-  border-left: 4px solid @color-warning;
+  position: relative;
   margin: @spacing-lg 0;
-  padding: @spacing-sm @spacing-lg;
-  color: @text-secondary;
-  background: #fffbe6;
-  border-radius: 0 @radius-sm @radius-sm 0;
+  padding: 14px 16px 14px 44px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  // 状态图标
+  .statusIcon {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    font-size: 18px;
+    line-height: 1;
+    flex-shrink: 0;
+    user-select: none;
+  }
+
+  // 内容区
+  .content {
+    flex: 1;
+    min-width: 0;
+
+    > :first-child {
+      margin-top: 0;
+    }
+
+    > :last-child {
+      margin-bottom: 0;
+    }
+  }
+
+  // ===== 主题色（normal）=====
+  &.statusNormal {
+    background: linear-gradient(135deg, rgba(24, 144, 255, 0.06), rgba(24, 144, 255, 0.02));
+    border-color: rgba(24, 144, 255, 0.2);
+    color: #1f1f1f;
+
+    .statusIcon {
+      filter: none;
+    }
+  }
+
+  // ===== 警告（warning）=====
+  &.statusWarning {
+    background: linear-gradient(135deg, rgba(250, 173, 20, 0.1), rgba(250, 173, 20, 0.03));
+    border-color: rgba(250, 173, 20, 0.3);
+    color: #1f1f1f;
+
+    .statusIcon {
+      filter: none;
+    }
+  }
+
+  // ===== 危险（danger）=====
+  &.statusDanger {
+    background: linear-gradient(135deg, rgba(255, 77, 79, 0.08), rgba(255, 77, 79, 0.02));
+    border-color: rgba(255, 77, 79, 0.3);
+    color: #1f1f1f;
+
+    .statusIcon {
+      filter: none;
+    }
+  }
+
+  // ===== 成功（success）=====
+  &.statusSuccess {
+    background: linear-gradient(135deg, rgba(82, 196, 26, 0.08), rgba(82, 196, 26, 0.02));
+    border-color: rgba(82, 196, 26, 0.3);
+    color: #1f1f1f;
+
+    .statusIcon {
+      filter: none;
+    }
+  }
 }

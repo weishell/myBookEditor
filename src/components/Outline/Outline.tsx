@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useEditorMode } from '@/context/EditorContext';
 import { useHeadings } from './useHeadings';
 import styles from './Outline.module.less';
@@ -113,11 +113,30 @@ interface OutlineListProps {
 }
 
 function OutlineList({ headings, activeId, onSelect }: OutlineListProps) {
+  const navRef = useRef<HTMLDivElement>(null);
+  const itemRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
+
+  useEffect(() => {
+    if (!activeId || !navRef.current) return;
+    const activeEl = itemRefs.current.get(activeId);
+    if (activeEl) {
+      const navRect = navRef.current.getBoundingClientRect();
+      const elRect = activeEl.getBoundingClientRect();
+      if (elRect.top < navRect.top || elRect.bottom > navRect.bottom) {
+        activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      }
+    }
+  }, [activeId]);
+
   return (
-    <nav className={styles.nav}>
+    <nav className={styles.nav} ref={navRef}>
       {headings.map((h) => (
         <button
           key={h.id}
+          ref={(el) => {
+            if (el) itemRefs.current.set(h.id, el);
+            else itemRefs.current.delete(h.id);
+          }}
           className={`${styles.item} ${styles[`level-${h.level}`]} ${activeId === h.id ? styles.active : ''}`}
           onClick={() => onSelect(h.id)}
           title={h.text}
