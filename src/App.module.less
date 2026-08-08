@@ -18,7 +18,7 @@
   background-color: @bg-base;
   border-bottom: 1px solid @border-color-light;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s;
+  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
 }
 
 .logo {
@@ -49,7 +49,24 @@
   }
 }
 
-// 暗黑模式下页面级额外背景
+/* ================ 暗黑模式专属样式（壁纸透出） =================== */
+
+/* 外层容器背景去掉 → 让 WallpaperHost（z-index:0）的壁纸可见 */
 :global(.dark-mode) .container {
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.03);
+  background-color: transparent;
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+/* 顶栏：保留一点点玻璃感的半透明深色 + 柔和分割线，不挡壁纸且有层次 */
+:global(.dark-mode) .header {
+  background-color: color-mix(in srgb, var(--dm-bg-base, #121721) 68%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--dm-border-light, #202837) 70%, transparent);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+/* main 区域背景透明，直接露出壁纸 */
+:global(.dark-mode) .main {
+  background-color: transparent;
 }

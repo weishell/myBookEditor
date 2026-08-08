@@ -83,13 +83,15 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 maxWidth: PAGE_WIDTH_NORMAL,
                 margin: '0 auto',
                 padding: '40px 50px',
-                border: isDarkMode ? '1px solid var(--dm-border, #2b3240)' : '1px solid #e8e8e8',
+                // 暗黑模式：编辑纸去掉背景和边框，让底层壁纸透出来
+                border: isDarkMode ? 'none' : '1px solid #e8e8e8',
                 borderRadius: '8px',
-                backgroundColor: isDarkMode ? 'var(--dm-bg-base, #121721)' : '#fff',
+                backgroundColor: isDarkMode ? 'transparent' : '#fff',
+                boxShadow: isDarkMode ? 'none' : undefined,
                 minHeight: '500px',
                 pointerEvents: readOnly ? 'none' : 'auto',
                 fontFamily: globalFont,
-                transition: 'background-color 0.2s, border-color 0.2s',
+                transition: 'background-color 0.2s, border-color 0.2s, box-shadow 0.2s',
               }}
             >
               <Editable

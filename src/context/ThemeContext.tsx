@@ -64,13 +64,19 @@ interface ThemeContextType {
   theme: ThemeId;
   themeColor: string;
   isDarkMode: boolean;
+  wallpaper: string;
   setTheme: (theme: ThemeId) => void;
+  setWallpaper: (wallpaperId: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const DEFAULT_WALLPAPER = 'none';
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeId>(DEFAULT_THEME);
+  // 壁纸 ID：仅在暗黑模式下生效；默认选中一张（用户可切到"默认"即 none 关掉）
+  const [wallpaper, setWallpaper] = useState<string>(DEFAULT_WALLPAPER);
 
   const themeColor = useMemo(() => {
     return THEME_PRESETS.find((t) => t.id === theme)?.color ?? '#1890ff';
@@ -86,6 +92,7 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   // 暗黑模式：给 html 加 class，同步切换全局 CSS 变量（文字/背景/边框）
   useEffect(() => {
     const htmlEl = document.documentElement;
+    const bodyEl = document.body;
     if (isDarkMode) {
       htmlEl.classList.add('dark-mode');
       htmlEl.style.setProperty('--dm-text-primary', '#e5e7eb');
@@ -98,6 +105,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       htmlEl.style.setProperty('--dm-bg-page', '#080b13');
       htmlEl.style.setProperty('--dm-border', '#2b3240');
       htmlEl.style.setProperty('--dm-border-light', '#202837');
+      // html/body 底色变暗，保证"无壁纸"时页面也不是白的
+      htmlEl.style.backgroundColor = '#080b13';
+      if (bodyEl) bodyEl.style.backgroundColor = '#080b13';
     } else {
       htmlEl.classList.remove('dark-mode');
       htmlEl.style.removeProperty('--dm-text-primary');
@@ -110,12 +120,14 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
       htmlEl.style.removeProperty('--dm-bg-page');
       htmlEl.style.removeProperty('--dm-border');
       htmlEl.style.removeProperty('--dm-border-light');
+      htmlEl.style.backgroundColor = '';
+      if (bodyEl) bodyEl.style.backgroundColor = '';
     }
   }, [isDarkMode]);
 
   const value = useMemo(
-    () => ({ theme, themeColor, isDarkMode, setTheme }),
-    [theme, themeColor, isDarkMode],
+    () => ({ theme, themeColor, isDarkMode, wallpaper, setTheme, setWallpaper }),
+    [theme, themeColor, isDarkMode, wallpaper],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
