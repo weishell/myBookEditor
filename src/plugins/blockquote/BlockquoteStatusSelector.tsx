@@ -32,13 +32,17 @@ export function BlockquoteStatusSelector({
 
   const handleChangeStatus = (status: BlockquoteStatus) => {
     try {
-      const entries = Array.from(
-        (editor as any).nodes({
-          at: [],
-          match: (n: any) =>
-            Element.isElement(n) && (n as any).type === BlockElementType.BLOCKQUOTE,
-        }),
-      );
+      // (editor as any).nodes() 返回 Generator<[Node, Path]>，TS strict 下经 Array.from 会推断成 unknown[]。
+      // 先收窄成数组，再显式声明元素类型为 [Node, Path] 元组，才能在 for..of 里解构。
+      const raw = (editor as any).nodes({
+        at: [],
+        match: (n: any) => Element.isElement(n) && (n as any).type === BlockElementType.BLOCKQUOTE,
+      });
+      const entries = Array.isArray(raw)
+        ? (raw as Array<[any, number[]]>)
+        : raw != null && typeof raw[Symbol.iterator] === 'function'
+          ? Array.from(raw as Iterable<[any, number[]]>)
+          : [];
       for (const [node, path] of entries) {
         const nodeId = (node as any).id;
         if (nodeId === pluginId) {

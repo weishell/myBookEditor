@@ -325,8 +325,9 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
       const target = e.target as HTMLElement | null;
       if (!target) return;
       if (ref.current && ref.current.contains(target)) return;
-      // 目标是根节点才触发关闭（即拖滚动条滚的是整页）
-      if (target === document.documentElement || target === document.body || target === window) {
+      // 目标是根节点才触发关闭（拖滚动条滚的是整页）。
+      // 注：window 与 HTMLElement 类型无可比性，不应做 === 判断（scroll 事件的 target 本来就是 DOM 节点，不会是 window）。
+      if (target === document.documentElement || target === document.body) {
         onClose();
       }
     };

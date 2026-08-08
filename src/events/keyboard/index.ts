@@ -1,4 +1,4 @@
-import { Transforms, type Editor, Range } from 'slate';
+import { Transforms, Editor, Range } from 'slate';
 import type { Location } from 'slate';
 import { handleEnter } from './handleEnter';
 import { handleTabIndent } from './handleTab';
