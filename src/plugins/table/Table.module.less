@@ -5,13 +5,38 @@
 }
 
 .scrollContainer {
-  overflow-x: auto;
+  overflow-x: scroll;
+  overflow-y: auto;
+  max-height: 60vh;
   position: relative;
+
+  // 自定义滚动条 — WebKit 内核
+  &::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #c8c8c8;
+    border-radius: 4px;
+
+    &:hover {
+      background: #a0a0a0;
+    }
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 .table {
   border-collapse: collapse;
-  min-width: 100%;
 }
 
 // 插入行/列圆点 - 飞书风格
@@ -82,5 +107,303 @@
     content: '';
     position: absolute;
     border: 4px solid transparent;
+  }
+}
+
+// ========== 列宽拖拽 ==========
+.resizeHandle {
+  position: absolute;
+  width: 6px;
+  cursor: col-resize;
+  z-index: 15;
+  background: transparent;
+  transform: translateX(-50%);
+  transition: background 0.15s;
+
+  &:hover,
+  &.resizeHandleActive {
+    background: @color-primary;
+  }
+}
+
+.resizeIndicatorLine {
+  position: absolute;
+  width: 2px;
+  background-color: @color-primary;
+  z-index: 20;
+  pointer-events: none;
+}
+
+.dragColHighlight {
+  position: absolute;
+  background-color: @color-primary;
+  opacity: 0.06;
+  z-index: 4;
+  pointer-events: none;
+}
+
+// ========== 行列头选择区 ==========
+// 行头：覆盖在表格左侧边缘，14px 宽，淡灰背景 + 左侧 3px 竖线
+.rowHeader {
+  position: absolute;
+  left: 0;
+  width: 14px;
+  cursor: pointer;
+  z-index: 12;
+  background: rgba(0, 0, 0, 0.03);
+  transition: background 0.15s;
+
+  // 左侧主题色竖线
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 3px;
+    height: 100%;
+    background: @border-color;
+    transition: all 0.15s;
+  }
+
+  &:hover {
+    background: rgba(0, 0, 0, 0.06);
+
+    &::before {
+      width: 4px;
+      background: @color-primary;
+    }
+  }
+
+  &.rowHeaderSelected {
+    background: rgba(0, 0, 0, 0.06);
+
+    &::before {
+      width: 4px;
+      background: @color-primary;
+    }
+  }
+}
+
+// 列头点击检测 overlay — 透明，覆盖整个表格顶部
+.colHeaderOverlay {
+  position: absolute;
+  z-index: 16;
+  cursor: pointer;
+}
+
+// 列头：覆盖在表格顶部边缘，14px 高，淡灰背景 + 顶部 3px 横线 + 右侧分隔线
+.colHeader {
+  position: absolute;
+  top: 0;
+  height: 14px;
+  cursor: pointer;
+  z-index: 12;
+  background: rgba(0, 0, 0, 0.03);
+  transition: background 0.15s;
+  // 右侧分隔线，让每列独立可见
+  border-right: 1px solid @border-color;
+
+  // 顶部主题色横线
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 3px;
+    background: @border-color;
+    transition: all 0.15s;
+  }
+
+  &:hover,
+  &.colHeaderHovered {
+    background: rgba(0, 0, 0, 0.06);
+
+    &::before {
+      height: 4px;
+      background: @color-primary;
+    }
+  }
+
+  &.colHeaderSelected {
+    background: rgba(0, 0, 0, 0.06);
+
+    &::before {
+      height: 4px;
+      background: @color-primary;
+    }
+  }
+}
+
+// ========== hover 预览高亮 ==========
+.hoverHighlight {
+  position: absolute;
+  z-index: 2;
+  pointer-events: none;
+  background-color: @text-tertiary;
+  opacity: 0.05;
+}
+
+// ========== 选中高亮 ==========
+.selectedHighlight {
+  position: absolute;
+  z-index: 3;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: @color-primary;
+    opacity: 0.08;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border: 1px solid @color-primary;
+    opacity: 0.25;
+  }
+}
+
+// ========== 删除工具栏 ==========
+.selectionToolbar {
+  position: absolute;
+  // 位置通过行内样式控制（选中行/列的上方）
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: #fff;
+  border: 1px solid @border-color;
+  border-radius: @radius-md;
+  padding: 4px 8px;
+  box-shadow: @shadow-sm;
+  z-index: 30;
+  animation: toolbarSlideIn 0.2s ease;
+
+  // 向下箭头指向表格
+  &::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 5px solid @border-color;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    bottom: -3.5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 3.5px solid transparent;
+    border-right: 3.5px solid transparent;
+    border-top: 3.5px solid #fff;
+    z-index: 1;
+  }
+
+  .toolbarBtn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    border: none;
+    background: transparent;
+    border-radius: @radius-sm;
+    cursor: pointer;
+    font-size: @font-size-sm;
+    color: @text-primary;
+    transition: background 0.15s;
+    white-space: nowrap;
+
+    &:hover {
+      background: @bg-hover;
+    }
+  }
+}
+
+@keyframes toolbarSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+// ========== 暗黑模式 ==========
+:global(.dark-mode) {
+  .scrollContainer {
+    &::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    &::-webkit-scrollbar-thumb {
+      background: #4a4e58;
+
+      &:hover {
+        background: #5e6370;
+      }
+    }
+  }
+
+  .selectionToolbar {
+    background: #1e1e1e;
+    border-color: #333;
+
+    &::before {
+      border-top-color: #1e1e1e;
+    }
+
+    &::after {
+      border-top-color: #333;
+    }
+
+    .toolbarBtn {
+      color: #e0e0e0;
+
+      &:hover {
+        background: #2a2a2a;
+      }
+    }
+  }
+
+  .rowHeader,
+  .colHeader {
+    background: rgba(255, 255, 255, 0.04);
+
+    &::before {
+      background: #333;
+    }
+
+    &:hover,
+    &.rowHeaderSelected,
+    &.colHeaderSelected,
+    &.colHeaderHovered {
+      background: rgba(255, 255, 255, 0.08);
+
+      &::before {
+        background: @color-primary;
+      }
+    }
+  }
+
+  .hoverHighlight {
+    background-color: #888;
+    opacity: 0.06;
+  }
+
+  .insertTooltip {
+    background-color: #444;
   }
 }

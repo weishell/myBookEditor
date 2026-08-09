@@ -25,7 +25,7 @@ type NodeEntry = [CustomElement, number[]];
 export const createTableCell = (attrs?: TableCellAttrs): CustomElement => ({
   type: BlockElementType.TABLE_CELL,
   id: uuidv4(),
-  attrs,
+  attrs: { width: '160px', ...attrs },
   children: [
     {
       type: BlockElementType.PARAGRAPH,

@@ -45,7 +45,8 @@ export const TableCell: React.FC<TableCellProps> = ({
       className={styles.cell}
       style={{
         backgroundColor: actualBg || 'transparent',
-        width: width || 'auto',
+        width: width || '160px',
+        minWidth: '60px',
         transition: 'background-color 0.2s, border-color 0.2s',
       }}
       onContextMenu={(e) => {

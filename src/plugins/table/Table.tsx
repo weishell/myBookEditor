@@ -1,7 +1,7 @@
 import React, { useState, useCallback, useRef, useLayoutEffect, useEffect } from 'react';
 import type { RenderElementProps } from 'slate-react';
 import { useSlateStatic, ReactEditor } from 'slate-react';
-import { Path } from 'slate';
+import { Path, Editor, Transforms } from 'slate';
 import type { CustomElement } from '@/core/types';
 import type { TableAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
@@ -54,6 +54,30 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const hideTimerRef = useRef<number | null>(null);
   const isPinnedRef = useRef(false);
 
+  // 行列选中状态
+  const [selectedRow, setSelectedRow] = useState<number | null>(null);
+  const [selectedCol, setSelectedCol] = useState<number | null>(null);
+
+  // hover 预览状态
+  const [hoveredRow, setHoveredRow] = useState<number | null>(null);
+  const [hoveredCol, setHoveredCol] = useState<number | null>(null);
+
+  // 列宽拖拽状态
+  const resizingRef = useRef<{
+    colIndex: number;
+    startX: number;
+    startWidth: number;
+    currentWidth: number;
+  } | null>(null);
+  const [draggingCol, setDraggingCol] = useState<number | null>(null);
+  const [dragIndicatorX, setDragIndicatorX] = useState<number | null>(null);
+
+  // 用 ref 存储测量数据，避免拖拽回调的依赖问题
+  const colDotsRef = useRef(colDots);
+  colDotsRef.current = colDots;
+  const tableSizeRef = useRef(tableSize);
+  tableSizeRef.current = tableSize;
+
   // 同步 ref
   useEffect(() => {
     isPinnedRef.current = isPinned;
@@ -61,7 +85,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
 
   const attrs = element.attrs as TableAttrs;
   const { borderColor: rawBorderColor = '#d9d9d9', borderWidth = '1px' } = attrs || {};
-  // 暗黑模式：默认浅色边框 → 柔和深色边框（LIGHT_BG_PATTERN 覆盖白→米白范围，额外兜底 #d9d9d9 等浅灰）
   const borderColor = (() => {
     if (!isDarkMode) return rawBorderColor;
     const c = rawBorderColor.trim();
@@ -141,7 +164,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     }
   }, []);
 
-  // 点击钉住后，点击外部释放
+  // 点击外部时清除所有状态
   useEffect(() => {
     if (!isPinned) return;
     const handleOutsideMouseDown = (e: MouseEvent) => {
@@ -149,6 +172,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         setIsPinned(false);
         setShowDots(false);
         setHoveredDot(null);
+        setSelectedRow(null);
+        setSelectedCol(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideMouseDown);
@@ -163,6 +188,35 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
     };
   }, []);
+
+  // 点击其他单元格时取消行列选中（通过监听 Slate 选区，但不依赖 selectedCol 状态避免循环）
+  const selectedRowRef = useRef(selectedRow);
+  const selectedColRef = useRef(selectedCol);
+  selectedRowRef.current = selectedRow;
+  selectedColRef.current = selectedCol;
+
+  useEffect(() => {
+    // 只在 selectedRow/Col 从 null 变为有值时不需要检查，从有值变为 null 时也不需要检查
+    // 这里只在 editor.selection 变化时检查是否点击了其他单元格
+    if (selectedRowRef.current === null && selectedColRef.current === null) return;
+    if (!editor.selection || !isCursorInTable()) return;
+
+    try {
+      const tablePath = ReactEditor.findPath(editor, element);
+      const relativePath = editor.selection.anchor.path.slice(tablePath.length);
+      const rowIdx = relativePath[0];
+      const colIdx = relativePath[1];
+      // 如果当前选区不在选中的行/列上，说明用户点击了其他单元格，取消选中
+      if (selectedRowRef.current !== null && selectedRowRef.current !== rowIdx) {
+        setSelectedRow(null);
+      }
+      if (selectedColRef.current !== null && selectedColRef.current !== colIdx) {
+        setSelectedCol(null);
+      }
+    } catch {
+      /* ignore */
+    }
+  }, [editor.selection, element, editor, isCursorInTable]);
 
   // 测量 DOM 位置
   useLayoutEffect(() => {
@@ -184,22 +238,22 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         return;
       }
 
-      const cells = rows[0].querySelectorAll('td, th');
-      if (cells.length === 0) {
+      // 使用 table.rows[0].cells 标准 API，最可靠
+      const firstRow = tableRef.current.rows[0];
+      if (!firstRow || firstRow.cells.length === 0) {
         if (retryCount < maxRetries) {
           retryCount++;
           rafId = requestAnimationFrame(measure);
         }
         return;
       }
+      const cells = firstRow.cells;
 
-      // 更新表格尺寸
       setTableSize({
         width: tableRect.width,
         height: tableRect.height,
       });
 
-      // 测量行边界位置（相对于 wrapper）
       const newRowDots: DotPosition[] = [];
       for (let i = 0; i <= rows.length; i++) {
         if (i === 0) {
@@ -217,20 +271,18 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       setRowDots(newRowDots);
 
-      // 测量列边界位置（相对于 wrapper）
+      // 计算 colDots（用于插入列圆点、列头定位、拖拽手柄）
       const newColDots: DotPosition[] = [];
       for (let i = 0; i <= cells.length; i++) {
         if (i === 0) {
-          const rect = cells[0].getBoundingClientRect();
+          const rect = (cells[0] as HTMLElement).getBoundingClientRect();
           newColDots.push({ top: 0, left: rect.left - wrapperRect.left });
         } else if (i === cells.length) {
-          const rect = cells[cells.length - 1].getBoundingClientRect();
+          const rect = (cells[cells.length - 1] as HTMLElement).getBoundingClientRect();
           newColDots.push({ top: 0, left: rect.right - wrapperRect.left });
         } else {
-          const prevRect = cells[i - 1].getBoundingClientRect();
-          const currRect = cells[i].getBoundingClientRect();
-          const midX = (prevRect.right + currRect.left) / 2;
-          newColDots.push({ top: 0, left: midX - wrapperRect.left });
+          const rect = (cells[i] as HTMLElement).getBoundingClientRect();
+          newColDots.push({ top: 0, left: rect.left - wrapperRect.left });
         }
       }
       setColDots(newColDots);
@@ -311,7 +363,219 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     [editor, element],
   );
 
-  // 指示线渲染数据
+  // ========== 列宽拖拽 ==========
+  const handleResizeStart = useCallback(
+    (colIndex: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      if (!tableRef.current) return;
+      const cells = tableRef.current.querySelectorAll(`td[data-col-index="${colIndex}"]`);
+      const firstCell = cells[0] as HTMLElement | undefined;
+      const startWidth = firstCell ? firstCell.getBoundingClientRect().width : 160;
+
+      resizingRef.current = {
+        colIndex,
+        startX: e.clientX,
+        startWidth,
+        currentWidth: startWidth,
+      };
+      setDraggingCol(colIndex);
+
+      const handleMove = (moveEvent: MouseEvent) => {
+        if (!resizingRef.current || !wrapperRef.current) return;
+        const delta = moveEvent.clientX - resizingRef.current.startX;
+        const newWidth = Math.max(60, resizingRef.current.startWidth + delta);
+        resizingRef.current.currentWidth = newWidth;
+
+        const colLeft = colDotsRef.current[colIndex]?.left || 0;
+        setDragIndicatorX(colLeft + newWidth);
+
+        cells.forEach((cell) => {
+          (cell as HTMLElement).style.width = `${newWidth}px`;
+          (cell as HTMLElement).style.minWidth = `${newWidth}px`;
+        });
+      };
+
+      const handleUp = () => {
+        if (!resizingRef.current) return;
+        const { colIndex: ci, currentWidth } = resizingRef.current;
+
+        try {
+          const tablePath = ReactEditor.findPath(editor, element);
+          const rows = element.children as CustomElement[];
+          Editor.withoutNormalizing(editor, () => {
+            for (let rowIdx = 0; rowIdx < rows.length; rowIdx++) {
+              const cellPath = [...tablePath, rowIdx, ci];
+              const cell = rows[rowIdx].children[ci] as CustomElement;
+              const currentAttrs = (cell.attrs || {}) as Record<string, unknown>;
+              Transforms.setNodes(
+                editor,
+                { attrs: { ...currentAttrs, width: `${currentWidth}px` } } as any,
+                { at: cellPath },
+              );
+            }
+          });
+        } catch (err) {
+          console.error('Update column width failed:', err);
+        }
+
+        resizingRef.current = null;
+        setDraggingCol(null);
+        setDragIndicatorX(null);
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mouseup', handleUp);
+      };
+
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleUp);
+    },
+    [editor, element],
+  );
+
+  // ========== 行列选中 ==========
+  const handleSelectRow = useCallback(
+    (rowIndex: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedRow((prev) => (prev === rowIndex ? null : rowIndex));
+      setSelectedCol(null);
+      setIsPinned(true);
+      setShowDots(true);
+      // 同步设置 Slate 选区到该行的第一个单元格，确保 useEffect 检查时匹配
+      try {
+        const tablePath = ReactEditor.findPath(editor, element);
+        const cellPath = [...tablePath, rowIndex, 0];
+        Transforms.select(editor, Editor.start(editor, cellPath));
+      } catch {
+        /* ignore */
+      }
+    },
+    [editor, element],
+  );
+
+  const handleSelectCol = useCallback(
+    (colIndex: number, e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setSelectedCol((prev) => (prev === colIndex ? null : colIndex));
+      setSelectedRow(null);
+      setIsPinned(true);
+      setShowDots(true);
+      // 同步设置 Slate 选区到该列的第一个单元格，确保 useEffect 检查时匹配
+      try {
+        const tablePath = ReactEditor.findPath(editor, element);
+        const cellPath = [...tablePath, 0, colIndex];
+        Transforms.select(editor, Editor.start(editor, cellPath));
+      } catch {
+        /* ignore */
+      }
+    },
+    [editor, element],
+  );
+
+  const handleDeleteSelectedRow = useCallback(() => {
+    if (selectedRow === null) return;
+    try {
+      const tablePath = ReactEditor.findPath(editor, element);
+      const rows = element.children as CustomElement[];
+      // 如果只剩一行，删除整个表格
+      if (rows.length <= 1) {
+        Transforms.removeNodes(editor, { at: tablePath });
+      } else {
+        Transforms.removeNodes(editor, { at: [...tablePath, selectedRow] });
+      }
+      setSelectedRow(null);
+    } catch (err) {
+      console.error('Delete row failed:', err);
+    }
+  }, [selectedRow, editor, element]);
+
+  const handleDeleteSelectedCol = useCallback(() => {
+    if (selectedCol === null) return;
+    try {
+      const tablePath = ReactEditor.findPath(editor, element);
+      const rows = element.children as CustomElement[];
+      // 如果只剩一列，删除整个表格
+      if (rows[0].children.length <= 1) {
+        Transforms.removeNodes(editor, { at: tablePath });
+      } else {
+        // 从最后一行开始删除，避免路径变化
+        Editor.withoutNormalizing(editor, () => {
+          for (let rowIdx = rows.length - 1; rowIdx >= 0; rowIdx--) {
+            Transforms.removeNodes(editor, { at: [...tablePath, rowIdx, selectedCol] });
+          }
+        });
+      }
+      setSelectedCol(null);
+    } catch (err) {
+      console.error('Delete column failed:', err);
+    }
+  }, [selectedCol, editor, element]);
+
+  // ========== 表格原生点击处理：用 cell.closest('td') + cell.cellIndex ==========
+  const lastMouseMoveRef = useRef(0);
+
+  const handleTableClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!showDots || selectedRow !== null) return;
+      const target = e.target as HTMLElement;
+      const cell = target.closest('td, th') as HTMLTableCellElement | null;
+      if (!cell || cell.cellIndex < 0) return;
+      const cellRect = cell.getBoundingClientRect();
+      const yInCell = e.clientY - cellRect.top;
+      if (yInCell < 0 || yInCell > 14) return;
+      e.stopPropagation();
+      handleSelectCol(cell.cellIndex, e);
+    },
+    [showDots, selectedRow, handleSelectCol],
+  );
+
+  const handleTableMouseDown = useCallback(
+    (e: React.MouseEvent) => {
+      if (!showDots) return;
+      const target = e.target as HTMLElement;
+      const cell = target.closest('td, th') as HTMLTableCellElement | null;
+      if (!cell || cell.cellIndex < 0) return;
+      const cellRect = cell.getBoundingClientRect();
+      const yInCell = e.clientY - cellRect.top;
+      if (yInCell >= 0 && yInCell <= 14) {
+        // 阻止 Slate 处理此单元格的选区
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    [showDots],
+  );
+
+  const handleWrapperMouseMove = useCallback(
+    (e: React.MouseEvent) => {
+      const now = Date.now();
+      if (now - lastMouseMoveRef.current < 50) return;
+      lastMouseMoveRef.current = now;
+      const wrapper = wrapperRef.current;
+      if (!wrapper) return;
+      const wrapperRect = wrapper.getBoundingClientRect();
+      const y = e.clientY - wrapperRect.top;
+      if (y < 0 || y > 14) {
+        setHoveredCol(null);
+        return;
+      }
+      const x = e.clientX - wrapperRect.left;
+      for (let i = 0; i < colCount; i++) {
+        const left = colDots[i]?.left || 0;
+        const right = colDots[i + 1]?.left || left;
+        if (x >= left && x < right) {
+          setHoveredCol(i);
+          return;
+        }
+      }
+      setHoveredCol(null);
+    },
+    [colCount, colDots],
+  );
+
+  // ========== 指示线 ==========
   let indicatorLine: React.ReactNode = null;
   let tooltip: React.ReactNode = null;
 
@@ -371,6 +635,98 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     }
   }
 
+  // 拖拽指示线
+  const resizeIndicatorLine =
+    dragIndicatorX !== null && draggingCol !== null ? (
+      <div
+        className={styles.resizeIndicatorLine}
+        style={{
+          left: dragIndicatorX,
+          top: 0,
+          height: tableSizeRef.current.height,
+        }}
+      />
+    ) : null;
+
+  // 拖拽列高亮
+  const dragColHighlight =
+    draggingCol !== null && colDots.length > draggingCol + 1 ? (
+      <div
+        className={styles.dragColHighlight}
+        style={{
+          left: colDots[draggingCol]?.left || 0,
+          width: (colDots[draggingCol + 1]?.left || 0) - (colDots[draggingCol]?.left || 0),
+          height: tableSizeRef.current.height,
+        }}
+      />
+    ) : null;
+
+  // hover 预览高亮
+  const hoverRowHighlight =
+    hoveredRow !== null && selectedRow === null && rowDots.length > hoveredRow
+      ? (() => {
+          const top = rowDots[hoveredRow]?.top || 0;
+          const bottom = rowDots[hoveredRow + 1]?.top || top;
+          return (
+            <div
+              className={styles.hoverHighlight}
+              style={{
+                top,
+                left: 0,
+                width: tableSize.width,
+                height: bottom - top,
+              }}
+            />
+          );
+        })()
+      : null;
+
+  const hoverColHighlight =
+    hoveredCol !== null && selectedCol === null && colDots.length > hoveredCol + 1 ? (
+      <div
+        className={styles.hoverHighlight}
+        style={{
+          top: 0,
+          left: colDots[hoveredCol]?.left || 0,
+          width: (colDots[hoveredCol + 1]?.left || 0) - (colDots[hoveredCol]?.left || 0),
+          height: tableSize.height,
+        }}
+      />
+    ) : null;
+
+  // 选中高亮
+  const selectedRowHighlight =
+    selectedRow !== null && rowDots.length > selectedRow
+      ? (() => {
+          const top = rowDots[selectedRow]?.top || 0;
+          const bottom = rowDots[selectedRow + 1]?.top || top;
+          return (
+            <div
+              className={styles.selectedHighlight}
+              style={{
+                top,
+                left: 0,
+                width: tableSize.width,
+                height: bottom - top,
+              }}
+            />
+          );
+        })()
+      : null;
+
+  const selectedColHighlight =
+    selectedCol !== null && colDots.length > selectedCol + 1 ? (
+      <div
+        className={styles.selectedHighlight}
+        style={{
+          top: 0,
+          left: colDots[selectedCol]?.left || 0,
+          width: (colDots[selectedCol + 1]?.left || 0) - (colDots[selectedCol]?.left || 0),
+          height: tableSize.height,
+        }}
+      />
+    ) : null;
+
   return (
     <div
       ref={wrapperRef}
@@ -378,8 +734,119 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       onContextMenu={handleContextMenu}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
+      onMouseMove={handleWrapperMouseMove}
     >
-      {/* 行插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
+      {/* 删除工具栏 - 出现在选中的行/列上方 */}
+      {(selectedRow !== null || selectedCol !== null) && (
+        <div
+          className={styles.selectionToolbar}
+          contentEditable={false}
+          style={{
+            // 选中列时，按钮出现在该列上方居中
+            ...(selectedCol !== null && colDots.length > selectedCol + 1
+              ? {
+                  left:
+                    ((colDots[selectedCol]?.left || 0) + (colDots[selectedCol + 1]?.left || 0)) / 2,
+                  top: -36,
+                  transform: 'translateX(-50%)',
+                }
+              : {}),
+            // 选中行时，按钮出现在该行左侧上方
+            ...(selectedRow !== null && rowDots[selectedRow]
+              ? {
+                  left: 0,
+                  top: rowDots[selectedRow].top - 36,
+                  transform: 'none',
+                }
+              : {}),
+          }}
+        >
+          {selectedRow !== null && (
+            <button className={styles.toolbarBtn} onClick={handleDeleteSelectedRow}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              <span>删除行</span>
+            </button>
+          )}
+          {selectedCol !== null && (
+            <button className={styles.toolbarBtn} onClick={handleDeleteSelectedCol}>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
+              </svg>
+              <span>删除列</span>
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 行头选择区 */}
+      {showDots &&
+        Array.from({ length: rowCount }, (_, i) => {
+          const top = rowDots[i]?.top || 0;
+          const bottom = rowDots[i + 1]?.top || top;
+          return (
+            <div
+              key={`row-header-${i}`}
+              contentEditable={false}
+              className={`${styles.rowHeader} ${selectedRow === i ? styles.rowHeaderSelected : ''}`}
+              style={{
+                top,
+                left: 0,
+                height: bottom - top,
+              }}
+              onClick={(e) => handleSelectRow(i, e)}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onMouseEnter={() => {
+                handleMouseEnter();
+                setHoveredRow(i);
+              }}
+              onMouseLeave={() => {
+                handleMouseLeave();
+                setHoveredRow(null);
+              }}
+            />
+          );
+        })}
+
+      {/* 列头视觉条 — 仅视觉，不处理事件 */}
+      {showDots &&
+        Array.from({ length: colCount }, (_, i) => {
+          const left = colDots[i]?.left || 0;
+          const right = colDots[i + 1]?.left || left;
+          return (
+            <div
+              key={`col-header-${i}`}
+              contentEditable={false}
+              className={`${styles.colHeader} ${selectedCol === i ? styles.colHeaderSelected : ''} ${hoveredCol === i ? styles.colHeaderHovered : ''}`}
+              style={{
+                top: 0,
+                left,
+                width: Math.max(right - left, 10),
+                pointerEvents: 'none',
+              }}
+            />
+          );
+        })}
+
+      {/* 行插入圆点 */}
       {showDots &&
         rowDots.map((pos, i) => (
           <button
@@ -406,7 +873,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           />
         ))}
 
-      {/* 列插入圆点 - 在 wrapper 内，Slate 管理区域外 */}
+      {/* 列插入圆点 */}
       {showDots &&
         colDots.map((pos, i) => (
           <button
@@ -433,15 +900,50 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           />
         ))}
 
+      {/* 拖拽手柄 */}
+      {showDots &&
+        Array.from({ length: colCount }, (_, i) => {
+          const rightEdge = colDots[i + 1];
+          if (!rightEdge) return null;
+          return (
+            <div
+              key={`resize-${i}`}
+              contentEditable={false}
+              className={`${styles.resizeHandle} ${draggingCol === i ? styles.resizeHandleActive : ''}`}
+              style={{
+                left: rightEdge.left,
+                top: 0,
+                height: tableSize.height,
+              }}
+              onMouseDown={(e) => handleResizeStart(i, e)}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+            />
+          );
+        })}
+
       {/* 悬浮指示线 */}
       {indicatorLine}
 
       {/* 插入提示 tooltip */}
       {tooltip}
 
+      {/* 拖拽指示线 */}
+      {resizeIndicatorLine}
+
+      {/* 拖拽列高亮 */}
+      {dragColHighlight}
+
+      {/* hover 预览高亮 */}
+      {hoverRowHighlight}
+      {hoverColHighlight}
+
+      {/* 选中高亮 */}
+      {selectedRowHighlight}
+      {selectedColHighlight}
+
       {/* 横向滚动容器 */}
       <div ref={scrollRef} className={styles.scrollContainer}>
-        {/* Slate 管理的 div */}
         <div
           ref={setSlateDivRef}
           {...otherAttributes}
@@ -452,6 +954,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           <table
             ref={tableRef}
             className={styles.table}
+            onClick={handleTableClick}
+            onMouseDown={handleTableMouseDown}
             style={{
               border: `${borderWidth} solid ${borderColor}`,
             }}
