@@ -1,30 +1,62 @@
-// Blockquote 组件样式 - 支持4种状态
+// Blockquote 组件样式 - 支持4种类型：说明/注意/警告/提示
 .blockquote {
   position: relative;
   margin: @spacing-lg 0;
-  padding: 14px 16px 14px 44px;
+  padding: 12px 16px;
   border-radius: 10px;
   border: 1px solid transparent;
-  display: flex;
-  align-items: flex-start;
-  gap: 12px;
   transition: background-color 0.2s, border-color 0.2s;
 
-  // 状态图标
-  .statusIcon {
-    position: absolute;
-    left: 14px;
-    top: 14px;
-    font-size: 18px;
-    line-height: 1;
+  // 头部：图标 + 标签
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+    font-weight: 500;
+    font-size: 15px;
+  }
+
+  .typeIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     flex-shrink: 0;
-    user-select: none;
+    line-height: 1;
+  }
+
+  .typeLabel {
+    line-height: 1;
+    cursor: pointer;
+    border-bottom: 1px dashed transparent;
+    transition: border-color 0.15s;
+
+    &:hover {
+      border-bottom-color: currentColor;
+    }
+  }
+
+  .labelInput {
+    font-size: 15px;
+    font-weight: 500;
+    font-family: inherit;
+    line-height: 1;
+    padding: 1px 4px;
+    margin: -1px -4px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: @bg-base;
+    color: inherit;
+    outline: none;
+    min-width: 60px;
+    max-width: 200px;
   }
 
   // 内容区
   .content {
     flex: 1;
     min-width: 0;
+    padding-left: 26px; // 与图标对齐
 
     > :first-child {
       margin-top: 0;
@@ -35,47 +67,106 @@
     }
   }
 
-  // ===== 主题色（normal）=====
-  &.statusNormal {
-    background: linear-gradient(135deg, rgba(24, 144, 255, 0.06), rgba(24, 144, 255, 0.02));
-    border-color: rgba(24, 144, 255, 0.2);
-    color: #1f1f1f;
+  // ===== 说明（info）- 跟随主题色 =====
+  &.typeInfo {
+    background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 6%, @bg-base), color-mix(in srgb, var(--theme-primary) 2%, @bg-base));
+    border-color: color-mix(in srgb, var(--theme-primary) 20%, @border-color-light);
+    color: @text-primary;
 
-    .statusIcon {
-      filter: none;
+    .typeIcon,
+    .typeLabel {
+      color: var(--theme-primary);
     }
   }
 
-  // ===== 警告（warning）=====
-  &.statusWarning {
-    background: linear-gradient(135deg, rgba(250, 173, 20, 0.1), rgba(250, 173, 20, 0.03));
+  // ===== 注意（note）- 琥珀色 =====
+  &.typeNote {
+    background: linear-gradient(135deg, rgba(250, 173, 20, 0.08), rgba(250, 173, 20, 0.02));
     border-color: rgba(250, 173, 20, 0.3);
-    color: #1f1f1f;
+    color: @text-primary;
 
-    .statusIcon {
-      filter: none;
+    .typeIcon,
+    .typeLabel {
+      color: #faad14;
     }
   }
 
-  // ===== 危险（danger）=====
-  &.statusDanger {
+  // ===== 警告（warning）- 红色 =====
+  &.typeWarning {
     background: linear-gradient(135deg, rgba(255, 77, 79, 0.08), rgba(255, 77, 79, 0.02));
     border-color: rgba(255, 77, 79, 0.3);
-    color: #1f1f1f;
+    color: @text-primary;
 
-    .statusIcon {
-      filter: none;
+    .typeIcon,
+    .typeLabel {
+      color: #ff4d4f;
     }
   }
 
-  // ===== 成功（success）=====
-  &.statusSuccess {
+  // ===== 提示（tip）- 绿色 =====
+  &.typeTip {
     background: linear-gradient(135deg, rgba(82, 196, 26, 0.08), rgba(82, 196, 26, 0.02));
     border-color: rgba(82, 196, 26, 0.3);
-    color: #1f1f1f;
+    color: @text-primary;
 
-    .statusIcon {
-      filter: none;
+    .typeIcon,
+    .typeLabel {
+      color: #52c41a;
     }
   }
+}
+
+/* ================== 暗黑模式覆盖 ================== */
+
+:global(.dark-mode) .blockquote .labelInput {
+  background: var(--dm-bg-base, #121721);
+  color: inherit;
+}
+
+/* info 类型在暗黑模式下主题色需要提亮 */
+:global(.dark-mode) .blockquote.typeInfo {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--dm-bg-base, #121721)), color-mix(in srgb, var(--theme-primary) 4%, var(--dm-bg-base, #121721)));
+  border-color: color-mix(in srgb, var(--theme-primary) 30%, var(--dm-border, #2b3240));
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .blockquote.typeInfo .typeIcon,
+:global(.dark-mode) .blockquote.typeInfo .typeLabel {
+  color: color-mix(in srgb, var(--theme-primary) 70%, #ffffff);
+}
+
+/* note 类型 */
+:global(.dark-mode) .blockquote.typeNote {
+  background: linear-gradient(135deg, rgba(250, 173, 20, 0.12), rgba(250, 173, 20, 0.04));
+  border-color: rgba(250, 173, 20, 0.35);
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .blockquote.typeNote .typeIcon,
+:global(.dark-mode) .blockquote.typeNote .typeLabel {
+  color: #fbbf24;
+}
+
+/* warning 类型 */
+:global(.dark-mode) .blockquote.typeWarning {
+  background: linear-gradient(135deg, rgba(255, 77, 79, 0.12), rgba(255, 77, 79, 0.04));
+  border-color: rgba(255, 77, 79, 0.35);
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .blockquote.typeWarning .typeIcon,
+:global(.dark-mode) .blockquote.typeWarning .typeLabel {
+  color: #ff7875;
+}
+
+/* tip 类型 */
+:global(.dark-mode) .blockquote.typeTip {
+  background: linear-gradient(135deg, rgba(82, 196, 26, 0.12), rgba(82, 196, 26, 0.04));
+  border-color: rgba(82, 196, 26, 0.35);
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .blockquote.typeTip .typeIcon,
+:global(.dark-mode) .blockquote.typeTip .typeLabel {
+  color: #95de64;
 }

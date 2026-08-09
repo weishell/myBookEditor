@@ -17,3 +17,13 @@ export const BlockElementType = {
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];
+
+/* 引用块类型 */
+export const BlockquoteType = {
+  INFO: 'info', // 说明
+  NOTE: 'note', // 注意
+  WARNING: 'warning', // 警告
+  TIP: 'tip', // 提示
+} as const;
+
+export type BlockquoteType = (typeof BlockquoteType)[keyof typeof BlockquoteType];
