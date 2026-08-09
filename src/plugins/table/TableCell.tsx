@@ -1,5 +1,5 @@
 import React from 'react';
-import type { RenderElementProps } from 'slate-react';
+import { ReactEditor, useSlateStatic, type RenderElementProps } from 'slate-react';
 import type { CustomElement } from '@/core/types';
 import type { TableCellAttrs } from './table-operations';
 import { useTheme } from '@/context/ThemeContext';
@@ -9,7 +9,6 @@ import styles from './TableCell.module.less';
 interface TableCellProps extends RenderElementProps {
   pluginId?: string;
   element: CustomElement;
-  colIndex?: number;
   onInsertRow?: (at?: number) => void;
   onInsertColumn?: (at?: number) => void;
   onDeleteRow?: () => void;
@@ -20,15 +19,14 @@ interface TableCellProps extends RenderElementProps {
   onToggleLazyLoad?: () => void;
 }
 
-export const TableCell: React.FC<TableCellProps> = ({
-  attributes,
-  children,
-  element,
-  colIndex = 0,
-}) => {
+export const TableCell: React.FC<TableCellProps> = ({ attributes, children, element }) => {
   const attrs = element.attrs as TableCellAttrs;
   const { colspan = 1, rowspan = 1, bgColor, width } = attrs || {};
   const { isDarkMode } = useTheme();
+  const editor = useSlateStatic();
+  const path = ReactEditor.findPath(editor, element);
+  const colIndex = path[path.length - 1] ?? 0;
+  // const rowIndex = path[path.length - 2] ?? 0; 暂时注释
 
   // 暗黑模式：若用户把单元格背景设成浅白（典型表头）→ 换成柔和深色
   let actualBg: string | undefined = bgColor;

@@ -108,6 +108,19 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         )
       : 0;
 
+  // 从 Slate 数据直接计算每列的 left 和 width，零 DOM 测量
+  const colLayouts: Array<{ left: number; width: number }> = (() => {
+    const firstRowCells = element.children?.[0]?.children || [];
+    const layouts: Array<{ left: number; width: number }> = [];
+    let cumLeft = 0;
+    for (const cell of firstRowCells) {
+      const w = parseInt((cell as any).attrs?.width || '160px', 10) || 160;
+      layouts.push({ left: cumLeft, width: w });
+      cumLeft += w;
+    }
+    return layouts;
+  })();
+
   // 合并 Slate ref 和本地 ref
   const setSlateDivRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -217,6 +230,18 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       /* ignore */
     }
   }, [editor.selection, element, editor, isCursorInTable]);
+
+  // 点击表格外部时取消行列选中
+  useEffect(() => {
+    const handler = (e: MouseEvent) => {
+      if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
+        setSelectedRow(null);
+        setSelectedCol(null);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, []);
 
   // 测量 DOM 位置
   useLayoutEffect(() => {
@@ -513,40 +538,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     }
   }, [selectedCol, editor, element]);
 
-  // ========== 表格原生点击处理：用 cell.closest('td') + cell.cellIndex ==========
+  // ========== hover 检测（列头区域）==========
   const lastMouseMoveRef = useRef(0);
-
-  const handleTableClick = useCallback(
-    (e: React.MouseEvent) => {
-      if (!showDots || selectedRow !== null) return;
-      const target = e.target as HTMLElement;
-      const cell = target.closest('td, th') as HTMLTableCellElement | null;
-      if (!cell || cell.cellIndex < 0) return;
-      const cellRect = cell.getBoundingClientRect();
-      const yInCell = e.clientY - cellRect.top;
-      if (yInCell < 0 || yInCell > 14) return;
-      e.stopPropagation();
-      handleSelectCol(cell.cellIndex, e);
-    },
-    [showDots, selectedRow, handleSelectCol],
-  );
-
-  const handleTableMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (!showDots) return;
-      const target = e.target as HTMLElement;
-      const cell = target.closest('td, th') as HTMLTableCellElement | null;
-      if (!cell || cell.cellIndex < 0) return;
-      const cellRect = cell.getBoundingClientRect();
-      const yInCell = e.clientY - cellRect.top;
-      if (yInCell >= 0 && yInCell <= 14) {
-        // 阻止 Slate 处理此单元格的选区
-        e.preventDefault();
-        e.stopPropagation();
-      }
-    },
-    [showDots],
-  );
 
   const handleWrapperMouseMove = useCallback(
     (e: React.MouseEvent) => {
@@ -562,9 +555,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         return;
       }
       const x = e.clientX - wrapperRect.left;
-      for (let i = 0; i < colCount; i++) {
-        const left = colDots[i]?.left || 0;
-        const right = colDots[i + 1]?.left || left;
+      for (let i = 0; i < colLayouts.length; i++) {
+        const left = colLayouts[i].left;
+        const right = left + colLayouts[i].width;
         if (x >= left && x < right) {
           setHoveredCol(i);
           return;
@@ -572,7 +565,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       setHoveredCol(null);
     },
-    [colCount, colDots],
+    [colLayouts],
   );
 
   // ========== 指示线 ==========
@@ -826,25 +819,37 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           );
         })}
 
-      {/* 列头视觉条 — 仅视觉，不处理事件 */}
+      {/* 列头视觉条 — 从 Slate 数据计算位置，零 DOM 测量 */}
       {showDots &&
-        Array.from({ length: colCount }, (_, i) => {
-          const left = colDots[i]?.left || 0;
-          const right = colDots[i + 1]?.left || left;
-          return (
-            <div
-              key={`col-header-${i}`}
-              contentEditable={false}
-              className={`${styles.colHeader} ${selectedCol === i ? styles.colHeaderSelected : ''} ${hoveredCol === i ? styles.colHeaderHovered : ''}`}
-              style={{
-                top: 0,
-                left,
-                width: Math.max(right - left, 10),
-                pointerEvents: 'none',
-              }}
-            />
-          );
-        })}
+        colLayouts.map((layout, i) => (
+          <div
+            key={`col-header-${i}`}
+            contentEditable={false}
+            className={`${styles.colHeader} ${selectedCol === i ? styles.colHeaderSelected : ''} ${hoveredCol === i ? styles.colHeaderHovered : ''}`}
+            style={{
+              top: 0,
+              left: layout.left,
+              width: layout.width,
+              pointerEvents: 'auto',
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleSelectCol(i, e);
+            }}
+            onMouseDown={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
+            onMouseEnter={() => {
+              handleMouseEnter();
+              setHoveredCol(i);
+            }}
+            onMouseLeave={() => {
+              handleMouseLeave();
+              setHoveredCol(null);
+            }}
+          />
+        ))}
 
       {/* 行插入圆点 */}
       {showDots &&
@@ -954,8 +959,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           <table
             ref={tableRef}
             className={styles.table}
-            onClick={handleTableClick}
-            onMouseDown={handleTableMouseDown}
             style={{
               border: `${borderWidth} solid ${borderColor}`,
             }}
