@@ -3,18 +3,18 @@
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  border: 1px solid #e8e8e8;
-  background: #fff;
+  border: 1px solid @border-color-light;
+  background: @bg-base;
   cursor: pointer;
   font-size: 14px;
-  color: #333;
+  color: @text-primary;
   border-radius: 6px;
   transition: all 0.15s ease;
   min-width: 80px;
 
   &:hover {
-    border-color: #1890ff;
-    color: #1890ff;
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
   }
 }
 

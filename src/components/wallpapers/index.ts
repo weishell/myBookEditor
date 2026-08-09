@@ -37,7 +37,7 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     name: '萤火夜空',
     kind: 'svg',
     component: FireflyNightSky,
-    description: '新月、山丘和点点萤火虫（默认壁纸）',
+    description: '新月、山丘和点点萤火虫',
   },
   {
     id: 'warm-hearth',

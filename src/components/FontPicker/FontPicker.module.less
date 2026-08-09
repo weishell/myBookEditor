@@ -15,12 +15,12 @@
   cursor: pointer;
   text-align: left;
   font-size: 14px;
-  color: #333;
+  color: @text-primary;
   border-radius: 4px;
   transition: background-color 0.15s ease;
 
   &:hover {
-    background-color: #f5f5f5;
+    background-color: @bg-hover;
   }
 
   &:disabled {
@@ -30,12 +30,12 @@
 }
 
 .itemActive {
-  background-color: #e6f7ff;
-  color: #1890ff;
+  background-color: color-mix(in srgb, var(--theme-primary) 12%, transparent);
+  color: var(--theme-primary);
   font-weight: 500;
 
   &:hover {
-    background-color: #bae7ff;
+    background-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
   }
 }
 

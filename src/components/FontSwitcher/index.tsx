@@ -76,7 +76,7 @@ export default function FontSwitcher() {
         <span
           style={{
             fontFamily: isDefault ? undefined : font.family,
-            color: isActive ? '#1890ff' : undefined,
+            color: isActive ? 'var(--theme-primary)' : undefined,
             fontWeight: isActive ? 500 : 400,
           }}
         >

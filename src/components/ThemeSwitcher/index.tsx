@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
 import {
   WALLPAPER_PRESETS,
@@ -139,8 +139,10 @@ export default function ThemeSwitcher() {
   const { theme, themeColor, setTheme, wallpaper, setWallpaper } = useTheme();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const wallpaperPopRef = useRef<HTMLDivElement>(null);
 
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
+  const [popPlacement, setPopPlacement] = useState<'bottom' | 'top'>('bottom');
 
   // 点击外部关闭
   useEffect(() => {
@@ -162,6 +164,31 @@ export default function ThemeSwitcher() {
   // 统一的"黑色主题悬浮区"：包含选项 + 壁纸弹框，鼠标离开整块才关
   const hoverGroupEnter = () => setWallpaperOpen(true);
   const hoverGroupLeave = () => setWallpaperOpen(false);
+
+  // 弹框智能定位：下方空间不够时自动翻转到上方
+  useLayoutEffect(() => {
+    if (!wallpaperOpen) return;
+    const raf = requestAnimationFrame(() => {
+      const popEl = wallpaperPopRef.current;
+      const hoverEl = popEl?.parentElement as HTMLElement | null;
+      if (!popEl || !hoverEl) return;
+
+      const hoverRect = hoverEl.getBoundingClientRect();
+      const estimatedHeight = Math.min(popEl.scrollHeight, 480);
+      const gap = 6;
+      const spaceBelow = window.innerHeight - hoverRect.bottom;
+      const spaceAbove = hoverRect.top;
+
+      if (spaceBelow < estimatedHeight + gap && spaceAbove > estimatedHeight + gap) {
+        setPopPlacement('top');
+        hoverEl.style.setProperty('--bridge-top', '-6px');
+      } else {
+        setPopPlacement('bottom');
+        hoverEl.style.setProperty('--bridge-top', '100%');
+      }
+    });
+    return () => cancelAnimationFrame(raf);
+  }, [wallpaperOpen]);
 
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
@@ -201,7 +228,12 @@ export default function ThemeSwitcher() {
                   </div>
 
                   {wallpaperOpen && (
-                    <div className={styles.wallpaperPop} onClick={(e) => e.stopPropagation()}>
+                    <div
+                      ref={wallpaperPopRef}
+                      className={styles.wallpaperPop}
+                      data-placement={popPlacement}
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className={styles.wallpaperPopTitle}>选择暗黑壁纸</div>
                       <div className={styles.wallpaperGrid}>
                         {WALLPAPER_PRESETS.map((w) => {
