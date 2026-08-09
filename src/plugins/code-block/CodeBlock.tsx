@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Transforms } from 'slate';
 import { useSlateStatic } from 'slate-react';
-import { Select } from 'antd';
+import { Select, ConfigProvider } from 'antd';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { SUPPORTED_LANGUAGES } from '@/utils/code-highlighter';
+import { useTheme } from '@/context/ThemeContext';
 import styles from './CodeBlock.module.less';
 
 interface CodeBlockAttrs {
@@ -25,6 +26,7 @@ interface ElementProps {
 
 export const CodeBlock = ({ attributes, children, pluginId, element }: ElementProps) => {
   const editor = useSlateStatic();
+  const { isDarkMode } = useTheme();
   const [height, setHeight] = useState<number>(element?.attrs?.height || 150);
   const [isDragging, setIsDragging] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -105,6 +107,24 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
 
   const isToolbarVisible = isHovered;
 
+  const selectTheme = isDarkMode
+    ? {
+        token: {
+          colorBgContainer: '#1a2130',
+          colorBgElevated: '#1a2130',
+          colorText: '#e5e7eb',
+          colorTextPlaceholder: '#6b7280',
+          colorBorder: '#2b3240',
+        },
+        components: {
+          Select: {
+            optionSelectedBg: '#1e2532',
+            optionActiveBg: '#253041',
+          },
+        },
+      }
+    : {};
+
   return (
     <ElementWrapper type={BlockElementType.CODE_BLOCK} pluginId={pluginId}>
       <div
@@ -116,46 +136,49 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
         <div
           contentEditable={false}
           suppressContentEditableWarning={true}
-          className={styles.toolbar}
+          className={`${styles.toolbar} ${isToolbarVisible ? styles.toolbarVisible : ''}`}
           style={{
-            backgroundColor: isToolbarVisible ? '#f9fafb' : '#ffffff',
-            borderBottom: isToolbarVisible ? '1px solid #e5e7eb' : 'none',
             opacity: isToolbarVisible ? 1 : 0,
             pointerEvents: isToolbarVisible ? 'auto' : 'none',
           }}
         >
           <div className={styles.controlsWrapper}>
-            <Select
-              value={localLanguage}
-              onChange={handleLanguageChange}
-              options={languageOptions}
-              style={{ width: 120 }}
-              size="small"
-              placeholder="选择语言"
-              popupMatchSelectWidth={false}
-              styles={{ popup: { root: { minWidth: 160 } } }}
-              showSearch
-              optionFilterProp="label"
-              filterOption={(input, option) =>
-                (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
-              }
-            />
+            <ConfigProvider theme={selectTheme}>
+              <Select
+                value={localLanguage}
+                onChange={handleLanguageChange}
+                options={languageOptions}
+                style={{ width: 120 }}
+                size="small"
+                placeholder="选择语言"
+                popupMatchSelectWidth={false}
+                styles={{ popup: { root: { minWidth: 160 } } }}
+                showSearch
+                optionFilterProp="label"
+                filterOption={(input, option) =>
+                  (option?.label as string)?.toLowerCase().includes(input.toLowerCase())
+                }
+                className="codeblock-select"
+                popupClassName="codeblock-select-dropdown"
+              />
+            </ConfigProvider>
 
-            <Select
-              value={localWrap ? 'on' : 'off'}
-              onChange={handleWrapChange}
-              options={wrapOptions}
-              style={{ width: 90 }}
-              size="small"
-              popupMatchSelectWidth={false}
-            />
+            <ConfigProvider theme={selectTheme}>
+              <Select
+                value={localWrap ? 'on' : 'off'}
+                onChange={handleWrapChange}
+                options={wrapOptions}
+                style={{ width: 90 }}
+                size="small"
+                popupMatchSelectWidth={false}
+                className="codeblock-select"
+                popupClassName="codeblock-select-dropdown"
+              />
+            </ConfigProvider>
           </div>
 
           <div
-            className={styles.copyButton}
-            style={{
-              color: showCopySuccess ? '#52c41a' : '#6b7280',
-            }}
+            className={`${styles.copyButton} ${showCopySuccess ? styles.copySuccess : ''}`}
             onClick={(e) => {
               e.stopPropagation();
               handleCopy();

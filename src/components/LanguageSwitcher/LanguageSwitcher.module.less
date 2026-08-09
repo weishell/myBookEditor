@@ -1,15 +1,27 @@
 .button {
   padding: 6px 12px;
-  border: 1px solid @border-color-light;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 55%, @border-color-light);
   border-radius: 4px;
   background-color: @bg-base;
   cursor: pointer;
   font-size: @font-size-sm;
-  color: @text-secondary;
+  color: var(--theme-primary);
   transition: all 0.2s ease;
 
   &:hover {
-    background-color: @bg-subtle;
-    border-color: @border-color;
+    background-color: color-mix(in srgb, var(--theme-primary) 8%, @bg-subtle);
+    border-color: var(--theme-primary);
+  }
+}
+
+/* 暗黑模式下：themeColor 可能是深黑色，在暗底上看不见，按钮改用亮色 */
+:global(.dark-mode) .button {
+  color: var(--dm-text-primary, #e5e7eb);
+  border-color: var(--dm-border, #2b3240);
+
+  &:hover {
+    background-color: var(--dm-bg-hover, #1e2532);
+    border-color: var(--dm-text-primary, #e5e7eb);
+    color: var(--dm-text-primary, #e5e7eb);
   }
 }

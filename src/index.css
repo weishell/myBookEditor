@@ -36,9 +36,85 @@ body {
   background-color: color-mix(in srgb, var(--theme-primary) 28%, transparent);
 }
 
+/* 暗黑模式下选区需要更强的对比度 - 偏白色 */
+.dark-mode ::selection {
+  background-color: color-mix(in srgb, #ffffff 28%, var(--theme-primary));
+  color: #ffffff;
+}
+
 /* 光标颜色 - 跟随主题色 */
 .caret-theme {
   caret-color: var(--theme-primary);
+}
+
+/* 暗黑模式下光标需要更明显 - 偏白色 */
+.dark-mode .caret-theme {
+  caret-color: color-mix(in srgb, #ffffff 60%, var(--theme-primary));
+}
+
+/* ================== 代码块内 antd Select 全局样式 ================== */
+
+/* 默认模式：边框和文字跟随主题色 */
+.codeblock-select .ant-select-selector {
+  border-color: color-mix(in srgb, var(--theme-primary) 55%, #d9d9d9) !important;
+}
+
+.codeblock-select .ant-select-selection-item {
+  color: var(--theme-primary) !important;
+}
+
+.codeblock-select .ant-select-arrow {
+  color: color-mix(in srgb, var(--theme-primary) 70%, #999) !important;
+}
+
+/* hover / focus 时边框完全变主题色 */
+.codeblock-select:hover .ant-select-selector,
+.codeblock-select.ant-select-focused .ant-select-selector {
+  border-color: var(--theme-primary) !important;
+}
+
+/* 暗黑模式：暗底亮字 */
+.dark-mode .codeblock-select .ant-select-selector {
+  background-color: #1a2130 !important;
+  border-color: #2b3240 !important;
+}
+
+.dark-mode .codeblock-select:hover .ant-select-selector {
+  border-color: #9ca3af !important;
+}
+
+.dark-mode .codeblock-select.ant-select-focused .ant-select-selector {
+  border-color: var(--theme-primary) !important;
+}
+
+.dark-mode .codeblock-select .ant-select-selection-item {
+  color: #e5e7eb !important;
+}
+
+.dark-mode .codeblock-select .ant-select-selection-placeholder {
+  color: #6b7280 !important;
+}
+
+.dark-mode .codeblock-select .ant-select-arrow {
+  color: #9ca3af !important;
+}
+
+/* 下拉菜单（portal 渲染到 body） */
+.dark-mode .codeblock-select-dropdown {
+  background-color: #1a2130 !important;
+}
+
+.dark-mode .codeblock-select-dropdown .ant-select-item {
+  color: #e5e7eb !important;
+}
+
+.dark-mode .codeblock-select-dropdown .ant-select-item-option-selected {
+  background-color: color-mix(in srgb, var(--theme-primary) 20%, #1e2532) !important;
+  color: #e5e7eb !important;
+}
+
+.dark-mode .codeblock-select-dropdown .ant-select-item-option-active {
+  background-color: #1e2532 !important;
 }
 
 

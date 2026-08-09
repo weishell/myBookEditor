@@ -17,6 +17,13 @@
   padding: @spacing-xs @spacing-md;
   transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   user-select: none;
+  background-color: @bg-base;
+  border-bottom: 1px solid transparent;
+}
+
+.toolbarVisible {
+  background-color: @bg-base;
+  border-bottom-color: @border-color-light;
 }
 
 .controlsWrapper {
@@ -32,6 +39,11 @@
   border-radius: 3px;
   background-color: @bg-base;
   border: 1px solid @border-color-light;
+  color: @text-secondary;
+}
+
+.copySuccess {
+  color: @color-success;
 }
 
 .codeBodyWrapper {
@@ -69,4 +81,36 @@
   height: 2px;
   background-color: @border-color;
   border-radius: 1px;
+}
+
+/* ================== 暗黑模式覆盖 ================== */
+:global(.dark-mode) .container {
+  background-color: var(--dm-bg-subtle, #0f141d);
+  border-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .toolbar,
+:global(.dark-mode) .toolbarVisible {
+  background-color: var(--dm-bg-base, #121721);
+  border-bottom-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .codeContent {
+  background-color: var(--dm-bg-subtle, #0f141d);
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .copyButton {
+  background-color: var(--dm-bg-base, #121721);
+  border-color: var(--dm-border, #2b3240);
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .resizeHandle {
+  background-color: var(--dm-bg-subtle, #0f141d);
+  border-top-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .resizeHandleBar {
+  background-color: var(--dm-border, #2b3240);
 }

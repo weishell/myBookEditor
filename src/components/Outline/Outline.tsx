@@ -1,10 +1,19 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useEditorMode } from '@/context/EditorContext';
 import { useHeadings } from './useHeadings';
+import { BlockElementType } from '@/enums';
 import styles from './Outline.module.less';
 
 // 断点：小于此宽度时显示为悬浮模式
 const MOBILE_BREAKPOINT = 1200;
+
+/** 从 Slate 节点递归提取纯文本 */
+function extractNodeText(node: any): string {
+  if (!node) return '';
+  if (node.text) return node.text;
+  if (!node.children || !Array.isArray(node.children)) return '';
+  return node.children.map((child: any) => extractNodeText(child)).join('');
+}
 
 export function Outline() {
   const { editor } = useEditorMode();
@@ -24,6 +33,25 @@ export function Outline() {
 
   const hasHeadings = headings.length > 0;
 
+  // 取文档标题：优先从 HEADING_TITLE 块提取（即文章大标题"欢迎使用文档编辑器"），
+  // 其次 fallback 到第一个 h1，都没有则留空
+  const docTitle = useMemo(() => {
+    if (!editor) return '';
+    const children = (editor as any).children;
+    if (!Array.isArray(children)) return '';
+    // 找 heading-title 类型块
+    for (const node of children) {
+      if (node.type === BlockElementType.HEADING_TITLE) {
+        const text = extractNodeText(node);
+        if (text.trim()) return text.trim();
+      }
+    }
+    // fallback: 第一个 h1
+    const h1 = headings.find((h) => h.level === 1);
+    if (h1?.text) return h1.text;
+    return '';
+  }, [editor, headings]);
+
   // 移动端显示为悬浮按钮
   if (isMobile) {
     return (
@@ -33,8 +61,8 @@ export function Outline() {
           <button
             className={styles.fab}
             onClick={() => setIsCollapsed(!isCollapsed)}
-            aria-label="目录"
-            title="目录"
+            aria-label={docTitle || '目录导航'}
+            title={docTitle || '目录导航'}
           >
             <svg
               width="20"
@@ -59,7 +87,7 @@ export function Outline() {
         {isCollapsed && hasHeadings && (
           <div className={`${styles.panel} ${styles.panelMobile}`}>
             <div className={styles.mobileHeader}>
-              <span>目录</span>
+              <span>{docTitle || '目录'}</span>
               <button
                 className={styles.closeBtn}
                 onClick={() => setIsCollapsed(false)}
@@ -99,7 +127,7 @@ export function Outline() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.sidebarHeader}>目录</div>
+      <div className={styles.sidebarHeader}>{docTitle || '目录'}</div>
       <OutlineList headings={headings} activeId={activeId} onSelect={scrollToHeading} />
     </aside>
   );

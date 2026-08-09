@@ -44,3 +44,10 @@
     opacity: 0.4;
   }
 }
+
+/* 暗黑模式：去掉白色阴影，背景变暗 */
+:global(.dark-mode) .iconButton,
+:global(.dark-mode) .dragButton {
+  background-color: var(--dm-bg-base, #121721);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}

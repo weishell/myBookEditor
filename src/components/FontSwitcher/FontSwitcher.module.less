@@ -3,18 +3,18 @@
   align-items: center;
   gap: 4px;
   padding: 6px 10px;
-  border: 1px solid @border-color-light;
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 55%, @border-color-light);
   background: @bg-base;
   cursor: pointer;
   font-size: 14px;
-  color: @text-primary;
+  color: var(--theme-primary);
   border-radius: 6px;
   transition: all 0.15s ease;
   min-width: 80px;
 
   &:hover {
+    background-color: color-mix(in srgb, var(--theme-primary) 8%, @bg-subtle);
     border-color: var(--theme-primary);
-    color: var(--theme-primary);
   }
 }
 
@@ -33,5 +33,21 @@
 
 .arrow {
   font-size: 10px;
-  color: #999;
+  color: color-mix(in srgb, var(--theme-primary) 70%, #999);
+}
+
+/* 暗黑模式下：themeColor 可能是深黑色，在暗底上看不见，按钮改用亮色 */
+:global(.dark-mode) .button {
+  color: var(--dm-text-primary, #e5e7eb);
+  border-color: var(--dm-border, #2b3240);
+
+  &:hover {
+    background-color: var(--dm-bg-hover, #1e2532);
+    border-color: var(--dm-text-primary, #e5e7eb);
+    color: var(--dm-text-primary, #e5e7eb);
+  }
+}
+
+:global(.dark-mode) .arrow {
+  color: var(--dm-text-secondary, #9ca3af);
 }

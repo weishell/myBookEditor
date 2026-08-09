@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import { useDocBar } from '@/plugins/docbar-context';
 import { useMenu } from '@/plugins/menu-context';
 import { useSelection } from '@/plugins/selection-context';
+import { useTheme } from '@/context/ThemeContext';
 import { BlockElementType } from '@/enums';
 import styles from './DocBar.module.less';
 
@@ -179,7 +180,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
   }
 };
 
-const getElementColor = (): string => {
+const getElementColor = (isDarkMode: boolean): string => {
+  if (isDarkMode) return 'var(--dm-text-primary, #e5e7eb)';
   return 'var(--theme-primary)';
 };
 
@@ -187,6 +189,7 @@ export const DocBar = () => {
   const { activeElement } = useDocBar();
   const { openMenu, closeMenu, hoveringMenu } = useMenu();
   const { hasSelection } = useSelection();
+  const { isDarkMode } = useTheme();
   const [iconHovered, setIconHovered] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
   const timerRef = useRef<number | null>(null);
@@ -276,7 +279,7 @@ export const DocBar = () => {
     currentElement.attrs,
     currentElement.isEmpty,
   );
-  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor();
+  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor(isDarkMode);
 
   return (
     <div

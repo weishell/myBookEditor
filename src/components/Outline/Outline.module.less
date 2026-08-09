@@ -215,3 +215,30 @@
 :global(.dark-mode) .mobileHeader {
   border-bottom-color: var(--dm-border-light, #202837);
 }
+
+/* 暗黑模式下目录选中项增强对比度 */
+:global(.dark-mode) .item {
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .item:hover {
+  color: var(--dm-text-primary, #e5e7eb);
+  background-color: var(--dm-bg-hover, #1e2532);
+}
+
+/* 黑色主题下 themeColor=#1f1f1f 在暗底上看不见，所以暗黑模式下：
+   - 文字色用主题色和白色的混合（保持主题色调但提亮）
+   - 背景色用主题色和暗背景的混合
+   - 左侧标识条也要提亮 */
+:global(.dark-mode) .active {
+  color: color-mix(in srgb, var(--theme-primary) 28%, #ffffff);
+  background-color: color-mix(in srgb, var(--theme-primary) 30%, var(--dm-bg-hover, #1e2532));
+
+  &::before {
+    background-color: color-mix(in srgb, var(--theme-primary) 35%, #ffffff);
+  }
+}
+
+:global(.dark-mode) .active:hover {
+  background-color: color-mix(in srgb, var(--theme-primary) 40%, var(--dm-bg-hover, #1e2532));
+}

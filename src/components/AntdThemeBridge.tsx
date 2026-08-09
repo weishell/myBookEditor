@@ -38,6 +38,10 @@ export default function AntdThemeBridge({ children }: { children: React.ReactNod
       components: isDarkMode
         ? {
             Select: {
+              selectorBg: '#1a2130',
+              colorText: '#e5e7eb',
+              colorTextPlaceholder: '#6b7280',
+              colorBorder: '#2b3240',
               optionSelectedBg: 'rgba(59, 130, 246, 0.16)',
               optionActiveBg: '#1e2532',
             },
