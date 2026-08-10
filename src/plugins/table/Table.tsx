@@ -110,7 +110,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
 
   // 从 Slate 数据直接计算每列的 left 和 width，零 DOM 测量
   const colLayouts: Array<{ left: number; width: number }> = (() => {
-    const firstRowCells = element.children?.[0]?.children || [];
+    const firstRow = element.children?.[0] as CustomElement | undefined;
+    const firstRowCells = (firstRow?.children || []) as CustomElement[];
     const layouts: Array<{ left: number; width: number }> = [];
     let cumLeft = 0;
     for (const cell of firstRowCells) {
