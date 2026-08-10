@@ -115,7 +115,11 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
         onMouseEnter={() => setHovered(true)}
         onMouseLeave={() => setHovered(false)}
       >
-        <div className={styles.header}>
+        <div
+          className={styles.header}
+          contentEditable={false}
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <span className={styles.typeIcon} aria-hidden>
             <Icon size={18} />
           </span>

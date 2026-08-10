@@ -41,15 +41,18 @@
     font-weight: 500;
     font-family: inherit;
     line-height: 1;
-    padding: 1px 4px;
-    margin: -1px -4px;
-    border: 1px solid currentColor;
-    border-radius: 4px;
-    background: @bg-base;
+    padding: 0;
+    margin: 0;
+    border: none;
+    border-bottom: 2px solid currentColor;
+    border-radius: 0;
+    background: transparent;
     color: inherit;
     outline: none;
     min-width: 60px;
     max-width: 200px;
+    box-shadow: none;
+    -webkit-appearance: none;
   }
 
   // 内容区
@@ -117,11 +120,6 @@
 }
 
 /* ================== 暗黑模式覆盖 ================== */
-
-:global(.dark-mode) .blockquote .labelInput {
-  background: var(--dm-bg-base, #121721);
-  color: inherit;
-}
 
 /* info 类型在暗黑模式下主题色需要提亮 */
 :global(.dark-mode) .blockquote.typeInfo {
