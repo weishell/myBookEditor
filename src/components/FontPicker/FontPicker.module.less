@@ -3,6 +3,15 @@
   flex-direction: column;
   gap: 2px;
   min-width: 160px;
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: 4px;
+}
+
+:global(.dark-mode) .picker {
+  background-color: var(--dm-bg-base, #121721);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 .item {
@@ -29,6 +38,14 @@
   }
 }
 
+:global(.dark-mode) .item {
+  color: var(--dm-text-primary, #e5e7eb);
+
+  &:hover {
+    background-color: var(--dm-bg-hover, #1e2532);
+  }
+}
+
 .itemActive {
   background-color: color-mix(in srgb, var(--theme-primary) 12%, transparent);
   color: var(--theme-primary);
@@ -45,16 +62,25 @@
 
 .loading {
   font-size: 12px;
-  color: #999;
+  color: @text-tertiary;
   animation: blink 1s infinite;
+}
+
+:global(.dark-mode) .loading {
+  color: var(--dm-text-tertiary, #8c8c8c);
 }
 
 .badge {
   font-size: 10px;
-  color: #999;
-  background: #f0f0f0;
+  color: @text-tertiary;
+  background: @bg-hover;
   padding: 1px 5px;
   border-radius: 2px;
+}
+
+:global(.dark-mode) .badge {
+  color: var(--dm-text-tertiary, #8c8c8c);
+  background: var(--dm-bg-hover, #1e2532);
 }
 
 @keyframes blink {

@@ -3,36 +3,31 @@
 // 通过 MutationObserver 监听 --theme-primary 变化并同步到 --rgb-accent
 
 .iconPicker {
-  background: #fff;
+  background: @bg-base;
   border-radius: 10px;
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.12);
+  box-shadow: @shadow-lg;
   padding: 0;
   width: 292px;
   z-index: 10002;
   box-sizing: border-box;
   overflow: hidden;
 
-  // emoji-mart v5 的 #root 是主容器，使用 flex 布局
   :global(#root) {
     width: 100% !important;
   }
 
-  // 覆盖 emoji-mart 默认内边距，让网格填满容器
   :global(.padding) {
     padding: 10px !important;
   }
 
-  // 网格容器零边距，消除右侧空白
   :global(.scroll) {
     padding-right: 0 !important;
   }
 
-  // 行容器零右边距
   :global(.row) {
     width: 100% !important;
   }
 
-  // emoji 按钮背景色：hover/选中态跟随主题色
   :global(.category button) {
     .background {
       background-color: var(--em-color-border) !important;
@@ -50,7 +45,6 @@
     }
   }
 
-  // 分类标题
   :global(.sticky) {
     background-color: rgba(var(--em-rgb-background), 0.95) !important;
     color: var(--color-b) !important;
@@ -59,7 +53,6 @@
     font-size: 12px;
   }
 
-  // 导航栏（底部）：激活指示器用主题色
   :global(#nav .bar) {
     background-color: rgb(var(--em-rgb-accent)) !important;
   }
@@ -72,17 +65,14 @@
     color: var(--color-a) !important;
   }
 
-  // 搜索框：聚焦态主题色
   :global(.search input[type="search"]:focus) {
     box-shadow: inset 0 0 0 1px rgb(var(--em-rgb-accent)) !important;
   }
 
-  // 皮肤色调选中态
   :global(.skin-tone-button[aria-selected]) {
     background-color: rgb(var(--em-rgb-accent)) !important;
   }
 
-  // 滚动条
   :global(.scroll::-webkit-scrollbar-thumb) {
     background-color: var(--em-color-border) !important;
     border-radius: 4px;
@@ -93,26 +83,40 @@
   }
 }
 
+:global(.dark-mode) .iconPicker {
+  background: var(--dm-bg-base, #121721);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.45);
+}
+
 .header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px 6px;
-  border-bottom: 1px solid #f0f0f0;
-  background: #fff;
+  border-bottom: 1px solid @border-color-lighter;
+  background: @bg-base;
+}
+
+:global(.dark-mode) .header {
+  border-bottom-color: var(--dm-border, #2b3240);
+  background: var(--dm-bg-base, #121721);
 }
 
 .title {
   font-size: 13px;
   font-weight: 600;
-  color: #262626;
+  color: @text-primary;
+}
+
+:global(.dark-mode) .title {
+  color: var(--dm-text-primary, #e5e7eb);
 }
 
 .removeBtn {
   display: inline-flex;
   align-items: center;
   font-size: 12px;
-  color: #8c8c8c;
+  color: @text-tertiary;
   padding: 3px 10px;
   border-radius: 6px;
   background: transparent;
@@ -124,4 +128,8 @@
     background: color-mix(in srgb, var(--theme-primary) 10%, transparent);
     color: var(--theme-primary);
   }
+}
+
+:global(.dark-mode) .removeBtn {
+  color: var(--dm-text-tertiary, #8c8c8c);
 }
