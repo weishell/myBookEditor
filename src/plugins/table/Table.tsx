@@ -505,6 +505,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     try {
       const tablePath = ReactEditor.findPath(editor, element);
       const rows = element.children as CustomElement[];
+      // 删除前先清空选区，防止 Slate normalize 后把选区锚到相邻 cell
+      Transforms.deselect(editor);
+      ReactEditor.blur(editor);
       // 如果只剩一行，删除整个表格
       if (rows.length <= 1) {
         Transforms.removeNodes(editor, { at: tablePath });
@@ -512,6 +515,14 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         Transforms.removeNodes(editor, { at: [...tablePath, selectedRow] });
       }
       setSelectedRow(null);
+      // 删除后再次清空（防止 normalize 重新设置选区）
+      Transforms.deselect(editor);
+      ReactEditor.blur(editor);
+      // DOM 兜底
+      const domSel = window.getSelection?.();
+      if (domSel && domSel.rangeCount > 0) domSel.removeAllRanges();
+      const ae = document.activeElement as HTMLElement | null;
+      ae?.blur?.();
     } catch (err) {
       console.error('Delete row failed:', err);
     }
@@ -522,6 +533,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     try {
       const tablePath = ReactEditor.findPath(editor, element);
       const rows = element.children as CustomElement[];
+      // 删除前先清空选区，防止 Slate normalize 后把选区锚到相邻 cell
+      Transforms.deselect(editor);
+      ReactEditor.blur(editor);
       // 如果只剩一列，删除整个表格
       if (rows[0].children.length <= 1) {
         Transforms.removeNodes(editor, { at: tablePath });
@@ -534,10 +548,124 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         });
       }
       setSelectedCol(null);
+      // 删除后再次清空（防止 normalize 重新设置选区）
+      Transforms.deselect(editor);
+      ReactEditor.blur(editor);
+      // DOM 兜底
+      const domSel = window.getSelection?.();
+      if (domSel && domSel.rangeCount > 0) domSel.removeAllRanges();
+      const ae = document.activeElement as HTMLElement | null;
+      ae?.blur?.();
     } catch (err) {
       console.error('Delete column failed:', err);
     }
   }, [selectedCol, editor, element]);
+
+  // ========== 全局监听：调试 + 兜底清空非法光标 ==========
+  useEffect(() => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    // 1) 捕获阶段拦截：比 React 合成事件更早，确保浏览器默认行为被阻止
+    const onMouseDownCapture = (e: MouseEvent) => {
+      const t = e.target as HTMLElement;
+      if (!t || !wrapper.contains(t)) return;
+
+      // 白名单：td/th（可编辑单元格）
+      const inCell = t.closest('td, th');
+      if (inCell) return; // 正常点击单元格，放行
+
+      // 白名单：已注册的交互控件
+      const interactive = t.closest(
+        [
+          'button',
+          '[class*="colHeader"]',
+          '[class*="rowHeader"]',
+          '[class*="selectionToolbar"]',
+          '[class*="toolbarBtn"]',
+          '[class*="resizeHandle"]',
+          '[class*="contextMenu"]',
+        ].join(','),
+      );
+      if (interactive) {
+        // 交互控件：阻止默认行为（防光标）但允许事件传播（让 onClick 正常触发）
+        e.preventDefault();
+        return;
+      }
+
+      // 非法区域（空白、dot、indicator、Highlight 等）
+      console.log('[Table] mousedown on non-cell target:', {
+        tag: t.tagName,
+        className: typeof t.className === 'string' ? t.className : '',
+        id: t.id,
+        parentTag: t.parentElement?.tagName,
+        parentClass:
+          typeof t.parentElement?.className === 'string' ? t.parentElement.className : '',
+        rect: t.getBoundingClientRect
+          ? {
+              x: t.getBoundingClientRect().x,
+              y: t.getBoundingClientRect().y,
+              w: t.getBoundingClientRect().width,
+              h: t.getBoundingClientRect().height,
+            }
+          : null,
+        clientX: e.clientX,
+        clientY: e.clientY,
+      });
+      e.preventDefault();
+      e.stopPropagation();
+    };
+
+    // 2) selectionchange 兜底：如果光标意外落在 wrapper 内但不在 td/th 内，立即清空
+    const onSelectionChange = () => {
+      const sel = window.getSelection();
+      if (!sel || sel.rangeCount === 0 || sel.isCollapsed === false) {
+        // 有非折叠选区（用户选中文字）时不清空
+        if (sel && sel.rangeCount > 0 && !sel.isCollapsed) {
+          const range = sel.getRangeAt(0);
+          const startEl =
+            range.startContainer.nodeType === 1
+              ? (range.startContainer as Element)
+              : range.startContainer.parentElement;
+          if (startEl && wrapper.contains(startEl)) {
+            const inCell = startEl.closest('td, th');
+            if (!inCell) {
+              // 选区在 wrapper 内但不在单元格内 → 清空
+              sel.removeAllRanges();
+            }
+          }
+        }
+        return;
+      }
+      // 折叠选区（光标）
+      const range = sel.getRangeAt(0);
+      const startEl =
+        range.startContainer.nodeType === 1
+          ? (range.startContainer as Element)
+          : range.startContainer.parentElement;
+      if (!startEl || !wrapper.contains(startEl)) return;
+
+      const inCell = startEl.closest('td, th');
+      if (!inCell) {
+        console.log('[Table] Caret landed outside cell, clearing:', {
+          startContainerTag: range.startContainer.nodeName,
+          startElTag: startEl.tagName,
+          startElClass: typeof startEl.className === 'string' ? startEl.className : '',
+          offset: range.startOffset,
+        });
+        sel.removeAllRanges();
+      }
+    };
+
+    // 捕获阶段，最早执行
+    document.addEventListener('mousedown', onMouseDownCapture, true);
+    document.addEventListener('selectionchange', onSelectionChange);
+
+    return () => {
+      document.removeEventListener('mousedown', onMouseDownCapture, true);
+      document.removeEventListener('selectionchange', onSelectionChange);
+    };
+  }, []);
 
   // ========== hover 检测（列头区域）==========
   const lastMouseMoveRef = useRef(0);
@@ -729,6 +857,36 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleWrapperMouseMove}
+      onMouseDown={(e) => {
+        // Bug 1：点击 wrapper 内非单元格、非交互控件时，事件会冒泡到外层
+        // Slate contentEditable 并产生光标。仅对白名单节点放行：
+        const t = e.target as HTMLElement;
+        if (t.closest) {
+          const editable =
+            t.closest('td, th') ||
+            t.closest(
+              // 合法交互控件 / 覆盖层
+              [
+                'button',
+                '[class*="colHeader"]',
+                '[class*="rowHeader"]',
+                '[class*="selectionToolbar"]',
+                '[class*="toolbarBtn"]',
+                '[class*="insertTooltip"]',
+                '[class*="indicatorLine"]',
+                '[class*="resizeHandle"]',
+                '[class*="Highlight"]', // hover/selected/drag 高亮
+                '[class*="dot"]',
+                '[class*="contextMenu"]',
+              ].join(','),
+            );
+          if (!editable) {
+            // 不属于可编辑单元格 且 不属于交互控件 → 阻止冒泡到外层 contentEditable 产生光标
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }
+      }}
     >
       {/* 删除工具栏 - 出现在选中的行/列上方 */}
       {(selectedRow !== null || selectedCol !== null) && (
@@ -756,7 +914,15 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           }}
         >
           {selectedRow !== null && (
-            <button className={styles.toolbarBtn} onClick={handleDeleteSelectedRow}>
+            <button
+              className={styles.toolbarBtn}
+              onClick={handleDeleteSelectedRow}
+              onMouseDown={(e) => {
+                // 关键：阻止浏览器原生 mousedown 改 document.selection / 抢焦点
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
               <svg
                 width="14"
                 height="14"
@@ -771,7 +937,15 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             </button>
           )}
           {selectedCol !== null && (
-            <button className={styles.toolbarBtn} onClick={handleDeleteSelectedCol}>
+            <button
+              className={styles.toolbarBtn}
+              onClick={handleDeleteSelectedCol}
+              onMouseDown={(e) => {
+                // 关键：阻止浏览器原生 mousedown 改 document.selection / 抢焦点
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
               <svg
                 width="14"
                 height="14"
