@@ -1,6 +1,7 @@
 // Drawio 流程图插件 - 主组件
 // 支持内联预览 + 全屏编辑模式，通过 iframe 嵌入 draw.io
 import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react';
+import ReactDOM from 'react-dom';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
@@ -31,9 +32,11 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   const isSelected = useSelected();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
   const [description, setDescription] = useState(attrs?.description || '');
   const [bounds, setBounds] = useState<DOMRect | null>(null);
+  const [resizeOffset, setResizeOffset] = useState({ x: 0, y: 0 });
   const hideTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -92,12 +95,12 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
     [editor, getElementPath],
   );
 
-  // 保存流程图内容
+  // 保存流程图内容 - 有 SVG 预览图时更新预览，否则只更新 XML
   const handleSave = useCallback(
     (xml: string, svgDataUrl?: string) => {
       updateAttrs({
         xml,
-        content: svgDataUrl || xml,
+        ...(svgDataUrl ? { content: svgDataUrl } : {}),
       });
     },
     [updateAttrs],
@@ -106,6 +109,18 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   // 打开编辑器
   const handleOpenEditor = useCallback(() => {
     setIsEditing(true);
+  }, []);
+
+  // 打开预览（放大查看）
+  const handleOpenPreview = useCallback(() => {
+    if (attrs?.content) {
+      setIsPreviewing(true);
+    }
+  }, [attrs?.content]);
+
+  // 关闭预览
+  const handleClosePreview = useCallback(() => {
+    setIsPreviewing(false);
   }, []);
 
   // 关闭编辑器
@@ -166,13 +181,19 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
     }, 300);
   }, [isSelected]);
 
-  // 拖拽缩放回调
+  // 拖拽缩放回调 - 实时更新尺寸 + 锚点补偿偏移
   const handleResize = useCallback(
-    (newWidth: number, newHeight: number) => {
+    (newWidth: number, newHeight: number, offsetX: number, offsetY: number) => {
       updateAttrs({ width: newWidth, height: newHeight });
+      setResizeOffset({ x: offsetX, y: offsetY });
     },
     [updateAttrs],
   );
+
+  // 拖拽结束 - 清除偏移（容器恢复居中）
+  const handleResizeEnd = useCallback(() => {
+    setResizeOffset({ x: 0, y: 0 });
+  }, []);
 
   // 预览内容处理
   const hasContent = !!attrs?.content;
@@ -249,7 +270,12 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             className={`${styles.container} ${isSelected ? styles.containerSelected : ''}`}
             contentEditable={false}
             suppressContentEditableWarning={true}
-            onClick={handleOpenEditor}
+            onClick={handleOpenPreview}
+            style={{
+              width: attrs?.width || undefined,
+              height: attrs?.height || undefined,
+              transform: `translate(${resizeOffset.x}px, ${resizeOffset.y}px)`,
+            }}
           >
             {/* 标题栏 */}
             <div className={styles.titleBar}>
@@ -258,7 +284,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             </div>
 
             {/* 内容预览 */}
-            <div className={styles.previewArea} style={{ minHeight: attrs?.height || 200 }}>
+            <div className={styles.previewArea}>
               {previewSrc ? (
                 <img
                   src={previewSrc}
@@ -296,7 +322,11 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
 
           {/* 8点位拖拽缩放 */}
           {(isSelected || showToolbar) && bounds && (
-            <DrawioResizeHandle bounds={bounds} onResize={handleResize} />
+            <DrawioResizeHandle
+              bounds={bounds}
+              onResize={handleResize}
+              onResizeEnd={handleResizeEnd}
+            />
           )}
         </div>
 
@@ -321,6 +351,31 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
       {isEditing && (
         <DrawioEditor initialXml={attrs?.xml} onSave={handleSave} onClose={handleCloseEditor} />
       )}
+
+      {/* 预览放大遮罩 */}
+      {isPreviewing &&
+        previewSrc &&
+        ReactDOM.createPortal(
+          <div className={styles.previewOverlay} onClick={handleClosePreview}>
+            <img src={previewSrc} alt="flowchart preview" className={styles.previewOverlayImage} />
+            <button className={styles.previewCloseBtn} onClick={handleClosePreview}>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>,
+          document.body,
+        )}
     </ElementWrapper>
   );
 };

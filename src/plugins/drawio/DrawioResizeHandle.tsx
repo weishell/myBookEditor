@@ -1,4 +1,5 @@
 // Drawio 8点位拖拽缩放组件 - 使用 fixed 定位
+// 每个点位以其对边/对角为锚点收缩生长（锚点固定，被拖拽侧跟随鼠标）
 import React, { useRef, useCallback } from 'react';
 import styles from './Drawio.module.less';
 
@@ -8,8 +9,14 @@ type HandlePos = (typeof HANDLE_POSITIONS)[number];
 
 interface DrawioResizeHandleProps {
   bounds: DOMRect;
-  onResize: (width: number, height: number) => void;
+  onResize: (width: number, height: number, offsetX: number, offsetY: number) => void;
+  onResizeEnd: () => void;
 }
+
+const MIN_WIDTH = 200;
+const MAX_WIDTH = 1600;
+const MIN_HEIGHT = 150;
+const MAX_HEIGHT = 1200;
 
 const getCursor = (pos: HandlePos): string => {
   const map: Record<HandlePos, string> = {
@@ -25,12 +32,19 @@ const getCursor = (pos: HandlePos): string => {
   return map[pos];
 };
 
-const DrawioResizeHandle: React.FC<DrawioResizeHandleProps> = ({ bounds, onResize }) => {
+const DrawioResizeHandle: React.FC<DrawioResizeHandleProps> = ({
+  bounds,
+  onResize,
+  onResizeEnd,
+}) => {
   const isDraggingRef = useRef(false);
-  const dragStartRef = useRef({ x: 0, y: 0, width: 0, height: 0 });
+  // 拖拽开始时锁定的快照，避免拖拽中 bounds 变化导致计算漂移
+  const startRef = useRef({ left: 0, top: 0, right: 0, bottom: 0, width: 0, height: 0 });
   const dragHandleRef = useRef<HandlePos | null>(null);
   const onResizeRef = useRef(onResize);
+  const onResizeEndRef = useRef(onResizeEnd);
   onResizeRef.current = onResize;
+  onResizeEndRef.current = onResizeEnd;
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent, position: HandlePos) => {
@@ -38,9 +52,11 @@ const DrawioResizeHandle: React.FC<DrawioResizeHandleProps> = ({ bounds, onResiz
       e.stopPropagation();
       isDraggingRef.current = true;
       dragHandleRef.current = position;
-      dragStartRef.current = {
-        x: e.clientX,
-        y: e.clientY,
+      startRef.current = {
+        left: bounds.left,
+        top: bounds.top,
+        right: bounds.right,
+        bottom: bounds.bottom,
         width: bounds.width,
         height: bounds.height,
       };
@@ -48,49 +64,52 @@ const DrawioResizeHandle: React.FC<DrawioResizeHandleProps> = ({ bounds, onResiz
       const onMouseMove = (ev: MouseEvent) => {
         if (!isDraggingRef.current || !dragHandleRef.current) return;
 
-        const dx = ev.clientX - dragStartRef.current.x;
-        const dy = ev.clientY - dragStartRef.current.y;
-        const startW = dragStartRef.current.width;
-        const startH = dragStartRef.current.height;
+        const s = startRef.current;
+        const pos = dragHandleRef.current;
+        const mouseX = ev.clientX;
+        const mouseY = ev.clientY;
 
-        let newW = startW;
-        let newH = startH;
+        let newW = s.width;
+        let newH = s.height;
+        let offsetX = 0;
+        let offsetY = 0;
 
-        switch (dragHandleRef.current) {
-          case 'nw':
-            newW = startW - dx;
-            newH = startH - dy;
-            break;
-          case 'ne':
-            newW = startW + dx;
-            newH = startH - dy;
-            break;
-          case 'sw':
-            newW = startW - dx;
-            newH = startH + dy;
-            break;
-          case 'se':
-            newW = startW + dx;
-            newH = startH + dy;
-            break;
-          case 'n':
-            newH = startH - dy;
-            break;
-          case 's':
-            newH = startH + dy;
-            break;
-          case 'w':
-            newW = startW - dx;
-            break;
-          case 'e':
-            newW = startW + dx;
-            break;
+        // 水平方向：锚点在对边
+        if (pos === 'e' || pos === 'ne' || pos === 'se') {
+          // 锚点在左边，向右生长
+          newW = mouseX - s.left;
+        } else if (pos === 'w' || pos === 'nw' || pos === 'sw') {
+          // 锚点在右边，向左生长
+          newW = s.right - mouseX;
         }
 
-        newW = Math.max(200, Math.min(1600, newW));
-        newH = Math.max(150, Math.min(1200, newH));
+        // 垂直方向：锚点在对边
+        if (pos === 's' || pos === 'sw' || pos === 'se') {
+          // 锚点在上边，向下生长
+          newH = mouseY - s.top;
+        } else if (pos === 'n' || pos === 'nw' || pos === 'ne') {
+          // 锚点在下边，向上生长
+          newH = s.bottom - mouseY;
+        }
 
-        onResizeRef.current(newW, newH);
+        newW = Math.max(MIN_WIDTH, Math.min(MAX_WIDTH, newW));
+        newH = Math.max(MIN_HEIGHT, Math.min(MAX_HEIGHT, newH));
+
+        // 容器水平居中，宽度变化会导致中心偏移，需补偿使锚点固定
+        if (pos === 'w' || pos === 'nw' || pos === 'sw') {
+          // 锚点在右 → 向左平移补偿（宽度增加 (newW - s.width)/2，居中会右移一半）
+          offsetX = -(newW - s.width) / 2;
+        } else if (pos === 'e' || pos === 'ne' || pos === 'se') {
+          // 锚点在左 → 向右平移补偿
+          offsetX = (newW - s.width) / 2;
+        }
+
+        // 垂直方向：锚点在上时无需补偿（文档流自然下移），锚点在下时向上补偿
+        if (pos === 'n' || pos === 'nw' || pos === 'ne') {
+          offsetY = -(newH - s.height);
+        }
+
+        onResizeRef.current(newW, newH, offsetX, offsetY);
       };
 
       const onMouseUp = () => {
@@ -98,12 +117,13 @@ const DrawioResizeHandle: React.FC<DrawioResizeHandleProps> = ({ bounds, onResiz
         dragHandleRef.current = null;
         window.removeEventListener('mousemove', onMouseMove);
         window.removeEventListener('mouseup', onMouseUp);
+        onResizeEndRef.current();
       };
 
       window.addEventListener('mousemove', onMouseMove);
       window.addEventListener('mouseup', onMouseUp);
     },
-    [bounds.width, bounds.height],
+    [bounds.left, bounds.top, bounds.right, bounds.bottom, bounds.width, bounds.height],
   );
 
   const handleSize = 10;

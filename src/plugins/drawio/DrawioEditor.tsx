@@ -19,6 +19,9 @@ const DrawioEditor: React.FC<DrawioEditorProps> = ({ initialXml, onSave, onClose
   const onSaveRef = useRef(onSave);
   const onCloseRef = useRef(onClose);
   const loadedRef = useRef(false);
+  const lastXmlRef = useRef(initialXml || '');
+  // 用户主动保存后，等待 export 返回预览图再退出
+  const pendingCloseRef = useRef(false);
 
   // 保持回调引用最新
   onSaveRef.current = onSave;
@@ -41,6 +44,12 @@ const DrawioEditor: React.FC<DrawioEditorProps> = ({ initialXml, onSave, onClose
       autosave: 1,
     });
   }, [initialXml, sendMessage]);
+
+  // 关闭编辑器（防重复）
+  const doClose = useCallback(() => {
+    pendingCloseRef.current = false;
+    onCloseRef.current();
+  }, []);
 
   useEffect(() => {
     const handler = (event: MessageEvent) => {
@@ -68,30 +77,44 @@ const DrawioEditor: React.FC<DrawioEditorProps> = ({ initialXml, onSave, onClose
         }
 
         case 'save': {
+          // 用户点击保存/保存并退出：保存 XML + 请求 SVG 导出，等导出完成后退出
           const xml = msg.xml || '';
+          lastXmlRef.current = xml;
+          onSaveRef.current(xml);
+          pendingCloseRef.current = true;
           sendMessage({
             action: 'export',
             format: 'svg',
             xml,
           });
-          onSaveRef.current(xml);
           break;
         }
 
         case 'export': {
+          // SVG 预览图返回：更新预览
           if (msg.data) {
-            onSaveRef.current(msg.xml || '', msg.data);
+            onSaveRef.current(lastXmlRef.current || msg.xml || '', msg.data);
+          }
+          // 如果用户点击了保存/保存并退出，生成预览图后退出编辑器
+          if (pendingCloseRef.current) {
+            doClose();
           }
           break;
         }
 
         case 'exit': {
-          onCloseRef.current();
+          // 退出按钮直接关闭
+          doClose();
           break;
         }
 
-        case 'autosave':
+        case 'autosave': {
+          // 自动保存：静默更新 XML，不退出
+          if (msg.xml) {
+            lastXmlRef.current = msg.xml;
+          }
           break;
+        }
 
         default:
           break;
@@ -100,9 +123,9 @@ const DrawioEditor: React.FC<DrawioEditorProps> = ({ initialXml, onSave, onClose
 
     window.addEventListener('message', handler);
     return () => window.removeEventListener('message', handler);
-  }, [sendLoad, sendMessage]);
+  }, [sendLoad, sendMessage, doClose]);
 
-  // iframe 加载完成兜底：如果 init 没触发，3 秒后强制发送 load
+  // iframe 加载完成兑底：如果 init 没触发，3 秒后强制发送 load
   const handleIframeLoad = useCallback(() => {
     setTimeout(() => {
       if (!loadedRef.current) {
