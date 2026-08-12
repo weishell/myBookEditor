@@ -36,11 +36,54 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   const [showToolbar, setShowToolbar] = useState(false);
   const [description, setDescription] = useState(attrs?.description || '');
   const [bounds, setBounds] = useState<DOMRect | null>(null);
-  const [resizeOffset, setResizeOffset] = useState({ x: 0, y: 0 });
+  // 拖拽中的本地显示尺寸（不直接写 attrs，拖拽结束后按比例换算写回）
+  const [dragState, setDragState] = useState<{
+    w: number;
+    h: number;
+    ox: number;
+    oy: number;
+  } | null>(null);
+  // 拖拽开始时锁定的显示比例（逻辑尺寸 → 显示尺寸）
+  const ratioRef = useRef(1);
+  // 拖拽状态同步 ref，避免回调闭包拿到旧值
+  const dragStateRef = useRef<{ w: number; h: number; ox: number; oy: number } | null>(null);
   const hideTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   const containerRef = useRef<HTMLDivElement>(null);
+  const wrapperRef = useRef<HTMLDivElement>(null);
   attrsRef.current = attrs;
+
+  // 可用宽度（wrapper 宽度），用于动态比例缩放
+  const [availableWidth, setAvailableWidth] = useState(0);
+
+  useEffect(() => {
+    const measure = () => {
+      if (wrapperRef.current) {
+        setAvailableWidth(wrapperRef.current.clientWidth);
+      }
+    };
+    measure();
+    const observer = new ResizeObserver(measure);
+    if (wrapperRef.current) observer.observe(wrapperRef.current);
+    window.addEventListener('resize', measure);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  }, []);
+
+  // 逻辑尺寸 → 显示尺寸：宽度超过可用宽度时按比例缩小（参考 template 的 fileRatio）
+  const logicalWidth = attrs?.width || 520;
+  const logicalHeight = attrs?.height || 220;
+  const fileRatio =
+    availableWidth > 0 && logicalWidth > availableWidth ? availableWidth / logicalWidth : 1;
+  const displayWidth = Math.round(logicalWidth * fileRatio);
+  const displayHeight = Math.round(logicalHeight * fileRatio);
+
+  // 渲染尺寸：拖拽中直接用拖拽值（显示尺寸），否则用比例缩放后的尺寸
+  const effWidth = dragState ? dragState.w : displayWidth;
+  const effHeight = dragState ? dragState.h : displayHeight;
+  const effOffset = dragState ? { x: dragState.ox, y: dragState.oy } : { x: 0, y: 0 };
 
   // 更新容器边界
   const updateBounds = useCallback(() => {
@@ -181,19 +224,32 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
     }, 300);
   }, [isSelected]);
 
-  // 拖拽缩放回调 - 实时更新尺寸 + 锚点补偿偏移
+  // 拖拽缩放回调 - 只更新本地拖拽状态（显示尺寸），拖拽结束才写回 attrs
   const handleResize = useCallback(
     (newWidth: number, newHeight: number, offsetX: number, offsetY: number) => {
-      updateAttrs({ width: newWidth, height: newHeight });
-      setResizeOffset({ x: offsetX, y: offsetY });
+      if (!dragStateRef.current) {
+        // 拖拽开始：锁定当前显示比例
+        ratioRef.current = fileRatio;
+      }
+      const next = { w: newWidth, h: newHeight, ox: offsetX, oy: offsetY };
+      dragStateRef.current = next;
+      setDragState(next);
     },
-    [updateAttrs],
+    [fileRatio],
   );
 
-  // 拖拽结束 - 清除偏移（容器恢复居中）
+  // 拖拽结束 - 将显示尺寸换算回逻辑尺寸写回 attrs
   const handleResizeEnd = useCallback(() => {
-    setResizeOffset({ x: 0, y: 0 });
-  }, []);
+    const s = dragStateRef.current;
+    dragStateRef.current = null;
+    setDragState(null);
+    if (!s) return;
+    const ratio = ratioRef.current || 1;
+    updateAttrs({
+      width: Math.max(200, Math.round(s.w / ratio)),
+      height: Math.max(150, Math.round(s.h / ratio)),
+    });
+  }, [updateAttrs]);
 
   // 预览内容处理
   const hasContent = !!attrs?.content;
@@ -216,6 +272,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   return (
     <ElementWrapper type={BlockElementType.DRAWIO} pluginId={pluginId} attributes={attributes}>
       <div
+        ref={wrapperRef}
         className={styles.wrapper}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
@@ -272,9 +329,9 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             suppressContentEditableWarning={true}
             onClick={handleOpenPreview}
             style={{
-              width: attrs?.width || undefined,
-              height: attrs?.height || undefined,
-              transform: `translate(${resizeOffset.x}px, ${resizeOffset.y}px)`,
+              width: effWidth,
+              height: effHeight,
+              transform: `translate(${effOffset.x}px, ${effOffset.y}px)`,
             }}
           >
             {/* 标题栏 */}
@@ -331,7 +388,11 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
         </div>
 
         {/* 描述输入框 */}
-        <div className={styles.descriptionArea}>
+        <div
+          className={styles.descriptionArea}
+          contentEditable={false}
+          suppressContentEditableWarning={true}
+        >
           <input
             className={styles.descriptionInput}
             value={description}
@@ -339,7 +400,8 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescriptionBlur}
             onKeyDown={handleDescriptionKeyDown}
-            style={{ width: attrs?.width || '100%' }}
+            onMouseDown={(e) => e.stopPropagation()}
+            style={{ width: effWidth }}
           />
         </div>
       </div>

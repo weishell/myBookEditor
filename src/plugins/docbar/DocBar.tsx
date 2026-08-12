@@ -119,6 +119,24 @@ const ImageIcon = ({ color, size = 14 }: SvgIconProps) => (
   </svg>
 );
 
+const DrawioIcon = ({ color, size = 14 }: SvgIconProps) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke={color}
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="14" width="7" height="7" rx="1" />
+    <path d="M6.5 10v3a2 2 0 0 0 2 2h3" />
+    <path d="M10 6.5h3a2 2 0 0 1 2 2v3" />
+  </svg>
+);
+
 const DragIcon = ({ color = '#999', size = 12 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <line x1="9" y1="18" x2="15" y2="18" />
@@ -175,6 +193,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: TableIcon };
     case BlockElementType.IMAGE_BLOCK:
       return { component: ImageIcon };
+    case BlockElementType.DRAWIO:
+      return { component: DrawioIcon };
     default:
       return { component: ParagraphIcon };
   }
