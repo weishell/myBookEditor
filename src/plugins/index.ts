@@ -22,3 +22,4 @@ export * from './todo-list';
 export * from './art-text';
 export * from './table';
 export * from './font';
+export * from './drawio';

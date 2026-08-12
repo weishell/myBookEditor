@@ -469,6 +469,50 @@ export const initialValue: Descendant[] = [
     type: BlockElementType.HEADING,
     id: uuidv4(),
     attrs: { level: 2 },
+    children: [{ text: '流程图示例' }],
+  },
+  {
+    type: BlockElementType.DRAWIO,
+    id: uuidv4(),
+    attrs: {
+      content:
+        'data:image/svg+xml;charset=utf-8,' +
+        encodeURIComponent(
+          '<svg xmlns="http://www.w3.org/2000/svg" width="520" height="220" viewBox="0 0 520 220">' +
+            '<rect x="10" y="10" width="120" height="50" rx="8" fill="#e6f7ff" stroke="#1890ff" stroke-width="2"/>' +
+            '<text x="70" y="40" text-anchor="middle" font-size="14" fill="#333">开始</text>' +
+            '<line x1="130" y1="35" x2="190" y2="35" stroke="#1890ff" stroke-width="2" marker-end="url(#arrow)"/>' +
+            '<rect x="190" y="10" width="140" height="50" rx="8" fill="#fff7e6" stroke="#fa8c16" stroke-width="2"/>' +
+            '<text x="260" y="40" text-anchor="middle" font-size="14" fill="#333">处理数据</text>' +
+            '<line x1="330" y1="35" x2="390" y2="35" stroke="#1890ff" stroke-width="2" marker-end="url(#arrow)"/>' +
+            '<rect x="390" y="10" width="120" height="50" rx="8" fill="#f6ffed" stroke="#52c41a" stroke-width="2"/>' +
+            '<text x="450" y="40" text-anchor="middle" font-size="14" fill="#333">完成</text>' +
+            '<line x1="260" y1="60" x2="260" y2="110" stroke="#1890ff" stroke-width="2" marker-end="url(#arrow)"/>' +
+            '<rect x="190" y="110" width="140" height="50" rx="8" fill="#f9f0ff" stroke="#722ed1" stroke-width="2"/>' +
+            '<text x="260" y="140" text-anchor="middle" font-size="14" fill="#333">异常处理</text>' +
+            '<line x1="190" y1="135" x2="130" y2="135" stroke="#fa8c16" stroke-width="2" stroke-dasharray="6 3"/>' +
+            '<text x="160" y="128" text-anchor="middle" font-size="12" fill="#999">重试</text>' +
+            '<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="#1890ff"/></marker></defs>' +
+            '</svg>',
+        ),
+      xml: '',
+      description: '示例流程图 - 点击可编辑',
+      width: 520,
+      height: 220,
+    },
+    children: [{ text: '' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '点击上方流程图可打开 draw.io 编辑器进行编辑，支持创建各类流程图和 UML 图。' },
+    ],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '艺术字效果' }],
   },
   {

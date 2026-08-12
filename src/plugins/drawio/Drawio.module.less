@@ -1,0 +1,201 @@
+// Drawio 流程图插件样式 - 飞书风格
+
+.wrapper {
+  margin: @spacing-sm 0;
+  display: flex;
+  flex-direction: column;
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+.container {
+  position: relative;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-sm;
+  background: @bg-base;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: @color-primary;
+  }
+}
+
+// 流程图块 wrapper（包含容器 + 缩放手柄）
+.drawioBlock {
+  position: relative;
+  display: inline-block;
+  align-self: center;
+}
+
+.containerSelected {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.previewArea {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: @spacing-md;
+}
+
+.previewImage {
+  max-width: 100%;
+  max-height: 500px;
+  object-fit: contain;
+  display: block;
+}
+
+.emptyPlaceholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: @spacing-sm;
+  color: @text-tertiary;
+  padding: @spacing-xl 0;
+}
+
+.emptyIcon {
+  opacity: 0.4;
+}
+
+.emptyText {
+  font-size: @font-size-sm;
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: @spacing-xs;
+  padding: @spacing-xs @spacing-md;
+  background: @bg-subtle;
+  border-bottom: 1px solid @border-color-lighter;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: @radius-sm;
+  background: @color-primary;
+  color: #fff;
+  font-size: @font-size-xs;
+  font-weight: 600;
+}
+
+// 悬浮工具栏
+.toolbar {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0;
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  padding: 2px;
+  z-index: 10000;
+  box-shadow: @shadow-md;
+  border: 1px solid @border-color-light;
+  white-space: nowrap;
+}
+
+.toolbarButton {
+  height: 28px;
+  padding: 0 @spacing-sm;
+  border: none;
+  background-color: transparent;
+  border-radius: @radius-sm;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background-color: @border-color-light;
+  margin: @spacing-xs 2px;
+}
+
+// 全屏编辑器遮罩
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: #f2f3f1;
+}
+
+.overlayIframe {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+// 描述输入框
+.descriptionArea {
+  display: flex;
+  justify-content: center;
+  margin-top: @spacing-xs;
+}
+
+.descriptionInput {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid transparent;
+  background: transparent;
+  text-align: center;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+  padding: @spacing-xs @spacing-sm;
+  outline: none;
+
+  &:hover {
+    border-bottom-color: @border-color-light;
+  }
+
+  &:focus {
+    border-bottom-color: @color-primary;
+  }
+
+  &::placeholder {
+    color: @text-placeholder;
+  }
+}
+
+// 8点位拖拽缩放
+.resizeHandle {
+  position: fixed;
+  width: 10px;
+  height: 10px;
+  background-color: @bg-base;
+  border: 2px solid @color-primary;
+  border-radius: 50%;
+  z-index: 10001;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  transition: transform 0.1s ease;
+
+  &:hover {
+    transform: scale(1.3);
+  }
+}
