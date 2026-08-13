@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element } from 'slate';
 import { BlockElementType, BlockquoteType } from '@/enums';
@@ -7,6 +7,7 @@ import { BLOCKQUOTE_ICONS, BLOCKQUOTE_LABELS, BLOCKQUOTE_COLORS } from './icons'
 interface BlockquoteStatusSelectorProps {
   pluginId: string;
   currentType: BlockquoteType;
+  onClose?: () => void;
 }
 
 const TYPE_OPTIONS: { value: BlockquoteType; label: string }[] = [
@@ -16,16 +17,31 @@ const TYPE_OPTIONS: { value: BlockquoteType; label: string }[] = [
   { value: BlockquoteType.TIP, label: BLOCKQUOTE_LABELS[BlockquoteType.TIP] },
 ];
 
-export function BlockquoteStatusSelector({ pluginId, currentType }: BlockquoteStatusSelectorProps) {
+export function BlockquoteStatusSelector({
+  pluginId,
+  currentType,
+  onClose,
+}: BlockquoteStatusSelectorProps) {
   const editor = useSlateStatic();
   const [rect, setRect] = useState<DOMRect | null>(null);
 
-  useEffect(() => {
+  const measure = useCallback(() => {
     const el = document.querySelector(`[data-plugin-id="${pluginId}"]`) as HTMLElement;
     if (el) {
       setRect(el.getBoundingClientRect());
     }
   }, [pluginId]);
+
+  useEffect(() => {
+    measure();
+    // 面板使用视口坐标（fixed），滚动/缩放时跟随更新
+    window.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', measure);
+    return () => {
+      window.removeEventListener('scroll', measure, true);
+      window.removeEventListener('resize', measure);
+    };
+  }, [measure]);
 
   const handleChangeType = (type: BlockquoteType) => {
     try {
@@ -55,6 +71,7 @@ export function BlockquoteStatusSelector({ pluginId, currentType }: BlockquoteSt
     } catch {
       /* ignore */
     }
+    onClose?.();
   };
 
   if (!rect) return null;
@@ -64,8 +81,8 @@ export function BlockquoteStatusSelector({ pluginId, currentType }: BlockquoteSt
       contentEditable={false}
       style={{
         position: 'fixed',
-        top: rect.top - 40 + window.scrollY,
-        right: window.innerWidth - rect.right + 12,
+        top: rect.top + 2,
+        left: rect.left + 44,
         zIndex: 10001,
         display: 'flex',
         gap: 4,
@@ -76,6 +93,7 @@ export function BlockquoteStatusSelector({ pluginId, currentType }: BlockquoteSt
         boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
       }}
       onMouseDown={(e) => e.preventDefault()}
+      onMouseLeave={() => onClose?.()}
     >
       {TYPE_OPTIONS.map((opt) => {
         const Icon = BLOCKQUOTE_ICONS[opt.value];

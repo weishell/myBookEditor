@@ -1,7 +1,9 @@
-// 块类型选择器样式
+// 块类型选择器样式（飞书风格）
+// 基础组为按钮组（与左侧菜单顶部 toolbar 视觉一致），常用组为列表项
 
 .picker {
-  min-width: 200px;
+  width: 180px;
+  box-sizing: border-box;
   padding: @spacing-xs;
 }
 
@@ -23,25 +25,46 @@
   margin: @spacing-xs 0;
 }
 
-.backBtn {
-  width: 100%;
+// 基础组按钮组
+.toolbar {
+  padding: @spacing-xs;
   display: flex;
-  align-items: center;
-  gap: @spacing-sm;
-  padding: @spacing-xs @spacing-sm;
+  flex-wrap: wrap;
+  gap: 2px;
+}
+
+.btn {
+  width: 36px;
+  height: 32px;
   border: none;
   background: transparent;
   cursor: pointer;
-  text-align: left;
-  font-size: @font-size-sm;
-  color: @text-secondary;
+  text-align: center;
+  font-size: @font-size-md;
+  color: @text-primary;
   border-radius: @radius-sm;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 
   &:hover {
     background-color: @bg-hover;
   }
 }
 
+.btnBold {
+  composes: btn;
+  font-size: @font-size-sm;
+  font-weight: bold;
+}
+
+.btnMono {
+  composes: btn;
+  font-size: @font-size-sm;
+  font-family: monospace;
+}
+
+// 常用组列表项
 .item {
   width: 100%;
   display: flex;

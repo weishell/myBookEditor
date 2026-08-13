@@ -20,7 +20,7 @@ export const ContextMenu = () => {
   const menuRef = useRef<HTMLDivElement>(null);
   const editor = useSlateStatic();
   const [fontOpen, setFontOpen] = useState(false);
-  const [view, setView] = useState<'main' | 'insert'>('main');
+  const [insertOpen, setInsertOpen] = useState(false);
 
   const adjustPosition = useCallback(() => {
     if (!menuRef.current) return;
@@ -49,7 +49,7 @@ export const ContextMenu = () => {
   useEffect(() => {
     if (!visible) {
       setFontOpen(false);
-      setView('main');
+      setInsertOpen(false);
     }
   }, [visible]);
 
@@ -130,7 +130,7 @@ export const ContextMenu = () => {
     Transforms.insertNodes(editor, createBlockNode(type, options), { at: insertPath });
     Transforms.select(editor, Editor.start(editor, insertPath));
     ReactEditor.focus(editor);
-    setView('main');
+    setInsertOpen(false);
     forceCloseMenu();
   };
 
@@ -156,106 +156,177 @@ export const ContextMenu = () => {
         onMouseEnter={() => setHoveringMenu(true)}
         onMouseLeave={() => setHoveringMenu(false)}
       >
-        {view === 'insert' ? (
-          <BlockTypePicker onSelect={handleInsertBlock} onBack={() => setView('main')} />
-        ) : (
-          <>
-            <div className={styles.toolbar}>
-              <button
-                onClick={() => handleMenuClick('text')}
-                className={styles.btnPrimary}
-                disabled={DISABLED_ACTIONS.includes('text')}
-              >
-                T
-              </button>
-              <button
-                onClick={() => handleMenuClick('h1')}
-                className={styles.btnToolBold}
-                disabled={DISABLED_ACTIONS.includes('h1')}
-              >
-                H1
-              </button>
-              <button
-                onClick={() => handleMenuClick('h2')}
-                className={styles.btnToolBold}
-                disabled={DISABLED_ACTIONS.includes('h2')}
-              >
-                H2
-              </button>
-              <button
-                onClick={() => handleMenuClick('h3')}
-                className={styles.btnToolBold}
-                disabled={DISABLED_ACTIONS.includes('h3')}
-              >
-                H3
-              </button>
-              <button
-                onClick={() => handleMenuClick('numbered-list')}
-                className={styles.btnTool}
-                disabled={DISABLED_ACTIONS.includes('numbered-list')}
-              >
-                ≡
-              </button>
-              <button
-                onClick={() => handleMenuClick('bulleted-list')}
-                className={styles.btnTool}
-                disabled={DISABLED_ACTIONS.includes('bulleted-list')}
-              >
-                ≡
-              </button>
-            </div>
-            <div className={styles.divider} />
-            <div className={styles.toolbar}>
-              <button
-                onClick={() => handleMenuClick('checkbox')}
-                className={styles.btnTool}
-                disabled={DISABLED_ACTIONS.includes('checkbox')}
-              >
-                ☐
-              </button>
-              <button
-                onClick={() => handleMenuClick('code')}
-                className={styles.btnToolMono}
-                disabled={DISABLED_ACTIONS.includes('code')}
-              >
-                {'{ }'}
-              </button>
-              <button
-                onClick={() => handleMenuClick('quote')}
-                className={styles.btnTool}
-                disabled={DISABLED_ACTIONS.includes('quote')}
-              >
-                "
-              </button>
-              <button
-                onClick={() => handleMenuClick('code-block')}
-                className={styles.btnToolMono}
-                disabled={DISABLED_ACTIONS.includes('code-block')}
-              >
-                &lt;/&gt;
-              </button>
-              <button
-                onClick={() => handleMenuClick('link')}
-                className={styles.btnTool}
-                disabled={DISABLED_ACTIONS.includes('link')}
-              >
-                🔗
-              </button>
-            </div>
-            <div className={styles.divider} />
-            <button
-              onClick={() => handleMenuClick('indent')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('indent')}
+        <div className={styles.toolbar}>
+          <button
+            onClick={() => handleMenuClick('text')}
+            className={styles.btnPrimary}
+            disabled={DISABLED_ACTIONS.includes('text')}
+          >
+            T
+          </button>
+          <button
+            onClick={() => handleMenuClick('h1')}
+            className={styles.btnToolBold}
+            disabled={DISABLED_ACTIONS.includes('h1')}
+          >
+            H1
+          </button>
+          <button
+            onClick={() => handleMenuClick('h2')}
+            className={styles.btnToolBold}
+            disabled={DISABLED_ACTIONS.includes('h2')}
+          >
+            H2
+          </button>
+          <button
+            onClick={() => handleMenuClick('h3')}
+            className={styles.btnToolBold}
+            disabled={DISABLED_ACTIONS.includes('h3')}
+          >
+            H3
+          </button>
+          <button
+            onClick={() => handleMenuClick('numbered-list')}
+            className={styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('numbered-list')}
+          >
+            ≡
+          </button>
+          <button
+            onClick={() => handleMenuClick('bulleted-list')}
+            className={styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('bulleted-list')}
+          >
+            ≡
+          </button>
+        </div>
+        <div className={styles.divider} />
+        <div className={styles.toolbar}>
+          <button
+            onClick={() => handleMenuClick('checkbox')}
+            className={styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('checkbox')}
+          >
+            ☐
+          </button>
+          <button
+            onClick={() => handleMenuClick('code')}
+            className={styles.btnToolMono}
+            disabled={DISABLED_ACTIONS.includes('code')}
+          >
+            {'{ }'}
+          </button>
+          <button
+            onClick={() => handleMenuClick('quote')}
+            className={styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('quote')}
+          >
+            "
+          </button>
+          <button
+            onClick={() => handleMenuClick('code-block')}
+            className={styles.btnToolMono}
+            disabled={DISABLED_ACTIONS.includes('code-block')}
+          >
+            &lt;/&gt;
+          </button>
+          <button
+            onClick={() => handleMenuClick('link')}
+            className={styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('link')}
+          >
+            🔗
+          </button>
+        </div>
+        <div className={styles.divider} />
+        <button
+          onClick={() => handleMenuClick('indent')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('indent')}
+        >
+          <span className={styles.actionIcon}>☰</span>
+          <span>缩进和对齐</span>
+          <span className={styles.actionArrow}>›</span>
+        </button>
+        <Popover
+          open={fontOpen}
+          onOpenChange={(open) => {
+            setFontOpen(open);
+            setHoveringMenu(open);
+          }}
+          content={
+            <div
+              onMouseEnter={() => setHoveringMenu(true)}
+              onMouseLeave={() => setHoveringMenu(false)}
             >
-              <span className={styles.actionIcon}>☰</span>
-              <span>缩进和对齐</span>
-              <span className={styles.actionArrow}>›</span>
-            </button>
+              <FontPicker onFontChange={handleFontChange} />
+            </div>
+          }
+          trigger="click"
+          placement="right"
+        >
+          <button
+            className={`${styles.btnAction} ${fontOpen ? styles.btnActionActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setFontOpen(!fontOpen);
+              setHoveringMenu(true);
+            }}
+          >
+            <span className={styles.actionIcon}>Aa</span>
+            <span>字体</span>
+            <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
+          </button>
+        </Popover>
+        <button
+          onClick={() => handleMenuClick('color')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('color')}
+        >
+          <span className={styles.actionIcon}>🎨</span>
+          <span>颜色</span>
+          <span className={styles.actionArrow}>›</span>
+        </button>
+        <div className={styles.divider} />
+        <button
+          onClick={() => handleMenuClick('comment')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('comment')}
+        >
+          <span className={styles.actionIcon}>💬</span>
+          <span>评论</span>
+        </button>
+        <button
+          onClick={() => handleMenuClick('cut')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('cut')}
+        >
+          <span className={styles.actionIcon}>✂</span>
+          <span>剪切</span>
+        </button>
+        <button
+          onClick={() => handleMenuClick('copy')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('copy')}
+        >
+          <span className={styles.actionIcon}>📋</span>
+          <span>复制</span>
+        </button>
+        <button
+          onClick={() => handleMenuClick('delete')}
+          className={styles.btnAction}
+          disabled={DISABLED_ACTIONS.includes('delete')}
+        >
+          <span className={styles.actionIcon}>🗑</span>
+          <span>删除</span>
+        </button>
+        {canInsertBelow && (
+          <>
+            <div className={styles.divider} />
             <Popover
-              open={fontOpen}
+              open={insertOpen}
               onOpenChange={(open) => {
-                setFontOpen(open);
+                setInsertOpen(open);
                 setHoveringMenu(open);
               }}
               content={
@@ -263,77 +334,25 @@ export const ContextMenu = () => {
                   onMouseEnter={() => setHoveringMenu(true)}
                   onMouseLeave={() => setHoveringMenu(false)}
                 >
-                  <FontPicker onFontChange={handleFontChange} />
+                  <BlockTypePicker onSelect={handleInsertBlock} />
                 </div>
               }
               trigger="click"
               placement="right"
             >
               <button
-                className={`${styles.btnAction} ${fontOpen ? styles.btnActionActive : ''}`}
+                className={`${styles.btnAction} ${insertOpen ? styles.btnActionActive : ''}`}
                 onClick={(e) => {
                   e.stopPropagation();
-                  setFontOpen(!fontOpen);
+                  setInsertOpen(!insertOpen);
                   setHoveringMenu(true);
                 }}
               >
-                <span className={styles.actionIcon}>Aa</span>
-                <span>字体</span>
-                <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
+                <span className={styles.actionIcon}>＋</span>
+                <span>在下方插入</span>
+                <span className={styles.actionArrow}>{insertOpen ? '⌄' : '›'}</span>
               </button>
             </Popover>
-            <button
-              onClick={() => handleMenuClick('color')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('color')}
-            >
-              <span className={styles.actionIcon}>🎨</span>
-              <span>颜色</span>
-              <span className={styles.actionArrow}>›</span>
-            </button>
-            <div className={styles.divider} />
-            <button
-              onClick={() => handleMenuClick('comment')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('comment')}
-            >
-              <span className={styles.actionIcon}>💬</span>
-              <span>评论</span>
-            </button>
-            <button
-              onClick={() => handleMenuClick('cut')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('cut')}
-            >
-              <span className={styles.actionIcon}>✂</span>
-              <span>剪切</span>
-            </button>
-            <button
-              onClick={() => handleMenuClick('copy')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('copy')}
-            >
-              <span className={styles.actionIcon}>📋</span>
-              <span>复制</span>
-            </button>
-            <button
-              onClick={() => handleMenuClick('delete')}
-              className={styles.btnAction}
-              disabled={DISABLED_ACTIONS.includes('delete')}
-            >
-              <span className={styles.actionIcon}>🗑</span>
-              <span>删除</span>
-            </button>
-            {canInsertBelow && (
-              <>
-                <div className={styles.divider} />
-                <button className={styles.btnAction} onClick={() => setView('insert')}>
-                  <span className={styles.actionIcon}>＋</span>
-                  <span>在下方插入</span>
-                  <span className={styles.actionArrow}>›</span>
-                </button>
-              </>
-            )}
           </>
         )}
       </div>

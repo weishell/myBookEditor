@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element } from 'slate';
 import { BlockElementType, BlockquoteType } from '@/enums';
@@ -44,10 +44,38 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
   // 标签：优先用 attrs.label，否则按类型默认
   const label: string = element?.attrs?.label || BLOCKQUOTE_LABELS[type] || '说明';
 
-  const [hovered, setHovered] = useState(false);
   const [editingLabel, setEditingLabel] = useState(false);
   const [editValue, setEditValue] = useState(label);
+  // 类型切换面板：悬浮在类型图标上停留 1s 后展示
+  const [showSelector, setShowSelector] = useState(false);
+  const hoverTimerRef = useRef<number | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimerRef.current) {
+      clearTimeout(hoverTimerRef.current);
+      hoverTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => clearHoverTimer, [clearHoverTimer]);
+
+  const handleIconMouseEnter = useCallback(() => {
+    clearHoverTimer();
+    hoverTimerRef.current = window.setTimeout(() => {
+      setShowSelector(true);
+      hoverTimerRef.current = null;
+    }, 1000);
+  }, [clearHoverTimer]);
+
+  const handleIconMouseLeave = useCallback(() => {
+    // 只取消未触发的定时器，已展示的面板由面板自身 hover 维持
+    clearHoverTimer();
+  }, [clearHoverTimer]);
+
+  const handleSelectorClose = useCallback(() => {
+    setShowSelector(false);
+  }, []);
 
   const saveLabel = useCallback(() => {
     const newLabel = editValue.trim();
@@ -112,15 +140,18 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
         {...(attributes as React.HTMLAttributes<HTMLQuoteElement>)}
         className={`${styles.blockquote} ${typeClass}`}
         data-type={type}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
       >
         <div
           className={styles.header}
           contentEditable={false}
           onMouseDown={(e) => e.preventDefault()}
         >
-          <span className={styles.typeIcon} aria-hidden>
+          <span
+            className={styles.typeIcon}
+            aria-hidden
+            onMouseEnter={handleIconMouseEnter}
+            onMouseLeave={handleIconMouseLeave}
+          >
             <Icon size={18} />
           </span>
           {editingLabel ? (
@@ -142,7 +173,13 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
         </div>
         <div className={styles.content}>{children}</div>
       </blockquote>
-      {hovered && pluginId && <BlockquoteStatusSelector pluginId={pluginId} currentType={type} />}
+      {pluginId && showSelector && (
+        <BlockquoteStatusSelector
+          pluginId={pluginId}
+          currentType={type}
+          onClose={handleSelectorClose}
+        />
+      )}
     </ElementWrapper>
   );
 };
