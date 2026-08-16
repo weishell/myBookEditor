@@ -1,7 +1,7 @@
 // 块节点构造工具 - 用于"在下方插入"等功能
 // 根据块类型构造符合编辑器数据结构的节点（含 id、attrs、children 结构）
 import { Element } from 'slate';
-import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
+import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 
 export interface InsertBlockOptions {
@@ -63,18 +63,23 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         children: [{ text: '' }],
       } as Element;
     case BlockElementType.BULLETED_LIST:
-    case BlockElementType.NUMBERED_LIST:
+    case BlockElementType.NUMBERED_LIST: {
+      // 列表已改为绑定在段落上的 lilist 属性（旧 wrapper 类型废弃）
+      // 四字段必填；新建列表首项为自定义锚点（list_custom: true）
       return {
-        type,
+        type: BlockElementType.PARAGRAPH,
         id,
-        children: [
-          {
-            type: BlockElementType.LIST_ITEM,
-            id: uuidv4(),
-            children: [{ text: '' }],
+        attrs: {
+          lilist: {
+            list_type: type === BlockElementType.NUMBERED_LIST ? LilistType.OL : LilistType.UL,
+            list_id: uuidv4(),
+            list_number: 1,
+            list_custom: true,
           },
-        ],
+        },
+        children: [{ text: '' }],
       } as Element;
+    }
     default:
       return { type, id, children: [{ text: '' }] } as Element;
   }

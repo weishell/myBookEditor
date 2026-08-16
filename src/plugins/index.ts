@@ -8,6 +8,7 @@ export * from './code-block';
 export * from './bulleted-list';
 export * from './numbered-list';
 export * from './list-item';
+export * from './lilist';
 export * from './leaf';
 export * from './element-wrapper';
 export * from './menu-context';

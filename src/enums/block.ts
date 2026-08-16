@@ -19,6 +19,14 @@ export const BlockElementType = {
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];
 
+/* lilist 列表类型（绑定在段落/标题上的有序无序） */
+export const LilistType = {
+  OL: 'ol', // 有序列表
+  UL: 'ul', // 无序列表
+} as const;
+
+export type LilistType = (typeof LilistType)[keyof typeof LilistType];
+
 /* 引用块类型 */
 export const BlockquoteType = {
   INFO: 'info', // 说明

@@ -1,8 +1,11 @@
 import type { Descendant } from 'slate';
-import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
+import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 
 const codeBlockId = uuidv4();
+// 列表示例分组 id（lilist 绑定模型）
+const demoOlListId = uuidv4();
+const demoUlListId = uuidv4();
 const codeText = 'console.log("Hello, World!");\nconst a = 1;\nconst b = 2;\nconsole.log(a + b);';
 const codeLines = codeText.split('\n').map((text, i) => ({
   type: BlockElementType.CODE_LINE,
@@ -88,6 +91,96 @@ export const initialValue: Descendant[] = [
     id: uuidv4(),
     attrs: { checked: true },
     children: [{ text: '实现图片上传和裁剪功能' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '列表示例（lilist 绑定模型）' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: demoOlListId,
+        list_number: 1,
+        list_custom: true,
+      },
+    },
+    children: [{ text: '输入 "1." + 空格 可创建有序列表' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: demoOlListId,
+        list_number: 2,
+        list_custom: false,
+      },
+    },
+    children: [{ text: '回车自动延续编号，空项回车退出列表' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: demoOlListId,
+        list_number: 1,
+        list_custom: false,
+      },
+      indent: 1,
+    },
+    children: [{ text: 'Tab 缩进形成嵌套子项' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: demoOlListId,
+        list_number: 3,
+        list_custom: false,
+      },
+    },
+    children: [{ text: '嵌套结束后父级编号继续' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [{ text: '（普通段落把列表断开，下方是新列表）' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.UL,
+        list_id: demoUlListId,
+        list_number: 1,
+        list_custom: true,
+      },
+    },
+    children: [{ text: '输入 "-" + 空格 可创建无序列表' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    attrs: {
+      lilist: {
+        list_type: LilistType.UL,
+        list_id: demoUlListId,
+        list_number: 2,
+        list_custom: false,
+      },
+    },
+    children: [{ text: '无序符号随缩进层级交替' }],
   },
   {
     type: BlockElementType.HEADING,

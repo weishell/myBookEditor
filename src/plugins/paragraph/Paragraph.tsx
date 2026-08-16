@@ -1,6 +1,7 @@
 import React from 'react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import { getLilist, LilistPrefix } from '@/plugins/lilist';
 import styles from './Paragraph.module.less';
 
 interface ElementProps {
@@ -24,6 +25,7 @@ export const Paragraph = ({ attributes, children, pluginId, element }: ElementPr
         {...(attributes as React.HTMLAttributes<HTMLParagraphElement>)}
         className={styles.paragraph}
       >
+        {getLilist(element) && <LilistPrefix element={element} />}
         {children}
       </p>
     </ElementWrapper>

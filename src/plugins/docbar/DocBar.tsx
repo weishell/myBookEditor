@@ -4,6 +4,7 @@ import { useMenu } from '@/plugins/menu-context';
 import { useSelection } from '@/plugins/selection-context';
 import { useTheme } from '@/context/ThemeContext';
 import { BlockElementType } from '@/enums';
+import { LilistType, OlListIcon, UlListIcon } from '@/plugins/lilist';
 import styles from './DocBar.module.less';
 
 interface SvgIconProps {
@@ -64,27 +65,6 @@ const CodeIcon = ({ color, size = 14 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
     <polyline points="16 18 22 12 16 6" />
     <polyline points="8 6 2 12 8 18" />
-  </svg>
-);
-
-const ListIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <line x1="8" y1="6" x2="21" y2="6" />
-    <line x1="8" y1="12" x2="21" y2="12" />
-    <line x1="8" y1="18" x2="21" y2="18" />
-    <line x1="3" y1="6" x2="3.01" y2="6" />
-    <line x1="3" y1="12" x2="3.01" y2="12" />
-    <line x1="3" y1="18" x2="3.01" y2="18" />
-  </svg>
-);
-
-const NumberedListIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <line x1="8" y1="6" x2="21" y2="6" />
-    <line x1="8" y1="12" x2="21" y2="12" />
-    <line x1="8" y1="18" x2="21" y2="18" />
-    <path d="M3 6h1v4" />
-    <path d="M3 10h1v8" />
   </svg>
 );
 
@@ -159,6 +139,13 @@ const TitleIcon = ({ color, size = 14 }: SvgIconProps) => (
 );
 
 const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean): IconConfig => {
+  // lilist 判断：列表绑定在段落/标题宿主上（与正文共用同一块类型），
+  // 不能只按 type 判断，否则列表项会显示成段落图标；空列表项也保持列表图标
+  const lilist = attrs?.lilist;
+  if (lilist) {
+    return { component: lilist.list_type === LilistType.OL ? OlListIcon : UlListIcon };
+  }
+
   // 当标题或段落为空时，显示加号图标
   if (
     isEmpty &&
@@ -182,11 +169,11 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
     case BlockElementType.CODE_BLOCK:
       return { component: CodeIcon };
     case BlockElementType.BULLETED_LIST:
-      return { component: ListIcon };
+      return { component: UlListIcon };
     case BlockElementType.NUMBERED_LIST:
-      return { component: NumberedListIcon };
+      return { component: OlListIcon };
     case BlockElementType.LIST_ITEM:
-      return { component: ListIcon };
+      return { component: UlListIcon };
     case BlockElementType.TODO_LIST:
       return { component: TodoListIcon };
     case BlockElementType.TABLE:

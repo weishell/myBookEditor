@@ -1,5 +1,6 @@
 import { Editor, Transforms, Range, Element } from 'slate';
 import { BlockElementType } from '@/enums';
+import { convertBlockToLilist, LilistType, MAX_LIST_NUMBER } from '@/plugins/lilist';
 
 export const withMarkdownShortcuts = (editor: Editor) => {
   const { insertText } = editor;
@@ -121,6 +122,39 @@ export const withMarkdownShortcuts = (editor: Editor) => {
         { at: blockPath },
       );
 
+      return;
+    }
+
+    // 检测有序列表语法：数字 + .（如 "1."、"3."），任意位数数字都支持
+    const olMatch = beforeSpace.match(/^(\d+)\.$/);
+    if (olMatch) {
+      // 起始数字超过上限（MAX_LIST_NUMBER）时从 1 开始
+      const parsed = parseInt(olMatch[1], 10);
+      const startNumber = parsed > MAX_LIST_NUMBER ? 1 : parsed;
+
+      // 删除数字标记
+      Transforms.delete(editor, {
+        at: {
+          anchor: { path: [...blockPath, 0], offset: 0 },
+          focus: { path: [...blockPath, 0], offset: beforeSpace.length },
+        },
+      });
+
+      // 绑定 lilist 有序列表（起始数字 > 1 时自动作为自定义锚点）
+      convertBlockToLilist(editor, blockPath, LilistType.OL, startNumber);
+      return;
+    }
+
+    // 检测无序列表语法：-（注意排在 --- 分割线、- [ ] 待办之后）
+    if (/^-$/.test(beforeSpace)) {
+      Transforms.delete(editor, {
+        at: {
+          anchor: { path: [...blockPath, 0], offset: 0 },
+          focus: { path: [...blockPath, 0], offset: 1 },
+        },
+      });
+
+      convertBlockToLilist(editor, blockPath, LilistType.UL);
       return;
     }
 

@@ -2,6 +2,7 @@ import React from 'react';
 import { useSelected } from 'slate-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
+import { getLilist, LilistPrefix } from '@/plugins/lilist';
 import styles from './Heading.module.less';
 
 interface ElementProps {
@@ -59,6 +60,7 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
             H{level}
           </span>
         )}
+        {getLilist(element) && <LilistPrefix element={element} />}
         {children}
       </h1>
     </ElementWrapper>

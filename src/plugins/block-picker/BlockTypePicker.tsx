@@ -3,12 +3,13 @@
 // 常用组：列表项，非文本类占位禁用
 import React from 'react';
 import { BlockElementType } from '@/enums';
+import { OlListIcon, UlListIcon } from '@/plugins/lilist';
 import styles from './BlockTypePicker.module.less';
 
 export interface BlockTypeOption {
   type: BlockElementType;
   label: string;
-  icon: string;
+  icon: React.ReactNode;
   level?: number;
   disabled?: boolean;
   mono?: boolean;
@@ -24,8 +25,8 @@ const BASIC_ITEMS: BlockTypeOption[] = [
   { type: BlockElementType.HEADING, label: '一级标题', icon: 'H1', level: 1 },
   { type: BlockElementType.HEADING, label: '二级标题', icon: 'H2', level: 2 },
   { type: BlockElementType.HEADING, label: '三级标题', icon: 'H3', level: 3 },
-  { type: BlockElementType.BULLETED_LIST, label: '无序列表', icon: '≡' },
-  { type: BlockElementType.NUMBERED_LIST, label: '有序列表', icon: '1.' },
+  { type: BlockElementType.BULLETED_LIST, label: '无序列表', icon: <UlListIcon size={18} /> },
+  { type: BlockElementType.NUMBERED_LIST, label: '有序列表', icon: <OlListIcon size={18} /> },
   { type: BlockElementType.TODO_LIST, label: '待办事项', icon: '☐' },
   { type: BlockElementType.BLOCKQUOTE, label: '引用块', icon: '❝' },
   { type: BlockElementType.CODE_BLOCK, label: '代码块', icon: '</>', mono: true },

@@ -1,7 +1,8 @@
-import { Transforms, Editor, Range } from 'slate';
+import { Transforms, Editor, Range, Point } from 'slate';
 import type { Location } from 'slate';
 import { handleEnter } from './handleEnter';
 import { handleTabIndent } from './handleTab';
+import { getLilist, removeLilist } from '@/plugins/lilist';
 
 /**
  * Ctrl+A / Cmd+A 全选：手动把 Slate 内部的 editor.selection 设置为整个编辑器范围。
@@ -60,18 +61,49 @@ const handleSelectAll = (editor: Editor, e: React.KeyboardEvent) => {
   }
 };
 
+/**
+ * 列表项行首退格 → 退出列表（保留文字），与 Word / 飞书行为一致
+ */
+const handleLilistBackspace = (editor: Editor): boolean => {
+  const { selection } = editor;
+  if (!selection || !Range.isCollapsed(selection)) return false;
+
+  const match = Editor.above(editor, {
+    match: (n: any) => Editor.isBlock(editor, n),
+    mode: 'lowest',
+  });
+  if (!match) return false;
+
+  const [node, path] = match;
+  if (!getLilist(node)) return false;
+
+  const start = Editor.start(editor, path);
+  if (!Point.equals(selection.anchor, start)) return false;
+
+  removeLilist(editor, path);
+  return true;
+};
+
 export const createKeyboardHandler = (editor: Editor) => {
   return (e: React.KeyboardEvent) => {
     // 1. Ctrl/Cmd + A：Slate 内部全选
     if (handleSelectAll(editor, e)) return;
 
-    // 2. Tab
+    // 2. Backspace：列表项行首退出列表
+    if (e.key === 'Backspace' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+      if (handleLilistBackspace(editor)) {
+        e.preventDefault();
+        return;
+      }
+    }
+
+    // 3. Tab
     if (e.key === 'Tab') {
       handleTabIndent(editor, e);
       return;
     }
 
-    // 3. Enter
+    // 4. Enter
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleEnter(editor);

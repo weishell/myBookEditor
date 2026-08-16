@@ -1,5 +1,6 @@
 import { Editor, Transforms, Element } from 'slate';
 import { BlockElementType } from '@/enums';
+import { toggleLilist, LilistType, getLilist } from '@/plugins/lilist';
 
 interface ToggleBlockOptions {
   level?: number;
@@ -34,6 +35,16 @@ export const toggleBlock = (
   // 规则2：当前选区在 HEADING_TITLE 上时，禁止切换为其他块
   if (hasHeadingTitle(editor)) return;
 
+  // 有序/无序列表走 lilist 绑定模型（旧的 wrapper 类型已废弃）
+  if (format === BlockElementType.NUMBERED_LIST) {
+    toggleLilist(editor, LilistType.OL);
+    return;
+  }
+  if (format === BlockElementType.BULLETED_LIST) {
+    toggleLilist(editor, LilistType.UL);
+    return;
+  }
+
   const isActive = isBlockActive(editor, format, options);
 
   if (format === BlockElementType.HEADING && options?.level) {
@@ -61,6 +72,20 @@ export const isBlockActive = (
 ) => {
   const { selection } = editor;
   if (!selection) return false;
+
+  // lilist 列表的高亮判断：看宿主块的 attrs.lilist
+  if (format === BlockElementType.NUMBERED_LIST || format === BlockElementType.BULLETED_LIST) {
+    const targetType = format === BlockElementType.NUMBERED_LIST ? LilistType.OL : LilistType.UL;
+    const lilistNodes = Array.from(
+      (editor as any).nodes({
+        at: (editor as any).unhangRange(selection),
+        match: (n: unknown) =>
+          !(n as any).isEditor && Element.isElement(n) && getLilist(n)?.list_type === targetType,
+        mode: 'highest',
+      }),
+    );
+    return lilistNodes.length > 0;
+  }
 
   const nodes = Array.from(
     (editor as any).nodes({
