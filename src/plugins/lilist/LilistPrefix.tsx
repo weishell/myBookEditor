@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { Tooltip } from 'antd';
 import { useSlateStatic, ReactEditor } from 'slate-react';
-import { changeLilistNumber } from './lilist-commands';
 import { computeListNumber, convertNumber, getLilist, LilistType } from './lilist-model';
 import { LilistSettingPopover } from './LilistSettingPopover';
 import styles from './LilistPrefix.module.less';
@@ -24,7 +23,6 @@ interface PopoverState {
 export const LilistPrefix = ({ element }: LilistPrefixProps) => {
   const editor = useSlateStatic();
   const [popover, setPopover] = useState<PopoverState | null>(null);
-  const [editing, setEditing] = useState(false);
   const lilist = getLilist(element);
   if (!lilist) return null;
 
@@ -55,40 +53,6 @@ export const LilistPrefix = ({ element }: LilistPrefixProps) => {
     });
   };
 
-  // 修改编号值：行内编辑提交（Enter / 失焦提交，Esc 取消）
-  const commitEdit = (raw: string) => {
-    setEditing(false);
-    const v = parseInt(raw, 10);
-    if (isNaN(v) || v === number) return;
-    try {
-      changeLilistNumber(editor, ReactEditor.findPath(editor, element), v);
-    } catch {
-      /* ignore */
-    }
-  };
-
-  // 行内编辑态：编号本身变为输入框（飞书同款交互）
-  if (isOl && editing) {
-    return (
-      <span className={styles.prefix} contentEditable={false} data-lilist-prefix="ol">
-        <input
-          className={styles.inlineInput}
-          defaultValue={number}
-          autoFocus
-          onFocus={(e) => e.currentTarget.select()}
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => {
-            e.stopPropagation();
-            if (e.key === 'Enter') commitEdit(e.currentTarget.value);
-            if (e.key === 'Escape') setEditing(false);
-          }}
-          onBlur={(e) => commitEdit(e.currentTarget.value)}
-        />
-        .
-      </span>
-    );
-  }
-
   const prefixSpan = (
     <span
       className={`${styles.prefix} ${isOl ? styles.olNumber : ''}`}
@@ -113,7 +77,7 @@ export const LilistPrefix = ({ element }: LilistPrefixProps) => {
         <LilistSettingPopover
           element={element}
           anchorRect={popover.rect}
-          onEditNumber={() => setEditing(true)}
+          currentNumber={popover.number}
           onClose={() => setPopover(null)}
         />
       )}

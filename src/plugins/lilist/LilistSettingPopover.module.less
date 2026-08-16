@@ -44,3 +44,38 @@
     color: @text-primary;
   }
 }
+
+// 修改编号值面板：弹框内切换成「新编号为 [输入框] [确定]」，正文不出现输入框
+.modifyRow {
+  display: flex;
+  align-items: center;
+  gap: @spacing-xs;
+  padding: 2px;
+}
+
+.modifyLabel {
+  flex-shrink: 0;
+  font-size: @font-size-md;
+  color: @text-primary;
+  white-space: nowrap;
+}
+
+.modifyInput {
+  flex: 1;
+  min-width: 0;
+}
+
+.confirmButton {
+  flex-shrink: 0;
+  padding: 2px 10px;
+  border: none;
+  border-radius: @radius-sm;
+  background-color: @color-primary;
+  color: #fff;
+  font-size: @font-size-md;
+  cursor: pointer;
+
+  &:hover {
+    opacity: 0.85;
+  }
+}
