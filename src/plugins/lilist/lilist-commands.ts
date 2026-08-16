@@ -1,7 +1,14 @@
-// lilist 命令层 —— 绑定 / 解绑列表、Markdown 快捷键转换
+// lilist 命令层 —— 绑定 / 解绑列表、Markdown 快捷键转换、编号设置
 import { Editor, Element, Node, Transforms, Path } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
-import { getLilist, isLilistHost, LilistType, type LilistAttr } from './lilist-model';
+import {
+  computeListNumber,
+  getLilist,
+  isLilistHost,
+  LilistType,
+  MAX_LIST_NUMBER,
+  type LilistAttr,
+} from './lilist-model';
 
 const setLilist = (editor: Editor, path: Path, lilist: LilistAttr) => {
   const node = Node.get(editor, path) as any;
@@ -120,6 +127,70 @@ export const convertBlockToLilist = (
       list_id: connectId ?? uuidv4(),
       list_number: startNumber,
       list_custom: connectId === undefined,
+    });
+  } catch {
+    /* ignore */
+  }
+};
+
+/* ------------------------------------------------------------------ */
+/* 编号设置弹框命令（对应飞书的 继续之前的编号 / 开始新列表 / 修改编号值）  */
+/* ------------------------------------------------------------------ */
+
+/** 是否存在可承接的前方列表（弹框中"继续之前的编号"是否可用） */
+export const canContinueLilist = (editor: Editor, path: Path): boolean => {
+  const lilist = getLilist(Node.get(editor, path));
+  if (!lilist) return false;
+  return getPrevConnectListId(editor, path, lilist.list_type) !== undefined;
+};
+
+/** 继续之前的编号：承接前方同类型列表（list_custom 置 false，编号由组内重算） */
+export const continueLilist = (editor: Editor, path: Path): boolean => {
+  try {
+    const lilist = getLilist(Node.get(editor, path));
+    if (!lilist) return false;
+    const prevId = getPrevConnectListId(editor, path, lilist.list_type);
+    if (!prevId) return false;
+    setLilist(editor, path, {
+      list_type: lilist.list_type,
+      list_id: prevId,
+      list_number: 1,
+      list_custom: false,
+    });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/** 开始新列表：独立成新组，首项为锚点，编号保持当前显示值 */
+export const restartLilist = (editor: Editor, path: Path) => {
+  try {
+    const lilist = getLilist(Node.get(editor, path));
+    if (!lilist) return;
+    const displayNumber = lilist.list_type === LilistType.OL ? computeListNumber(editor, path) : 1;
+    setLilist(editor, path, {
+      list_type: lilist.list_type,
+      list_id: uuidv4(),
+      list_number: displayNumber || 1,
+      list_custom: true,
+    });
+  } catch {
+    /* ignore */
+  }
+};
+
+/** 修改编号值：写入自定义锚点（对齐 template 的 btnOlChangeNumber，超限截断到 MAX_LIST_NUMBER） */
+export const changeLilistNumber = (editor: Editor, path: Path, value: number) => {
+  try {
+    const lilist = getLilist(Node.get(editor, path));
+    if (!lilist) return;
+    const safeValue = Math.min(Math.max(Math.floor(value) || 1, 1), MAX_LIST_NUMBER);
+    setLilist(editor, path, {
+      list_type: lilist.list_type,
+      list_id: lilist.list_id,
+      list_number: safeValue,
+      list_custom: true,
     });
   } catch {
     /* ignore */

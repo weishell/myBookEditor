@@ -1,0 +1,46 @@
+// 编号设置弹框样式 —— 颜色全部走主题变量，不写死
+
+.popover {
+  position: fixed;
+  z-index: 1050;
+  box-sizing: border-box;
+  padding: @spacing-xs;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+}
+
+.option {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+  padding: 6px @spacing-sm;
+  border: none;
+  background: transparent;
+  border-radius: @radius-sm;
+  cursor: pointer;
+  text-align: left;
+  font-size: @font-size-md;
+  color: @text-primary;
+
+  &:hover:not(:disabled) {
+    background-color: @bg-hover;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    color: @text-tertiary;
+  }
+}
+
+.optionIcon {
+  flex-shrink: 0;
+  color: @text-secondary;
+
+  .option:hover:not(:disabled) & {
+    color: @text-primary;
+  }
+}

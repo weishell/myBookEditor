@@ -6,3 +6,30 @@
   white-space: nowrap;
   user-select: none;
 }
+
+// 有序编号：飞书同款字体；颜色跟随主题变量（暗黑模式自动适配），不写死
+.olNumber {
+  font-family: 'Helvetica Neue', Consolas, sans-serif;
+  color: @color-primary;
+  cursor: pointer;
+  border-radius: @radius-sm;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+// 修改编号值的行内输入框：样式跟随编号本身（字体/主题色）
+.inlineInput {
+  width: 3em;
+  margin: 0;
+  padding: 0 2px;
+  border: 1px solid @color-primary;
+  border-radius: @radius-sm;
+  outline: none;
+  background: transparent;
+  font-family: 'Helvetica Neue', Consolas, sans-serif;
+  font-size: inherit;
+  color: @color-primary;
+  text-align: right;
+}
