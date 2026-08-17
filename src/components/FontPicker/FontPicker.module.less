@@ -1,17 +1,10 @@
+// 面板不画自己的卡片底：使用方（FloatBar 下拉 / ContextMenu Popover）外层已自带
+// 背景+圆角+阴影，再画一层会出现双重底图
 .picker {
   display: flex;
   flex-direction: column;
   gap: 2px;
   min-width: 160px;
-  background-color: @bg-base;
-  border-radius: @radius-md;
-  box-shadow: @shadow-md;
-  padding: 4px;
-}
-
-:global(.dark-mode) .picker {
-  background-color: var(--dm-bg-base, #121721);
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
 .item {

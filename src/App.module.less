@@ -91,7 +91,8 @@
   color: var(--dm-text-disabled, #4b5563);
 }
 
-/* Popover 气泡 */
+/* Popover 气泡（antd v6：背景在 .ant-popover-container 上，旧版 .ant-popover-inner 已不存在，一并兑底） */
+:global(.dark-mode) :global(.ant-popover-container),
 :global(.dark-mode) :global(.ant-popover-inner) {
   background-color: var(--dm-bg-base, #121721);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
@@ -99,4 +100,9 @@
 
 :global(.dark-mode) :global(.ant-popover-arrow::before) {
   background-color: var(--dm-bg-base, #121721);
+}
+
+/* Popover 内文字跟随暗色（默认色由 antd cssinjs 控制，需显式盖掉） */
+:global(.dark-mode) :global(.ant-popover-container) {
+  color: var(--dm-text-primary, #e5e7eb);
 }

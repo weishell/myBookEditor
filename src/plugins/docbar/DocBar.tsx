@@ -286,7 +286,8 @@ export const DocBar = () => {
     currentElement.attrs,
     currentElement.isEmpty,
   );
-  const iconColor = currentElement.isEmpty ? '#262626' : getElementColor(isDarkMode);
+  // 空块图标：浅色模式用深灰（接近主题黑），暗黑模式不能写死深色，否则暗底上看不见
+  const iconColor = currentElement.isEmpty && !isDarkMode ? '#262626' : getElementColor(isDarkMode);
 
   return (
     <div
