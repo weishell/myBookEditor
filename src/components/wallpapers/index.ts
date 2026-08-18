@@ -5,6 +5,7 @@
 import type { ComponentType } from 'react';
 import FireflyNightSky from './firefly-night-sky';
 import WarmHearth from './warm-hearth';
+import MeteorNightSky from './meteor-night-sky';
 
 export type WallpaperKind = 'svg' | 'image';
 
@@ -45,6 +46,13 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     kind: 'svg',
     component: WarmHearth,
     description: '深夜墙边暖光壁炉，氛围安逸',
+  },
+  {
+    id: 'meteor-night-sky',
+    name: '流星雨',
+    kind: 'svg',
+    component: MeteorNightSky,
+    description: '深冷星空，流星不时划过夜空',
   },
 ];
 

@@ -47,12 +47,13 @@ function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
         className={styles.thumbInner}
         style={{
           background:
-            'radial-gradient(circle at 70% 22%, rgba(255,255,255,0.18), transparent 22%),' +
+            'radial-gradient(circle at 70% 22%, rgba(250,240,205,0.16), transparent 22%),' +
             'linear-gradient(180deg, #020617 0%, #07101f 50%, #050912 100%)',
           overflow: 'hidden',
           position: 'relative',
         }}
       >
+        {/* 暖象牙月亮：径向渐变 + 右下暗部界线（对齐主壁纸 SVG 效果） */}
         <div
           style={{
             position: 'absolute',
@@ -62,9 +63,9 @@ function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
             height: 22,
             borderRadius: '50%',
             background:
-              'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.98), rgba(226,232,240,0.78))',
+              'radial-gradient(circle at 34% 30%, #faf3dc 0%, #f0e2b6 42%, #d8c28e 74%, #a8946a 100%)',
             boxShadow:
-              'inset -4px -3px 8px -2px rgba(15,23,42,0.92), 0 0 6px rgba(255,255,255,0.18)',
+              'inset -4px -3px 7px -2px rgba(11,19,36,0.6), 0 0 7px rgba(253,230,138,0.28)',
           }}
         />
         {[
@@ -84,6 +85,101 @@ function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
               borderRadius: '50%',
               background: '#fde047',
               boxShadow: '0 0 4px rgba(253,224,71,0.9)',
+            }}
+          />
+        ))}
+      </div>
+    );
+  }
+  if (preset.kind === 'svg' && preset.id === 'meteor-night-sky') {
+    return (
+      <div
+        className={styles.thumbInner}
+        style={{
+          background:
+            'radial-gradient(ellipse 40% 30% at 24% 18%, rgba(129,140,248,0.14), transparent 70%),' +
+            'radial-gradient(ellipse 36% 26% at 80% 12%, rgba(56,189,248,0.12), transparent 70%),' +
+            'linear-gradient(180deg, #010409 0%, #050d1c 55%, #03060e 100%)',
+          overflow: 'hidden',
+          position: 'relative',
+        }}
+      >
+        {/* 大颗慢流星：长光迹 + 亮头，斜向右下 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '16%',
+            left: '14%',
+            width: 46,
+            height: 2,
+            borderRadius: 2,
+            transform: 'rotate(45deg)',
+            transformOrigin: '0 50%',
+            background:
+              'linear-gradient(to right, transparent, rgba(191,219,254,0.5) 70%, rgba(240,247,255,0.95))',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              right: -2,
+              top: '50%',
+              width: 4,
+              height: 4,
+              transform: 'translateY(-50%)',
+              borderRadius: '50%',
+              background: '#f0f7ff',
+              boxShadow: '0 0 5px 1px rgba(186,220,255,0.9), 0 0 10px 3px rgba(125,180,255,0.4)',
+            }}
+          />
+        </div>
+        {/* 快碎流星：短光迹，另一条斜线位置 */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '8%',
+            left: '62%',
+            width: 24,
+            height: 1.5,
+            borderRadius: 2,
+            transform: 'rotate(45deg)',
+            transformOrigin: '0 50%',
+            background:
+              'linear-gradient(to right, transparent, rgba(191,219,254,0.4) 65%, rgba(240,247,255,0.85))',
+          }}
+        >
+          <span
+            style={{
+              position: 'absolute',
+              right: -1.5,
+              top: '50%',
+              width: 3,
+              height: 3,
+              transform: 'translateY(-50%)',
+              borderRadius: '50%',
+              background: '#f0f7ff',
+              boxShadow: '0 0 4px 1px rgba(186,220,255,0.85)',
+            }}
+          />
+        </div>
+        {/* 零星点缀 */}
+        {[
+          { t: '30%', l: '40%' },
+          { t: '58%', l: '22%' },
+          { t: '72%', l: '70%' },
+          { t: '48%', l: '86%' },
+        ].map((p, i) => (
+          <span
+            key={i}
+            style={{
+              position: 'absolute',
+              top: p.t,
+              left: p.l,
+              width: 2,
+              height: 2,
+              borderRadius: '50%',
+              background: 'rgba(255,255,255,0.85)',
+              boxShadow: '0 0 3px rgba(255,255,255,0.6)',
             }}
           />
         ))}

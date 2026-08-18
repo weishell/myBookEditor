@@ -49,43 +49,14 @@
   50% { opacity: 0.85; }
 }
 
-/* 月光晕：温暖金色光晕 */
-.moonHalo {
+/* 月亮（SVG）：光晕/月面/界线/陨石坑都在 SVG 内绘制，
+   这里只负责定位；位置对齐旧版月亮（右上 12% 区域） */
+.moonSvg {
   position: absolute;
-  top: 48px;
-  right: 12%;
-  width: 240px;
-  height: 240px;
-  border-radius: 50%;
-  background:
-    radial-gradient(circle,
-      rgba(253, 224, 71, 0.22) 0%,
-      rgba(251, 191, 36, 0.12) 40%,
-      rgba(245, 158, 11, 0.04) 70%,
-      rgba(0, 0, 0, 0) 100%);
-  filter: blur(6px);
-}
-
-/* 金色新月 */
-.moon {
-  position: absolute;
-  top: 78px;
-  right: calc(12% + 44px);
-  width: 96px;
-  height: 96px;
-  border-radius: 50%;
-  /* 金色渐变：亮金 → 暖金 → 暗金 */
-  background:
-    radial-gradient(circle at 32% 30%,
-      rgba(255, 251, 235, 0.98) 0%,
-      rgba(253, 230, 138, 0.92) 40%,
-      rgba(251, 191, 36, 0.82) 78%,
-      rgba(217, 119, 6, 0.74) 100%);
-  /* 右下柔和内阴影 = 月缺；外发光 = 暖金月辉 */
-  box-shadow:
-    inset -14px -10px 24px -8px rgba(15, 23, 42, 0.92),
-    0 0 18px rgba(253, 224, 71, 0.28),
-    0 0 48px rgba(251, 191, 36, 0.18);
+  top: 40px;
+  right: calc(12% - 10px);
+  width: 260px;
+  height: 260px;
 }
 
 .hillBack,

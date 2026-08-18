@@ -1,0 +1,126 @@
+/* 流星雨夜空：深冷星空 + 动态流星 */
+.wallpaper {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(37, 99, 235, 0.1), transparent 36%),
+    linear-gradient(180deg, #010409 0%, #050d1c 42%, #03060e 100%);
+}
+
+/* 星云薄雾：紫/蓝两块极淡的色块，增加纵深 */
+.nebula {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 40% 26% at 20% 18%, rgba(129, 140, 248, 0.09), transparent 70%),
+    radial-gradient(ellipse 36% 22% at 78% 10%, rgba(56, 189, 248, 0.08), transparent 70%),
+    radial-gradient(ellipse 46% 30% at 56% 34%, rgba(99, 102, 241, 0.05), transparent 75%);
+}
+
+/* 近景星点：稍亮，慢速整体闪烁 */
+.stars {
+  position: absolute;
+  inset: 0;
+  opacity: 0.8;
+  background-image:
+    radial-gradient(1.2px 1.2px at 8% 12%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 18% 6%, #dbeafe 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 27% 20%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 38% 9%, #e0e7ff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 52% 16%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 64% 7%, #bae6fd 50%, transparent 51%),
+    radial-gradient(1.4px 1.4px at 74% 18%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 88% 12%, #e0f2fe 50%, transparent 51%),
+    radial-gradient(1px 1px at 12% 34%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 33% 42%, #c7d2fe 50%, transparent 51%),
+    radial-gradient(1px 1px at 58% 38%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 82% 44%, #ffffff 50%, transparent 51%),
+    radial-gradient(1.2px 1.2px at 22% 62%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 46% 70%, #dbeafe 50%, transparent 51%),
+    radial-gradient(1px 1px at 72% 64%, #ffffff 50%, transparent 51%),
+    radial-gradient(1px 1px at 92% 78%, #e0e7ff 50%, transparent 51%);
+  animation: twinkleStars 7s ease-in-out infinite;
+}
+
+/* 远景星点：更暗更小，闪烁相位错开 */
+.starsFar {
+  position: absolute;
+  inset: 0;
+  opacity: 0.5;
+  background-image:
+    radial-gradient(1px 1px at 5% 22%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 15% 48%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 30% 30%, rgba(219, 234, 254, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 44% 52%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 60% 26%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 68% 50%, rgba(224, 231, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 80% 30%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(1px 1px at 95% 40%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 36% 84%, rgba(255, 255, 255, 0.6) 50%, transparent 51%),
+    radial-gradient(1px 1px at 62% 88%, rgba(219, 234, 254, 0.6) 50%, transparent 51%);
+  animation: twinkleStars 9s ease-in-out infinite reverse;
+}
+
+@keyframes twinkleStars {
+  0%, 100% { opacity: 0.55; }
+  50% { opacity: 0.9; }
+}
+
+/* 流星：细光迹（头亮尾隐）+ ::after 发光头部，整体旋转 45° 向右下划过。
+   一个周期里只有前 ~12% 可见并位移，其余时间隐藏 = 天然的错峰间隔 */
+.meteor {
+  position: absolute;
+  top: var(--meteor-top);
+  left: var(--meteor-left);
+  width: var(--meteor-length);
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(
+    to right,
+    transparent 0%,
+    rgba(148, 197, 255, 0.16) 45%,
+    rgba(191, 219, 254, 0.55) 78%,
+    rgba(240, 247, 255, 0.95) 100%
+  );
+  opacity: 0;
+  will-change: transform, opacity;
+  animation: meteorFly var(--meteor-duration) linear infinite;
+  animation-delay: var(--meteor-delay);
+}
+
+.meteor::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 50%;
+  width: var(--meteor-size);
+  height: var(--meteor-size);
+  transform: translate(50%, -50%);
+  border-radius: 50%;
+  background: #f0f7ff;
+  box-shadow:
+    0 0 6px 2px rgba(186, 220, 255, 0.9),
+    0 0 18px 6px rgba(125, 180, 255, 0.4);
+}
+
+/* rotate(45deg) 后沿自身轴向（屏幕右下）位移，头部领飞、光迹拖后。
+   划过距离由 --meteor-travel 逐颗定制；速度 = 行程 / 可见窗口（周期×12%），
+   短周期小行程 = 快碎流星，长周期大行程 = 缓扫大流星 */
+@keyframes meteorFly {
+  0% {
+    opacity: 0;
+    transform: rotate(45deg) translateX(0);
+  }
+  1.5% {
+    opacity: 1;
+  }
+  9% {
+    opacity: 0.85;
+  }
+  12%, 100% {
+    opacity: 0;
+    transform: rotate(45deg) translateX(var(--meteor-travel, 62vmin));
+  }
+}
