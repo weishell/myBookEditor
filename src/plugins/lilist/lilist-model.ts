@@ -31,6 +31,24 @@ export const isLilistHost = (type: LilistType, blockType?: BlockElementType): bo
 
 export const getLilist = (node: any): LilistAttr | undefined => node?.attrs?.lilist;
 
+/**
+ * 取当前选区所在块的 lilist 属性（键盘劫持检测用）
+ * 非列表块 / 无选区返回 undefined
+ */
+export const getLilistAtSelection = (editor: Editor): LilistAttr | undefined => {
+  const { selection } = editor;
+  if (!selection) return undefined;
+  try {
+    const match = (editor as any).above({
+      match: (n: any) => (editor as any).isBlock(n),
+      mode: 'lowest',
+    });
+    return match ? getLilist(match[0]) : undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 /* ------------------------------------------------------------------ */
 /* 前缀格式转换器（对齐 template.md 的 convertNumber / OL_STRATEGY）      */
 /* 编号格式随缩进层级循环交替：数字 → 英文字母 → 罗马数字                */

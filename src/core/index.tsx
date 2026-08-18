@@ -21,7 +21,7 @@ import {
   withDelete,
 } from '@/editor-extensions';
 import { initialValue } from '@/utils/initial-value';
-import { createKeyboardHandler } from '@/events/keyboard';
+import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
 import FloatBar from '@/components/FloatBar';
 import { useEditorMode } from '@/context/EditorContext';
@@ -47,17 +47,24 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     [],
   );
 
-  // 把 editor 实例注册到 EditorContext，供 header 中的全局组件使用
+  // 把 editor 实例注册到 EditorContext，供 header 中的全局组件使用；
+  // 同时挂到 window/globalThis，调试时可在控制台直接打印 window.editor 看数据结构
   useEffect(() => {
     setEditor(editor);
-    return () => setEditor(null);
+    (window as any).editor = editor;
+    (globalThis as any).editor = editor;
+    return () => {
+      setEditor(null);
+      delete (window as any).editor;
+      delete (globalThis as any).editor;
+    };
   }, [editor, setEditor]);
 
   useEffect(() => {
     Editor.normalize(editor, { force: true });
   }, [editor]);
 
-  const keyboardHandler = useMemo(() => createKeyboardHandler(editor), [editor]);
+  const keyboardHandler = useMemo(() => createKeyDownHandler(editor), [editor]);
   const handleKeyDown = useCallback(
     (e: React.KeyboardEvent) => {
       if (!readOnly) {
@@ -66,9 +73,10 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     },
     [keyboardHandler, readOnly],
   );
+  // onChange 不再打印 editor 数据；需要看数据结构时控制台直接打 window.editor
   const handleChange = useCallback(() => {
-    console.warn('onChange', editor.children, editor);
-  }, [editor]);
+    /* no-op */
+  }, []);
 
   return (
     <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>

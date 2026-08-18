@@ -45,7 +45,7 @@ export default function FloatBar() {
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
-  const timerRef = useRef<number | null>(null);
+  const rafRef = useRef<number | null>(null);
 
   const calculatePosition = useCallback(() => {
     const selection = window.getSelection();
@@ -66,12 +66,14 @@ export default function FloatBar() {
 
   useEffect(() => {
     const handleMouseUp = () => {
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      // 等下一帧再算位置：确保选区/DOM 已稳定；同帧多次触发自动合并，不用拍脑袋的毫秒数
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
       }
-      timerRef.current = window.setTimeout(() => {
+      rafRef.current = window.requestAnimationFrame(() => {
+        rafRef.current = null;
         calculatePosition();
-      }, 50);
+      });
     };
 
     const handleSelectionChange = () => {
@@ -112,8 +114,8 @@ export default function FloatBar() {
       document.removeEventListener('click', handleClick);
       window.removeEventListener('scroll', handleScroll, true);
       window.removeEventListener('resize', handleScroll);
-      if (timerRef.current) {
-        clearTimeout(timerRef.current);
+      if (rafRef.current !== null) {
+        window.cancelAnimationFrame(rafRef.current);
       }
       if (scrollRafId !== null) {
         window.cancelAnimationFrame(scrollRafId);

@@ -32,6 +32,11 @@ export const handleEnter = (editor: Editor) => {
     // lilist 列表行为
     const lilist = getLilist(blockNode);
     if (lilist) {
+      console.log('[lilist] Enter 已劫持', {
+        list_type: lilist.list_type,
+        list_id: lilist.list_id,
+        path: blockPath,
+      });
       // 空列表项回车 → 退出列表
       if (Node.string(blockNode as any).trim() === '') {
         removeLilist(editor, blockPath);

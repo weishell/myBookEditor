@@ -12,6 +12,7 @@
 import { Transforms, Node, Element, type Editor, type Path, Range } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
+import { getLilistAtSelection } from '@/plugins/lilist';
 
 const DEFAULT_TITLE_ATTRS = {
   date: new Date().toISOString().slice(0, 10),
@@ -286,6 +287,10 @@ export const withDelete = (editor: Editor) => {
   };
 
   editor.deleteBackward = (unit: any) => {
+    // lilist 劫持点：列表内的 Backspace 已被接管，暂不做列表专属处理（先打 log 占位）
+    if (getLilistAtSelection(editor)) {
+      console.log('[lilist] Backspace 已劫持（暂走默认删除，待列表专属处理）');
+    }
     const saved = saveTitleInfo(editor);
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
@@ -296,6 +301,10 @@ export const withDelete = (editor: Editor) => {
   };
 
   editor.deleteForward = (unit: any) => {
+    // lilist 劫持点：列表内的 Delete 已被接管，暂不做列表专属处理（先打 log 占位）
+    if (getLilistAtSelection(editor)) {
+      console.log('[lilist] Delete 已劫持（暂走默认删除，待列表专属处理）');
+    }
     const saved = saveTitleInfo(editor);
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);

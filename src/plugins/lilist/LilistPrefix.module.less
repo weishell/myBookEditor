@@ -18,3 +18,9 @@
     background-color: @bg-hover;
   }
 }
+
+// 暗黑模式：主题色本身接近黑色（#1f1f1f），深底上不可见，
+// 降级为暗色文字色（与 DocBar 暗色图标同一约定）
+:global(.dark-mode) .olNumber {
+  color: var(--dm-text-primary, #e5e7eb);
+}
