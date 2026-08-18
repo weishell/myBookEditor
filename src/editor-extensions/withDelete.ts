@@ -12,7 +12,7 @@
 import { Transforms, Node, Element, type Editor, type Path, Range } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
-import { getLilistAtSelection } from '@/plugins/lilist';
+import { getLilist, sortLilist } from '@/plugins/lilist';
 
 const DEFAULT_TITLE_ATTRS = {
   date: new Date().toISOString().slice(0, 10),
@@ -110,6 +110,34 @@ const restoreTitleIfMissing = (editor: Editor, saved: TitleInfo | null) => {
 
 export const ensureHeadingTitle = (editor: Editor) => {
   restoreTitleIfMissing(editor, null);
+};
+
+/**
+ * 删除前收集受影响的列表组 id：选区所在块 + 前后相邻块（含自身 lilist）
+ * 删除/合并后再对这些组回写编号：
+ *  - 组内删项 → 后续项编号顺延回写
+ *  - 两个同 id 组之间的块被删 → 两组连通后统一重排
+ * fromIndex：增量起跑索引 = 选区块前一格（Backspace 行首合并会波及前一块），
+ * 变更点之前的编号必然不变，多算一格只是零写入
+ */
+const collectAffectedListIds = (editor: Editor): { ids: string[]; fromIndex: number } => {
+  const ids = new Set<string>();
+  let fromIndex = 0;
+  try {
+    const { selection } = editor;
+    if (!selection) return { ids: [], fromIndex: 0 };
+    const index = (Range.start(selection) as any).path?.[0];
+    if (typeof index !== 'number') return { ids: [], fromIndex: 0 };
+    fromIndex = Math.max(0, index - 1);
+    const children = (editor as any).children as any[];
+    [index - 1, index, index + 1].forEach((i) => {
+      const id = getLilist(children[i])?.list_id;
+      if (id) ids.add(id);
+    });
+  } catch {
+    /* ignore */
+  }
+  return { ids: [...ids], fromIndex };
 };
 
 export const withDelete = (editor: Editor) => {
@@ -287,31 +315,31 @@ export const withDelete = (editor: Editor) => {
   };
 
   editor.deleteBackward = (unit: any) => {
-    // lilist 劫持点：列表内的 Backspace 已被接管，暂不做列表专属处理（先打 log 占位）
-    if (getLilistAtSelection(editor)) {
-      console.log('[lilist] Backspace 已劫持（暂走默认删除，待列表专属处理）');
-    }
+    // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
+    const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
+      sortLilist(editor, affected.ids, affected.fromIndex);
       return;
     }
     deleteBackward(unit);
     restoreTitleIfMissing(editor, saved);
+    sortLilist(editor, affected.ids, affected.fromIndex);
   };
 
   editor.deleteForward = (unit: any) => {
-    // lilist 劫持点：列表内的 Delete 已被接管，暂不做列表专属处理（先打 log 占位）
-    if (getLilistAtSelection(editor)) {
-      console.log('[lilist] Delete 已劫持（暂走默认删除，待列表专属处理）');
-    }
+    // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
+    const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
+      sortLilist(editor, affected.ids, affected.fromIndex);
       return;
     }
     deleteForward(unit);
     restoreTitleIfMissing(editor, saved);
+    sortLilist(editor, affected.ids, affected.fromIndex);
   };
 
   return editor;

@@ -19,8 +19,14 @@
   }
 }
 
+// 无序符号：颜色与有序编号统一（跟随主题变量，暗黑模式自动适配），不写死
+.ulBullet {
+  color: @color-primary;
+}
+
 // 暗黑模式：主题色本身接近黑色（#1f1f1f），深底上不可见，
 // 降级为暗色文字色（与 DocBar 暗色图标同一约定）
-:global(.dark-mode) .olNumber {
+:global(.dark-mode) .olNumber,
+:global(.dark-mode) .ulBullet {
   color: var(--dm-text-primary, #e5e7eb);
 }

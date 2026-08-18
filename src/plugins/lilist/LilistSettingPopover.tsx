@@ -1,21 +1,23 @@
 // 有序列表编号设置弹框（对齐飞书交互）
 //  - 点击编号打开，只有三个操作：继续之前的编号 / 开始新列表 / 修改编号值
-//  - 修改编号值：弹框切换为「新编号为 [输入框] [确定]」面板（对齐 template 的 modifyInput），
-//    正文中不出现任何输入框
+//  - 修改编号值：面板切换为两行「当前编号的值为 [当前值]」+「新编号为 [输入框] [确定]」（对齐飞书），
+//    正文中不出现任何输入框；左侧返回箭头回到三选项菜单
+//  - H 标题有序兼容：当前值显示完整层级路径（1.1 等），新编号输入本层级序号，父级编号自动继承
 //  - 弹框打开期间锁定页面滚动（body overflow hidden），关闭时恢复
 //  - 点击弹框以外任意位置关闭
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { InputNumber } from 'antd';
+import { Button, InputNumber } from 'antd';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 import type { Path } from 'slate';
+import { BlockElementType } from '@/enums';
 import {
   canContinueLilist,
   changeLilistNumber,
   continueLilist,
   restartLilist,
 } from './lilist-commands';
-import { MAX_LIST_NUMBER } from './lilist-model';
+import { getLilist, MAX_LIST_NUMBER } from './lilist-model';
 import styles from './LilistSettingPopover.module.less';
 
 interface LilistSettingPopoverProps {
@@ -27,8 +29,8 @@ interface LilistSettingPopoverProps {
   onClose: () => void;
 }
 
-const POPOVER_WIDTH = 200;
-const POPOVER_HEIGHT = 130;
+const POPOVER_WIDTH = 248;
+const POPOVER_HEIGHT = 150;
 
 export const LilistSettingPopover = ({
   element,
@@ -42,6 +44,16 @@ export const LilistSettingPopover = ({
   const [modifyMode, setModifyMode] = useState(false);
   const [newValue, setNewValue] = useState<number | null>(currentNumber);
   const inputRef = useRef<any>(null);
+
+  const lilist = getLilist(element);
+  const isHeading = element?.type === BlockElementType.HEADING;
+  // H 标题当前值显示完整层级路径（H1 = 1.，H2 = 1.1）；段落显示数字本身
+  const currentPathLabel =
+    isHeading && lilist?.list_path
+      ? (element?.attrs?.level ?? 1) === 1
+        ? `${lilist.list_path}.`
+        : lilist.list_path
+      : undefined;
 
   const path: Path | null = useMemo(() => {
     try {
@@ -63,11 +75,19 @@ export const LilistSettingPopover = ({
   }, []);
 
   // 打开期间锁定页面滚动，关闭/卸载时恢复
+  // 隐藏 body 滚动条会让内容横向位移一个滚动条宽度（页面抖动），
+  // 用 paddingRight 等宽补偿；弹框是 fixed 定位且坐标在锁定前取好，不受影响
   useEffect(() => {
     const prevOverflow = document.body.style.overflow;
+    const prevPaddingRight = document.body.style.paddingRight;
+    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = 'hidden';
+    if (scrollbarWidth > 0) {
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+    }
     return () => {
       document.body.style.overflow = prevOverflow;
+      document.body.style.paddingRight = prevPaddingRight;
     };
   }, []);
 
@@ -127,21 +147,60 @@ export const LilistSettingPopover = ({
       style={{ left: position.left, top: position.top, width: POPOVER_WIDTH }}
     >
       {modifyMode ? (
-        <div className={styles.modifyRow}>
-          <span className={styles.modifyLabel}>新编号为</span>
-          <InputNumber
-            ref={inputRef}
-            className={styles.modifyInput}
-            controls={false}
-            min={1}
-            precision={0}
-            value={newValue}
-            onChange={(v) => setNewValue(v)}
-            onPressEnter={confirmModify}
-          />
-          <button className={styles.confirmButton} onClick={confirmModify}>
-            确定
+        <div className={styles.modifyPanel}>
+          <button
+            className={styles.backButton}
+            onClick={() => setModifyMode(false)}
+            aria-label="返回"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M15 18l-6-6 6-6" />
+            </svg>
           </button>
+          <div className={styles.modifyBody}>
+            <div className={styles.modifyRow}>
+              <span className={styles.modifyLabel}>当前编号的值为</span>
+              {currentPathLabel !== undefined ? (
+                <span className={styles.currentPath}>{currentPathLabel}</span>
+              ) : (
+                <InputNumber
+                  className={styles.modifyInput}
+                  value={currentNumber}
+                  controls
+                  disabled
+                />
+              )}
+            </div>
+            <div className={styles.modifyRow}>
+              <span className={styles.modifyLabel}>新编号为</span>
+              <InputNumber
+                ref={inputRef}
+                className={styles.modifyInput}
+                controls
+                min={1}
+                max={MAX_LIST_NUMBER}
+                precision={0}
+                value={newValue}
+                onChange={(v) => setNewValue(v)}
+                onPressEnter={confirmModify}
+              />
+              <Button type="primary" size="small" onClick={confirmModify}>
+                确定
+              </Button>
+            </div>
+            {isHeading && (
+              <div className={styles.modifyHint}>新编号为本层级序号，父级编号自动继承</div>
+            )}
+          </div>
         </div>
       ) : (
         <>
