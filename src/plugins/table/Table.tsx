@@ -99,14 +99,23 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     return rawBorderColor;
   })();
 
-  const rowCount = React.Children.count(children);
+  // 行/列数一律从 Slate 数据读取（element.children），不依赖 React.Children.count：
+  // slate-react 0.126 + React 19 下 props.children 可能是可迭代对象而非数组，
+  // Children.count 会把它数成 1（列手柄只渲染了一个的根因）
+  const rowCount = element.children?.length || React.Children.count(children);
   const firstRow = React.Children.toArray(children)[0];
-  const colCount =
-    firstRow && React.isValidElement(firstRow)
+  // 列数优先从 Slate 数据直接读取：slate-react 0.126 下 firstRow.props.children
+  // 经 Children.count 实测只得到 1（而非真实列数），导致拖拽手柄只渲染了第一列一个，
+  // 其余列边界无手柄可拖（浏览器实测确诊）
+  const colCount = (() => {
+    const firstRowCells = (element.children?.[0] as CustomElement | undefined)?.children;
+    if (firstRowCells && firstRowCells.length > 0) return firstRowCells.length;
+    return firstRow && React.isValidElement(firstRow)
       ? React.Children.count(
           (firstRow as React.ReactElement<{ children?: React.ReactNode }>).props.children,
         )
       : 0;
+  })();
 
   // 从 Slate 数据直接计算每列的 left 和 width，零 DOM 测量
   const colLayouts: Array<{ left: number; width: number }> = (() => {
