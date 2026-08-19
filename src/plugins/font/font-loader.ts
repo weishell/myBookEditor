@@ -1,6 +1,6 @@
 // 字体文件加载与 IndexedDB 缓存
 //
-// web 字体（金书宋、东方大楷等）首次使用时需要下载 woff2 文件。
+// web 字体（寒蝉锦书宋、东方大楷等）首次使用时需要下载 woff2 文件。
 // 把字体 ArrayBuffer 缓存到 IndexedDB，后续直接从缓存读取。
 //
 // 系统字体不走这里，直接由 CSS font-family 引用。

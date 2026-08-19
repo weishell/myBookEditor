@@ -5,7 +5,7 @@ import { BlockElementType } from '@/enums';
 import styles from './Outline.module.less';
 
 // 断点：小于此宽度时显示为悬浮模式
-const MOBILE_BREAKPOINT = 1200;
+const MOBILE_BREAKPOINT = 1500;
 
 /** 从 Slate 节点递归提取纯文本 */
 function extractNodeText(node: any): string {

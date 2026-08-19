@@ -88,7 +88,7 @@ export default {
       kaiti: '楷体',
       fangsong: '仿宋',
       yahei: '微软雅黑',
-      jinshusong: '金书宋',
+      jinshusong: '寒蝉锦书宋',
       dongfangdakai: '东方大楷',
     },
   },

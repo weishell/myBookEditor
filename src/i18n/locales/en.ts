@@ -88,7 +88,7 @@ export default {
       kaiti: 'Kaiti',
       fangsong: 'FangSong',
       yahei: 'Microsoft YaHei',
-      jinshusong: 'Jinshu Song',
+      jinshusong: 'Chill Jinshu Song',
       dongfangdakai: 'Dongfang Dakai',
     },
   },

@@ -6,8 +6,8 @@ export const ZERO_WIDTH_SPACE = '\u200B';
 // 回到顶部按钮出现阈值（单位 px）
 export const BACK_TO_TOP_THRESHOLD = 300;
 
-// 标准页面宽度
-export const PAGE_WIDTH_NORMAL = '1000px';
+// 标准页面宽度（默认内容容器宽度）
+export const PAGE_WIDTH_NORMAL = '1200px';
 // 较宽页面宽度
 export const PAGE_WIDTH_WIDE = '1200px';
 // 较窄页面宽度

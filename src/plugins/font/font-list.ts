@@ -7,7 +7,7 @@
 // 新增字体：在 FONT_LIST 追加一项，web 类需要 import 字体文件 URL
 import { BlockElementType } from '@/enums';
 
-// 金书宋、东方大楷两个 web 字体文件（Vite 会处理为带 hash 的 URL）
+// 寒蝉锦书宋、东方大楷两个 web 字体文件（Vite 会处理为带 hash 的 URL）
 import jinshusongUrl from '@/assets/fonts/ChillJinshuSongGBKTextRegular.woff2';
 import dongfangdakaiUrl from '@/assets/fonts/AlimamaDongFangDaKai-Regular.woff2';
 
@@ -39,7 +39,7 @@ export const FONT_LIST: FontDefinition[] = [
   { id: 'yahei', family: '"Microsoft YaHei", "微软雅黑", sans-serif', category: 'system' },
   {
     id: 'jinshusong',
-    family: '"ChillJinshuSong", "金书宋", serif',
+    family: '"ChillJinshuSong", "寒蝉锦书宋", serif',
     url: jinshusongUrl,
     category: 'web',
   },

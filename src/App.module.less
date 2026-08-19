@@ -38,14 +38,21 @@
   position: relative;
   z-index: 1;
   flex: 1;
-  padding: 24px 240px;
+  padding: 24px;
   transition: background-color 0.2s;
 }
 
-// 小屏幕时恢复默认 padding
-@media (max-width: 1199px) {
+// 宽屏桌面：左侧给固定目录留出空间，右侧最小间距，保证内容能达到 1200px
+@media (min-width: 1500px) {
   .main {
-    padding: 24px;
+    padding: 24px 60px 24px 240px;
+  }
+}
+
+// 超宽屏：恢复对称留白
+@media (min-width: 1700px) {
+  .main {
+    padding: 24px 240px;
   }
 }
 
