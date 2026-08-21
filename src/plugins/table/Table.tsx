@@ -20,11 +20,6 @@ interface DotPosition {
   left: number;
 }
 
-interface HoveredDot {
-  type: 'row' | 'col';
-  index: number;
-}
-
 interface TableSize {
   width: number;
   height: number;
@@ -45,11 +40,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const [rowDots, setRowDots] = useState<DotPosition[]>([]);
   const [colDots, setColDots] = useState<DotPosition[]>([]);
   const [tableSize, setTableSize] = useState<TableSize>({ width: 0, height: 0 });
+  // 横向滚动偏移：colDots 是「内容坐标」，wrapper 层浮层（工具栏）要减去它换算回视口坐标
+  const [scrollLeft, setScrollLeft] = useState(0);
 
   // 智能显示状态
   const [showDots, setShowDots] = useState(false);
   const [isPinned, setIsPinned] = useState(false);
-  const [hoveredDot, setHoveredDot] = useState<HoveredDot | null>(null);
   const hoverCountRef = useRef(0);
   const hideTimerRef = useRef<number | null>(null);
   const isPinnedRef = useRef(false);
@@ -139,6 +135,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 关键：覆盖全局/组件库可能设的 table{width:100%}。否则 table-layout:fixed 会把各列
   // 「缩放到填满容器宽度」——拖宽一列其他列就被压窄，且表格永不溢出（出不来横向滚动条）。
   const totalWidth = colWidths.reduce((sum, w) => sum + w, 0);
+  // 列宽签名：变化（插列/删列/拖宽）时驱动测量 effect 重跑，保证浮层几何同步
+  const colWidthsKey = colWidths.join(',');
 
   // 列几何：由 DOM 实测 colDots 派生（已随横向滚动重测），保证浮层与真实列对齐
   const colLayouts: Array<{ left: number; width: number }> = useMemo(() => {
@@ -203,7 +201,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       if (hideTimerRef.current) clearTimeout(hideTimerRef.current);
       hideTimerRef.current = window.setTimeout(() => {
         setShowDots(false);
-        setHoveredDot(null);
       }, 300);
     }
   }, []);
@@ -215,7 +212,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       if (wrapperRef.current && !wrapperRef.current.contains(e.target as Node)) {
         setIsPinned(false);
         setShowDots(false);
-        setHoveredDot(null);
         setSelectedRow(null);
         setSelectedCol(null);
       }
@@ -285,6 +281,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
 
       const wrapperRect = wrapperRef.current.getBoundingClientRect();
       const tableRect = tableRef.current.getBoundingClientRect();
+      // 关键：colDots/rowDots 存「内容坐标」（相对滚动内容左上角），
+      // 因为所有跟随表格的浮层都渲染在 scrollContainer 内部、随内容滚动。
+      // getBoundingClientRect 是视口坐标，须加回滚动偏移。
+      const scroller = scrollRef.current;
+      const scrollOffX = scroller ? scroller.scrollLeft : 0;
+      const scrollOffY = scroller ? scroller.scrollTop : 0;
       const rows = tableRef.current.querySelectorAll('tr');
       if (rows.length === 0) {
         if (retryCount < maxRetries) {
@@ -314,31 +316,31 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       for (let i = 0; i <= rows.length; i++) {
         if (i === 0) {
           const rect = rows[0].getBoundingClientRect();
-          newRowDots.push({ top: rect.top - wrapperRect.top, left: 0 });
+          newRowDots.push({ top: rect.top - wrapperRect.top + scrollOffY, left: 0 });
         } else if (i === rows.length) {
           const rect = rows[rows.length - 1].getBoundingClientRect();
-          newRowDots.push({ top: rect.bottom - wrapperRect.top, left: 0 });
+          newRowDots.push({ top: rect.bottom - wrapperRect.top + scrollOffY, left: 0 });
         } else {
           const prevRect = rows[i - 1].getBoundingClientRect();
           const currRect = rows[i].getBoundingClientRect();
           const midY = (prevRect.bottom + currRect.top) / 2;
-          newRowDots.push({ top: midY - wrapperRect.top, left: 0 });
+          newRowDots.push({ top: midY - wrapperRect.top + scrollOffY, left: 0 });
         }
       }
       setRowDots(newRowDots);
 
-      // 计算 colDots（用于插入列圆点、列头定位、拖拽手柄）
+      // 计算 colDots（列头定位、拖拽手柄等，内容坐标）
       const newColDots: DotPosition[] = [];
       for (let i = 0; i <= cells.length; i++) {
         if (i === 0) {
           const rect = (cells[0] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.left - wrapperRect.left });
+          newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
         } else if (i === cells.length) {
           const rect = (cells[cells.length - 1] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.right - wrapperRect.left });
+          newColDots.push({ top: 0, left: rect.right - wrapperRect.left + scrollOffX });
         } else {
           const rect = (cells[i] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.left - wrapperRect.left });
+          newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
         }
       }
       setColDots(newColDots);
@@ -346,9 +348,11 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
 
     measure();
 
+    // 滚动时内容坐标不变（浮层在容器内随内容滚动），无需重测；
+    // 仅同步 scrollLeft，供 wrapper 层的工具栏换算位置。
     const handleScroll = () => {
       if (scrollRef.current) {
-        measure();
+        setScrollLeft(scrollRef.current.scrollLeft);
       }
     };
 
@@ -365,7 +369,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       window.removeEventListener('resize', measure);
     };
-  }, [children, rowCount, colCount]);
+  }, [children, rowCount, colCount, colWidthsKey]);
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -383,7 +387,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setIsPinned(true);
       setShowDots(true);
-      setHoveredDot(null);
+      setHoveredRow(null);
+      setHoveredCol(null);
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
         hideTimerRef.current = null;
@@ -391,6 +396,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       try {
         const path = ReactEditor.findPath(editor, element);
         insertRow(editor, at, path);
+        // 选中索引跟随原行：在选中行上方插入时，原行下移一格
+        setSelectedRow((prev) => (prev !== null && at <= prev ? prev + 1 : prev));
       } catch (err) {
         console.error('Insert row failed:', err);
       }
@@ -404,7 +411,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setIsPinned(true);
       setShowDots(true);
-      setHoveredDot(null);
+      setHoveredRow(null);
+      setHoveredCol(null);
       if (hideTimerRef.current) {
         clearTimeout(hideTimerRef.current);
         hideTimerRef.current = null;
@@ -412,6 +420,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       try {
         const path = ReactEditor.findPath(editor, element);
         insertColumn(editor, at, path);
+        // 选中索引跟随原列：在选中列左侧插入时，原列右移一格
+        setSelectedCol((prev) => (prev !== null && at <= prev ? prev + 1 : prev));
       } catch (err) {
         console.error('Insert column failed:', err);
       }
@@ -492,6 +502,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setSelectedRow((prev) => (prev === rowIndex ? null : rowIndex));
       setSelectedCol(null);
+      setHoveredCol(null);
+      setHoveredRow(null);
       setIsPinned(true);
       setShowDots(true);
       // 同步设置 Slate 选区到该行的第一个单元格，确保 useEffect 检查时匹配
@@ -512,6 +524,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setSelectedCol((prev) => (prev === colIndex ? null : colIndex));
       setSelectedRow(null);
+      setHoveredCol(null);
+      setHoveredRow(null);
       setIsPinned(true);
       setShowDots(true);
       // 同步设置 Slate 选区到该列的第一个单元格，确保 useEffect 检查时匹配
@@ -709,7 +723,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         setHoveredCol(null);
         return;
       }
-      const x = e.clientX - wrapperRect.left;
+      // colLayouts 是内容坐标，鼠标 x 须加回滚动偏移
+      const x = e.clientX - wrapperRect.left + scrollLeft;
       for (let i = 0; i < colLayouts.length; i++) {
         const left = colLayouts[i].left;
         const right = left + colLayouts[i].width;
@@ -720,68 +735,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       setHoveredCol(null);
     },
-    [colLayouts],
+    [colLayouts, scrollLeft],
   );
-
-  // ========== 指示线 ==========
-  let indicatorLine: React.ReactNode = null;
-  let tooltip: React.ReactNode = null;
-
-  if (hoveredDot && showDots) {
-    if (hoveredDot.type === 'row') {
-      const pos = rowDots[hoveredDot.index];
-      if (pos && tableSize.width > 0) {
-        indicatorLine = (
-          <div
-            className={styles.indicatorLineH}
-            style={{
-              top: pos.top,
-              left: 0,
-              width: tableSize.width,
-            }}
-          />
-        );
-        tooltip = (
-          <div
-            className={styles.insertTooltip}
-            style={{
-              top: pos.top,
-              left: -12,
-              transform: 'translate(-100%, -50%)',
-            }}
-          >
-            插入行
-          </div>
-        );
-      }
-    } else {
-      const pos = colDots[hoveredDot.index];
-      if (pos && tableSize.height > 0) {
-        indicatorLine = (
-          <div
-            className={styles.indicatorLineV}
-            style={{
-              top: 0,
-              left: pos.left,
-              height: tableSize.height,
-            }}
-          />
-        );
-        tooltip = (
-          <div
-            className={styles.insertTooltip}
-            style={{
-              top: -12,
-              left: pos.left,
-              transform: 'translate(-50%, -100%)',
-            }}
-          >
-            插入列
-          </div>
-        );
-      }
-    }
-  }
 
   // 拖拽指示线
   const resizeIndicatorLine =
@@ -898,7 +853,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
                 '[class*="rowHeader"]',
                 '[class*="selectionToolbar"]',
                 '[class*="toolbarBtn"]',
-                '[class*="insertTooltip"]',
                 '[class*="indicatorLine"]',
                 '[class*="resizeHandle"]',
                 '[class*="Highlight"]', // hover/selected/drag 高亮
@@ -923,11 +877,13 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           className={styles.selectionToolbar}
           contentEditable={false}
           style={{
-            // 选中列时，按钮出现在该列上方居中
+            // 选中列时，按钮出现在该列上方居中（colDots 是内容坐标，工具栏在 wrapper 层须减 scrollLeft）
             ...(selectedCol !== null && colDots.length > selectedCol + 1
               ? {
                   left:
-                    ((colDots[selectedCol]?.left || 0) + (colDots[selectedCol + 1]?.left || 0)) / 2,
+                    ((colDots[selectedCol]?.left || 0) + (colDots[selectedCol + 1]?.left || 0)) /
+                      2 -
+                    scrollLeft,
                   top: -36,
                   transform: 'translateX(-50%)',
                 }
@@ -942,6 +898,52 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               : {}),
           }}
         >
+          {selectedRow !== null && (
+            <>
+              <button
+                className={styles.toolbarBtn}
+                onClick={(e) => handleInsertRow(selectedRow, e)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  {/* 向上箭头 + 顶部 + 号 = 往上插行 */}
+                  <path d="M12 22V8M7 11l5-5 5 5M9 6h6M12 3v6" />
+                </svg>
+                <span>往上插行</span>
+              </button>
+              <button
+                className={styles.toolbarBtn}
+                onClick={(e) => handleInsertRow(selectedRow + 1, e)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  {/* 向下箭头 + 底部 + 号 = 往下插行 */}
+                  <path d="M12 2v14M7 13l5 5 5-5M9 18h6M12 15v6" />
+                </svg>
+                <span>往下插行</span>
+              </button>
+            </>
+          )}
           {selectedRow !== null && (
             <button
               className={styles.toolbarBtn}
@@ -964,6 +966,52 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               </svg>
               <span>删除行</span>
             </button>
+          )}
+          {selectedCol !== null && (
+            <>
+              <button
+                className={styles.toolbarBtn}
+                onClick={(e) => handleInsertColumn(selectedCol, e)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  {/* 向左箭头 + 左侧 + 号 = 往左插列 */}
+                  <path d="M22 12H8M11 7l-5 5 5 5M6 9v6M3 12h6" />
+                </svg>
+                <span>往左插列</span>
+              </button>
+              <button
+                className={styles.toolbarBtn}
+                onClick={(e) => handleInsertColumn(selectedCol + 1, e)}
+                onMouseDown={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  {/* 向右箭头 + 右侧 + 号 = 往右插列 */}
+                  <path d="M2 12h14M13 7l5 5-5 5M18 9v6M15 12h6" />
+                </svg>
+                <span>往右插列</span>
+              </button>
+            </>
           )}
           {selectedCol !== null && (
             <button
@@ -990,9 +1038,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           )}
         </div>
       )}
-
-      {/* 插入提示 tooltip */}
-      {tooltip}
 
       {/* 横向滚动容器 —— 所有"跟随表格内容横向滚动"的浮层都搬到这里：
           row/col headers、resize handle、selection highlight、indicator、tooltip 等。
@@ -1038,7 +1083,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             <div
               key={`col-header-${i}`}
               contentEditable={false}
-              className={`${styles.colHeader} ${selectedCol === i ? styles.colHeaderSelected : ''} ${hoveredCol === i ? styles.colHeaderHovered : ''}`}
+              className={`${styles.colHeader} ${selectedCol === i ? styles.colHeaderSelected : ''} ${hoveredCol === i && selectedCol === null ? styles.colHeaderHovered : ''}`}
               style={{
                 top: 0,
                 left: layout.left,
@@ -1064,63 +1109,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
             />
           ))}
 
-        {/* 行插入圆点 —— 移到 scrollContainer 后 left 由 -12 改 0，
-            否则会被 overflow-x:auto 裁掉。横向滚动时跟随第一列移动/隐藏。 */}
-        {showDots &&
-          rowDots.map((pos, i) => (
-            <button
-              key={`row-dot-${i}`}
-              contentEditable={false}
-              onClick={(e) => handleInsertRow(i, e)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onMouseEnter={() => {
-                handleMouseEnter();
-                setHoveredDot({ type: 'row', index: i });
-              }}
-              onMouseLeave={() => {
-                handleMouseLeave();
-                setHoveredDot((prev) => (prev?.type === 'row' && prev.index === i ? null : prev));
-              }}
-              className={styles.dot}
-              style={{
-                top: pos.top,
-                left: 7, // 落在 14px 行表头条内（左侧边缘），可见且不被 overflow 裁切
-                zIndex: 20, // 高于 rowHeader(12)，保证可点击
-              }}
-            />
-          ))}
-
-        {/* 列插入圆点 —— 落进 14px 列表头条内，避免被 overflow 裁切 + 高于 colHeader 可点击 */}
-        {showDots &&
-          colDots.map((pos, i) => (
-            <button
-              key={`col-dot-${i}`}
-              contentEditable={false}
-              onClick={(e) => handleInsertColumn(i, e)}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-              }}
-              onMouseEnter={() => {
-                handleMouseEnter();
-                setHoveredDot({ type: 'col', index: i });
-              }}
-              onMouseLeave={() => {
-                handleMouseLeave();
-                setHoveredDot((prev) => (prev?.type === 'col' && prev.index === i ? null : prev));
-              }}
-              className={styles.dot}
-              style={{
-                top: 7, // 落在 14px 列表头条内（顶部边缘），可见且不被 overflow 裁切
-                left: Math.max(pos.left, 8), // 首列圆点避免被左边缘裁掉
-                zIndex: 20, // 高于 colHeader(12)，保证可点击
-              }}
-            />
-          ))}
-
         {/* 拖拽手柄 */}
         {showDots &&
           Array.from({ length: colCount }, (_, i) => {
@@ -1142,9 +1130,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               />
             );
           })}
-
-        {/* 悬浮指示线（行/列插入）—— 放在容器内，width=tableSize.width 时由 overflow-x:auto 自然裁掉超出部分 */}
-        {indicatorLine}
 
         {/* 拖拽指示线 */}
         {resizeIndicatorLine}
