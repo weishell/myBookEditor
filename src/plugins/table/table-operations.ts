@@ -18,6 +18,8 @@ export interface TableRowAttrs extends CustomElementAttrs {
 export interface TableAttrs extends CustomElementAttrs {
   borderColor?: string;
   borderWidth?: string;
+  /** 与 cell 解耦的列宽数组：每列一个像素宽度，索引即列号 */
+  colWidths?: number[];
 }
 
 type NodeEntry = [CustomElement, number[]];
@@ -46,7 +48,8 @@ export const createTableRow = (cellCount: number, attrs?: TableRowAttrs): Custom
 export const createTable = (rows: number, cols: number, attrs?: TableAttrs): CustomElement => ({
   type: BlockElementType.TABLE,
   id: uuidv4(),
-  attrs,
+  // 默认每列 160px；调用方传入的 attrs（含 colWidths）可覆盖
+  attrs: { colWidths: Array.from({ length: cols }, () => 160), ...attrs },
   children: Array.from({ length: rows }, () => createTableRow(cols)),
 });
 
@@ -157,6 +160,23 @@ const insertColumnInternal = (
       at: [...tablePath, rowIndex, insertIndex],
     });
   }
+
+  // 同步 table 节点的 colWidths 数组（列宽与 cell 解耦）
+  try {
+    const [curTable] = Editor.node(editor, tablePath);
+    const curAttrs = ((curTable as CustomElement).attrs || {}) as TableAttrs;
+    const curWidths = Array.isArray(curAttrs.colWidths)
+      ? [...curAttrs.colWidths]
+      : Array.from(
+          { length: (tableElement.children[0] as CustomElement)?.children?.length || 0 },
+          () => 160,
+        );
+    const insertAt = at !== undefined ? Math.min(at, curWidths.length) : curWidths.length;
+    curWidths.splice(insertAt, 0, 160);
+    updateTable(editor, tablePath, { colWidths: curWidths });
+  } catch (err) {
+    console.error('Update colWidths on insertColumn failed:', err);
+  }
 };
 
 export const deleteRow = (editor: Editor) => {
@@ -224,6 +244,18 @@ export const deleteColumn = (editor: Editor) => {
     for (let rowIndex = rows.length - 1; rowIndex >= 0; rowIndex--) {
       Transforms.removeNodes(editor, { at: [...tablePath, rowIndex, colIndex] });
     }
+    // 同步 table 节点的 colWidths 数组
+    try {
+      const [curTable] = Editor.node(editor, tablePath);
+      const curAttrs = ((curTable as CustomElement).attrs || {}) as TableAttrs;
+      const curWidths = Array.isArray(curAttrs.colWidths) ? [...curAttrs.colWidths] : [];
+      if (curWidths.length > colIndex) {
+        curWidths.splice(colIndex, 1);
+        updateTable(editor, tablePath, { colWidths: curWidths });
+      }
+    } catch (err) {
+      console.error('Update colWidths on deleteColumn failed:', err);
+    }
   }
 };
 
@@ -252,9 +284,20 @@ export const updateTableRow = (
 };
 
 export const updateTable = (editor: Editor, tablePath: number[], attrs: Partial<TableAttrs>) => {
-  Transforms.setNodes(
-    editor,
-    { attrs: { ...attrs } },
-    { at: tablePath, match: (n) => Element.isElement(n) },
-  );
+  // 合并已有 attrs，避免只更新 colWidths 时把 borderColor 等一起清掉
+  try {
+    const [node] = Editor.node(editor, tablePath);
+    const existing = ((node as CustomElement).attrs || {}) as TableAttrs;
+    Transforms.setNodes(
+      editor,
+      { attrs: { ...existing, ...attrs } },
+      { at: tablePath, match: (n) => Element.isElement(n) },
+    );
+  } catch {
+    Transforms.setNodes(
+      editor,
+      { attrs: { ...attrs } },
+      { at: tablePath, match: (n) => Element.isElement(n) },
+    );
+  }
 };

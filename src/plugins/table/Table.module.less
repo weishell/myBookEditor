@@ -5,15 +5,17 @@
 }
 
 .scrollContainer {
-  overflow-x: scroll;
+  // 横向：列多时按需出现横向滚动条
+  overflow-x: auto;
+  // 纵向：不限制高度 → 容器随内容自然增高，无内部纵向滚动条（由页面滚动）。
+  // 无 max-height，内容永不纵向溢出，故纵向滚动条不会出现。
   overflow-y: auto;
-  max-height: 60vh;
   position: relative;
 
   // 自定义滚动条 — WebKit 内核
   &::-webkit-scrollbar {
-    height: 8px;
-    width: 8px;
+    height: 8px; // 横向滚动条厚度
+    width: 0; // 无纵向滚动，不预留纵向槽位
   }
 
   &::-webkit-scrollbar-track {

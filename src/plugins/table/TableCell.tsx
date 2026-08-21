@@ -21,7 +21,7 @@ interface TableCellProps extends RenderElementProps {
 
 export const TableCell: React.FC<TableCellProps> = ({ attributes, children, element }) => {
   const attrs = element.attrs as TableCellAttrs;
-  const { colspan = 1, rowspan = 1, bgColor, width } = attrs || {};
+  const { colspan = 1, rowspan = 1, bgColor } = attrs || {};
   const { isDarkMode } = useTheme();
   const editor = useSlateStatic();
   const path = ReactEditor.findPath(editor, element);
@@ -43,8 +43,6 @@ export const TableCell: React.FC<TableCellProps> = ({ attributes, children, elem
       className={styles.cell}
       style={{
         backgroundColor: actualBg || 'transparent',
-        width: width || '160px',
-        minWidth: '60px',
         transition: 'background-color 0.2s, border-color 0.2s',
       }}
       onContextMenu={(e) => {
