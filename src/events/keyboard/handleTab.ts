@@ -1,6 +1,7 @@
 import { isHotkey, type KeyboardEventLike } from 'is-hotkey';
 import { Range, type Editor } from 'slate';
 import { increaseIndent, decreaseIndent, hasNonIndentableInSelection } from '@/utils/indent';
+import { isInCodeBlock, handleCodeBlockTab } from '@/utils/code-tab';
 import { showCursorToast, type ToastKey } from '@/components/InlineToast';
 import { getLilistAtSelection, indentLilistSubtree, sortLilist } from '@/plugins/lilist';
 
@@ -9,6 +10,15 @@ export function handleTabIndent(editor: Editor, e: React.KeyboardEvent): void {
   // isHotkey 内部已区分 mac/win 修饰键，跨平台无需手写判断
   const event = e as unknown as KeyboardEventLike;
   const isShift = isHotkey('shift+tab', event);
+  const isTab = isHotkey('tab', event) || isShift;
+
+  // 代码块内部没有层级概念：Tab 只操作文本（插入/删除制表符），不走文档缩进逻辑
+  if (isTab && isInCodeBlock(editor)) {
+    e.preventDefault();
+    handleCodeBlockTab(editor, isShift);
+    return;
+  }
+
   const lilist = getLilistAtSelection(editor);
   // 回退通用缩进只在多块选区走到，编号起跑点 = 选区起始块
   const fromIndex = editor.selection ? ((Range.start(editor.selection).path[0] as number) ?? 0) : 0;
