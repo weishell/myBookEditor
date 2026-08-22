@@ -63,6 +63,34 @@ export const initialValue: Descendant[] = [
     ],
   },
   {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '行内公式示例：质能方程 ' },
+      {
+        type: BlockElementType.FORMULA,
+        id: uuidv4(),
+        attrs: { value: 'E = mc^2' },
+        children: [{ text: '' }],
+      },
+      { text: '，勾股定理 ' },
+      {
+        type: BlockElementType.FORMULA,
+        id: uuidv4(),
+        attrs: { value: 'a^2 + b^2 = c^2' },
+        children: [{ text: '' }],
+      },
+      { text: '，以及积分公式 ' },
+      {
+        type: BlockElementType.FORMULA,
+        id: uuidv4(),
+        attrs: { value: '\\int_{0}^{\\infty} e^{-x^2} dx = \\frac{\\sqrt{\\pi}}{2}' },
+        children: [{ text: '' }],
+      },
+      { text: '。点击公式可编辑，按 ESC 完成输入。' },
+    ],
+  },
+  {
     type: BlockElementType.HEADING,
     id: uuidv4(),
     attrs: { level: 2 },

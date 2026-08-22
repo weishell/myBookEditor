@@ -1,0 +1,52 @@
+// 行内公式渲染样式 —— 对齐飞书
+// 选中态：蓝色半透明背景高亮（飞书公式选中效果）
+
+.formula {
+  display: inline-block;
+  vertical-align: middle;
+  margin: 0 1px;
+  padding: 1px 3px;
+  border-radius: 3px;
+  cursor: default;
+  line-height: 1;
+  user-select: none;
+  transition: background-color 0.15s ease;
+  position: relative;
+
+  &:hover {
+    background-color: rgba(24, 144, 255, 0.08);
+  }
+
+  // 选中态：Slate 选中 void 元素时会加 data-slate-void="true" 并由编辑器选区覆盖
+  // 我们通过 :focus-within + 自定义选中态实现飞书式蓝色高亮
+  &.isSelected {
+    background-color: rgba(24, 144, 255, 0.2);
+  }
+}
+
+// KaTeX 渲染容器：行内对齐
+.katexWrap {
+  display: inline-flex;
+  align-items: center;
+  vertical-align: middle;
+
+  :global(.katex) {
+    font-size: @font-size-md;
+  }
+
+  :global(.katex .base) {
+    // 让公式基线与正文文本对齐
+    vertical-align: -0.2em;
+  }
+}
+
+// 空公式占位
+.formulaPlaceholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  color: @text-tertiary;
+  font-size: @font-size-md;
+}

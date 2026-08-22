@@ -16,6 +16,7 @@ import {
   TableRow,
   TableCell,
   Drawio,
+  Formula,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -107,6 +108,8 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
           element={el as any}
         />
       );
+    case BlockElementType.FORMULA:
+      return <Formula attributes={attributes} element={el as any} readOnly={false} />;
     default:
       return (
         <Paragraph attributes={attributes} children={children} pluginId={el.id} element={el} />

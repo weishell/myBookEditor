@@ -13,7 +13,14 @@ import { useMemo, useCallback, useEffect } from 'react';
 import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
-import { MenuProvider, ContextMenu, SelectionProvider, DocBarProvider, DocBar } from '@/plugins';
+import {
+  MenuProvider,
+  ContextMenu,
+  SelectionProvider,
+  DocBarProvider,
+  DocBar,
+  withInlineFormula,
+} from '@/plugins';
 import {
   withCodeBlock,
   withMarkdownShortcuts,
@@ -41,7 +48,9 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     () =>
       withDelete(
         withEditorBehaviors(
-          withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+          withInlineFormula(
+            withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+          ),
         ),
       ),
     [],

@@ -15,6 +15,7 @@ export const BlockElementType = {
   TABLE_ROW: 'table-row',
   TABLE_CELL: 'table-cell',
   DRAWIO: 'drawio',
+  FORMULA: 'inline-formula',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

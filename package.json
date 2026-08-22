@@ -14,6 +14,7 @@
     "@emoji-mart/data": "^1.2.1",
     "@emoji-mart/react": "^1.1.1",
     "@types/is-hotkey": "^0.1.10",
+    "@types/katex": "^0.16.8",
     "@types/node": "^26.1.1",
     "@types/prismjs": "^1.26.6",
     "antd": "^6.5.0",
@@ -21,6 +22,7 @@
     "i18next-browser-languagedetector": "^8.2.1",
     "i18next-http-backend": "^4.0.0",
     "is-hotkey": "^0.2.0",
+    "katex": "^0.16.9",
     "prismjs": "^1.30.0",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
@@ -50,5 +52,6 @@
     "typescript": "~5.8.3",
     "typescript-eslint": "^8.30.1",
     "vite": "^6.3.5"
-  }
+  },
+  "packageManager": "pnpm@11.17.0+sha512.cca3cea332ad254bb84145f966d19f4879615210346fc92c79a047f23a0d7b3cca3c3792f0076ba1f1831d277efbcf0a9119b31a9a60eca7fb3d6231f331ef72"
 }

@@ -1,0 +1,111 @@
+// 公式编辑器弹层 —— 飞书样式
+// 上半部分：LaTeX 源码输入框（正常字体）
+// 下半部分：实时渲染的公式预览
+// 底部：按 ESC 完成输入 / 查看帮助文档
+
+.editor {
+  position: fixed;
+  width: 520px;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-lg;
+  box-shadow: @shadow-lg;
+  padding: @spacing-lg;
+  z-index: 10002;
+}
+
+// 输入框容器
+.inputBox {
+  position: relative;
+  width: 100%;
+  border: 2px solid @color-primary;
+  border-radius: @radius-md;
+  background-color: @bg-base;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.input {
+  width: 100%;
+  min-height: 72px;
+  resize: none;
+  padding: @spacing-md @spacing-lg;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 16px;
+  line-height: 1.6;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  color: @text-primary;
+  box-sizing: border-box;
+  caret-color: @color-primary;
+  user-select: text;
+}
+
+// 实时预览区（输入框下方）
+.previewBox {
+  margin-top: @spacing-sm;
+  padding: @spacing-md @spacing-lg;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  background-color: @bg-subtle;
+  border-radius: @radius-sm;
+  overflow-x: auto;
+}
+
+.previewContent {
+  display: inline-block;
+  max-width: 100%;
+
+  :global(.katex) {
+    font-size: 18px;
+  }
+}
+
+.previewPlaceholder {
+  color: @text-tertiary;
+  font-size: @font-size-sm;
+}
+
+// 底部提示栏
+.footer {
+  margin-top: @spacing-md;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 @spacing-xs;
+}
+
+.footerTip {
+  font-size: @font-size-base;
+  color: @text-tertiary;
+}
+
+.footerHelp {
+  font-size: @font-size-base;
+  color: @color-primary;
+  text-decoration: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+
+  &:hover {
+    text-decoration: underline;
+  }
+
+  &::before {
+    content: '?';
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    font-size: 11px;
+    line-height: 1;
+    font-weight: bold;
+  }
+}

@@ -24,3 +24,4 @@ export * from './art-text';
 export * from './table';
 export * from './font';
 export * from './drawio';
+export * from './formula';
