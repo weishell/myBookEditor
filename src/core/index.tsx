@@ -20,6 +20,8 @@ import {
   DocBarProvider,
   DocBar,
   withInlineFormula,
+  withMention,
+  MentionController,
 } from '@/plugins';
 import {
   withCodeBlock,
@@ -48,8 +50,10 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     () =>
       withDelete(
         withEditorBehaviors(
-          withInlineFormula(
-            withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+          withMention(
+            withInlineFormula(
+              withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+            ),
           ),
         ),
       ),
@@ -93,6 +97,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
         <MenuProvider>
           {!readOnly && <FloatBar />}
           {!readOnly && <ContextMenu />}
+          {!readOnly && <MentionController isDark={isDarkMode} />}
           <DocBarProvider>
             <DocBar />
             <div

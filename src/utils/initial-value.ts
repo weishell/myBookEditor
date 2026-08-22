@@ -91,6 +91,27 @@ export const initialValue: Descendant[] = [
     ],
   },
   {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '艾特功能示例：你可以 ' },
+      {
+        type: BlockElementType.MENTION,
+        id: uuidv4(),
+        attrs: { name: '产品需求文档 V2.0', kind: 'doc', targetId: 'doc-prd-v2' },
+        children: [{ text: '' }],
+      },
+      { text: ' 或 ' },
+      {
+        type: BlockElementType.MENTION,
+        id: uuidv4(),
+        attrs: { name: '技术开发', kind: 'category', targetId: 'cat-dev' },
+        children: [{ text: '' }],
+      },
+      { text: ' 来引用相关文档和分类。在段落中输入 @ 即可调出选择器。' },
+    ],
+  },
+  {
     type: BlockElementType.HEADING,
     id: uuidv4(),
     attrs: { level: 2 },

@@ -1,0 +1,30 @@
+.mention {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 6px;
+  margin: 0 2px;
+  border-radius: 4px;
+  background: rgba(24, 144, 255, 0.1);
+  color: var(--theme-primary, #1890ff);
+  font-size: 14px;
+  line-height: 22px;
+  vertical-align: baseline;
+  cursor: pointer;
+  user-select: none;
+  transition: background 0.15s ease;
+
+  &:hover {
+    background: rgba(24, 144, 255, 0.18);
+  }
+}
+
+.selected {
+  background: rgba(24, 144, 255, 0.25) !important;
+}
+
+.icon {
+  margin-right: 4px;
+  font-size: 12px;
+  opacity: 0.7;
+}
