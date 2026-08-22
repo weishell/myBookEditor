@@ -1,25 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
-import { useCursor, CURSOR_THEMES, cursorPaths } from '@/context/CursorContext';
+import { useCursor, CURSOR_THEMES } from '@/context/CursorContext';
 import styles from './CursorSwitcher.module.less';
-
-// 飞行器剪影预览（与光标同款"红白火箭"配色）
-function VehicleThumb({ paths }: { paths: string[] }) {
-  return (
-    <svg viewBox="0 0 32 32" width={30} height={30} className={styles.optionVehicle}>
-      <g
-        fill="#e0523f"
-        stroke="#ffffff"
-        strokeWidth={2}
-        strokeLinejoin="round"
-        strokeLinecap="round"
-      >
-        {paths.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </g>
-    </svg>
-  );
-}
 
 export default function CursorSwitcher() {
   const { cursorTheme, setCursorTheme } = useCursor();
@@ -60,11 +41,7 @@ export default function CursorSwitcher() {
                   setOpen(false);
                 }}
               >
-                {cursorPaths(t) ? (
-                  <VehicleThumb paths={cursorPaths(t)!} />
-                ) : (
-                  <span className={styles.optionBadge}>{t.badge}</span>
-                )}
+                <span className={styles.optionBadge}>{t.badge}</span>
                 <div className={styles.optionMeta}>
                   <span className={styles.optionName}>{t.name}</span>
                   {t.desc && <span className={styles.optionDesc}>{t.desc}</span>}

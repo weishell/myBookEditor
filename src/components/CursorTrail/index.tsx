@@ -1,10 +1,10 @@
-// 尾焰拖尾（CursorTrail）
+// 火焰尾迹（CursorTrail）
 //
-// 仅当光标主题为飞行器（歼-20）时启用：鼠标移动时会从光标后方
-// 拖出一串橙黄渐隐的尾焰粒子（canvas 全屏覆盖，pointer-events:none 不拦截鼠标，
+// 仅当光标主题为"黄色火焰"时启用：鼠标移动时会从光标后方
+// 拖出一串黄焰渐隐的尾焰粒子（canvas 全屏覆盖，pointer-events:none 不拦截鼠标，
 // z-index 极高使其如光标一般浮于所有内容之上）。
 import { useEffect, useRef } from 'react';
-import { useCursor, THRUST_THEMES } from '@/context/CursorContext';
+import { useCursor, FLAME_TRAIL_THEMES } from '@/context/CursorContext';
 
 const MAX_FLAMES = 170;
 
@@ -23,7 +23,7 @@ interface Flame {
 export default function CursorTrail() {
   const { cursorTheme } = useCursor();
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const active = THRUST_THEMES.includes(cursorTheme);
+  const active = FLAME_TRAIL_THEMES.includes(cursorTheme);
 
   useEffect(() => {
     if (!active) return;
@@ -71,7 +71,7 @@ export default function CursorTrail() {
         life: 360 + Math.random() * 180,
         size: (3.2 + Math.random() * 2.6) * dpr,
         seed: Math.random() * Math.PI * 2,
-        hue: Math.random() * 16 - 6,
+        hue: Math.random() * 18 - 6,
       };
       if (flames.length >= MAX_FLAMES) flames.shift();
       flames.push(flame);
@@ -101,11 +101,11 @@ export default function CursorTrail() {
           0.5,
         );
         const alpha = (1 - t) * 0.95;
-        const hue = 32 + f.hue;
+        const hue = 48 + f.hue;
         const grad = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, r);
-        grad.addColorStop(0, `rgba(255,248,214,${alpha})`);
-        grad.addColorStop(0.38, `hsla(${hue},100%,62%,${alpha * 0.75})`);
-        grad.addColorStop(1, 'rgba(255,60,0,0)');
+        grad.addColorStop(0, `rgba(255,250,225,${alpha})`);
+        grad.addColorStop(0.4, `hsla(${hue},100%,60%,${alpha * 0.8})`);
+        grad.addColorStop(1, 'rgba(255,175,0,0)');
         ctx.beginPath();
         ctx.arc(f.x, f.y, r, 0, Math.PI * 2);
         ctx.fillStyle = grad;

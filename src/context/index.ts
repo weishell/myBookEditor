@@ -4,8 +4,6 @@ export {
   useCursor,
   CURSOR_THEMES,
   DEFAULT_CURSOR_THEME,
-  THRUST_BODY,
-  THRUST_THEMES,
-  cursorPaths,
+  FLAME_TRAIL_THEMES,
 } from './CursorContext';
-export type { CursorThemeId, CursorThemeDef, ThrustThemeId } from './CursorContext';
+export type { CursorThemeId, CursorThemeDef } from './CursorContext';
