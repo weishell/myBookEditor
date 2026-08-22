@@ -1,4 +1,4 @@
-.button {
+﻿.button {
   display: flex;
   align-items: center;
   gap: 4px;
@@ -6,7 +6,7 @@
   border: 1px solid color-mix(in srgb, var(--theme-primary) 55%, @border-color-light);
   border-radius: 4px;
   background-color: @bg-base;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-size: @font-size-sm;
   color: var(--theme-primary);
   transition: all 0.2s ease;
@@ -50,7 +50,7 @@
   gap: @spacing-sm;
   padding: @spacing-sm @spacing-md;
   border-radius: @radius-sm;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-size: @font-size-sm;
   color: @text-primary;
   transition: background-color 0.15s ease;
@@ -157,7 +157,7 @@
 
 .wallpaperCard {
   all: unset;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   display: flex;
   flex-direction: column;
   gap: 6px;

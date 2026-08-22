@@ -1,4 +1,4 @@
-// 编号设置弹框样式 —— 飞书风格：圆角卡片 + 柔和阴影，颜色全部走主题变量，不写死
+﻿// 编号设置弹框样式 —— 飞书风格：圆角卡片 + 柔和阴影，颜色全部走主题变量，不写死
 
 .popover {
   position: fixed;
@@ -20,7 +20,7 @@
   border: none;
   background: transparent;
   border-radius: @radius-sm;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   text-align: left;
   font-size: @font-size-md;
   color: @text-primary;
@@ -65,7 +65,7 @@
   border-radius: @radius-sm;
   background: transparent;
   color: @text-secondary;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 
   &:hover {
     background-color: @bg-hover;

@@ -1,4 +1,4 @@
-// 目录样式 - 跟随主题色（通过 @bg-* / @text-* 变量 + .dark-mode 全局覆写）
+﻿// 目录样式 - 跟随主题色（通过 @bg-* / @text-* 变量 + .dark-mode 全局覆写）
 
 // 桌面端左侧固定面板
 .sidebar {
@@ -54,7 +54,7 @@
   color: @text-secondary;
   font-size: 13px;
   line-height: 1.4;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   border-radius: 4px;
   transition: color 0.15s ease, background-color 0.15s ease;
   text-decoration: none;
@@ -111,7 +111,7 @@
   background: @bg-base;
   box-shadow: @shadow-md;
   color: @text-secondary;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -161,7 +161,7 @@
   border: none;
   background: transparent;
   color: @text-secondary;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   padding: 4px;
   display: flex;
   align-items: center;

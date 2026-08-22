@@ -1,4 +1,4 @@
-// FloatBar 组件样式
+﻿// FloatBar 组件样式
 // 注：variables.less 已通过 vite.config.ts 的 additionalData 全局注入
 
 // 主工具栏（位置 left/top 动态计算，保留 inline）
@@ -26,7 +26,7 @@
   padding: 6px @spacing-sm;
   border: none;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-size: @font-size-md;
   border-radius: @radius-sm;
   display: flex;
@@ -106,7 +106,7 @@
   text-align: left;
   border: none;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-size: @font-size-base;
   border-radius: @radius-sm;
 
@@ -122,7 +122,7 @@
   text-align: left;
   border: none;
   background: transparent;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   font-weight: bold;
   border-radius: @radius-sm;
 

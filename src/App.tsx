@@ -13,6 +13,9 @@ import { WallpaperHost } from '@/components/wallpapers';
 import { EditorProvider, useEditorMode } from '@/context/EditorContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
+import { CursorProvider } from '@/context/CursorContext';
+import CursorSwitcher from '@/components/CursorSwitcher';
+import CursorTrail from '@/components/CursorTrail';
 import styles from './App.module.less';
 
 function AppLayout() {
@@ -21,12 +24,14 @@ function AppLayout() {
   return (
     <BrowserRouter>
       <div className={styles.container}>
+        <CursorTrail />
         <WallpaperHost />
         <header className={styles.header}>
           <div className={styles.logo}>MyBook Editor</div>
           <div className={styles.controls}>
             <FontSwitcher />
             <ThemeSwitcher />
+            <CursorSwitcher />
             <ModeSwitcher mode={mode} onChange={setMode} />
             <LanguageSwitcher />
           </div>
@@ -48,13 +53,15 @@ function App() {
   return (
     <LanguageProvider>
       <ThemeProvider>
-        {/* Antd 主题桥必须放在 ThemeProvider 内部，这样才能 useTheme() 拿到 isDarkMode/themeColor */}
-        <AntdThemeBridge>
-          <EditorProvider>
-            <AppLayout />
-            <InlineToastHost />
-          </EditorProvider>
-        </AntdThemeBridge>
+        {/* 光标主题必须放在 ThemeProvider 内部，且要在最外层包裹 */}
+        <CursorProvider>
+          <AntdThemeBridge>
+            <EditorProvider>
+              <AppLayout />
+              <InlineToastHost />
+            </EditorProvider>
+          </AntdThemeBridge>
+        </CursorProvider>
       </ThemeProvider>
     </LanguageProvider>
   );

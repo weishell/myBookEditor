@@ -31,6 +31,31 @@ body {
   min-height: 100vh;
 }
 
+/* ================== 光标主题 ==================
+   默认三态变量由 CursorContext 在运行时写入：
+   --cursor-arrow（默认箭头）/ --cursor-text（文本竖线）/ --cursor-pointer（小手）。
+   组件只在需要替换三态的位置引用对应变量（功能型 cursor 如 col-resize/move
+   一律保持原样，避免破坏拖拽等交互）。 */
+:root {
+  --cursor-arrow: default;
+  --cursor-text: text;
+  --cursor-pointer: pointer;
+}
+
+html,
+body {
+  cursor: var(--cursor-arrow);
+}
+
+/* 文本编辑处：编辑器正文、输入框、多行输入、以及任何可编辑容器 */
+input,
+textarea,
+[contenteditable],
+[role='textbox'],
+.caret-theme {
+  cursor: var(--cursor-text);
+}
+
 /* 选区颜色 - 跟随主题色，透明度较低保证可读性 */
 ::selection {
   background-color: color-mix(in srgb, var(--theme-primary) 28%, transparent);

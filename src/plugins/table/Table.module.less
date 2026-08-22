@@ -1,4 +1,4 @@
-// Table 组件样式
+﻿// Table 组件样式
 .wrapper {
   margin: 16px 0;
   position: relative;
@@ -80,7 +80,7 @@
   position: absolute;
   left: 0;
   width: 14px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   z-index: 12;
   background: rgba(0, 0, 0, 0.03);
   transition: background 0.15s;
@@ -120,7 +120,7 @@
 .colHeaderOverlay {
   position: absolute;
   z-index: 16;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
 }
 
 // 列头：覆盖在表格顶部边缘，14px 高，淡灰背景 + 顶部 3px 横线 + 右侧分隔线
@@ -128,7 +128,7 @@
   position: absolute;
   top: 0;
   height: 14px;
-  cursor: pointer;
+  cursor: var(--cursor-pointer);
   z-index: 12;
   background: rgba(0, 0, 0, 0.03);
   transition: background 0.15s;
@@ -250,7 +250,7 @@
     border: none;
     background: transparent;
     border-radius: @radius-sm;
-    cursor: pointer;
+    cursor: var(--cursor-pointer);
     font-size: @font-size-sm;
     color: @text-primary;
     transition: background 0.15s;
