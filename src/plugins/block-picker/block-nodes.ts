@@ -62,6 +62,34 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         attrs: { checked: false },
         children: [{ text: '' }],
       } as Element;
+    case BlockElementType.FILE_BLOCK:
+      return {
+        type,
+        id,
+        attrs: {
+          kind: 'file',
+          src: '/sample.txt',
+          name: 'sample.txt',
+          size: 0,
+          mimeType: 'text/plain',
+          layer: 'card',
+        },
+        children: [{ text: '' }],
+      } as Element;
+    case BlockElementType.VIDEO_BLOCK:
+      return {
+        type,
+        id,
+        attrs: {
+          kind: 'video',
+          src: '',
+          name: '新建视频.mp4',
+          size: 0,
+          mimeType: 'video/mp4',
+          layer: 'card',
+        },
+        children: [{ text: '' }],
+      } as Element;
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST: {
       // 列表已改为绑定在段落上的 lilist 属性（旧 wrapper 类型废弃）

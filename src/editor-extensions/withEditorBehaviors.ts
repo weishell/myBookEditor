@@ -30,6 +30,20 @@ const downgradeHeadingTitles = (nodes: Descendant[]): Descendant[] => {
   return result;
 };
 
+/**
+ * 递归重生成 Fragment 中所有层级的 id（保证页面内唯一）。
+ * 复制时写入剪贴板的是原始 id，粘贴时才换新，这样多次粘贴也不会产生重复 id。
+ */
+const regenerateIds = (nodes: Descendant[]): Descendant[] => {
+  const walk = (n: any): any => {
+    if (n && Array.isArray(n.children)) {
+      return { ...n, id: uuidv4(), children: n.children.map(walk) };
+    }
+    return n;
+  };
+  return nodes.map(walk) as Descendant[];
+};
+
 /** 提取节点树下所有叶子文本 */
 const extractLeafTexts = (nodes: any[]): { text: string; [k: string]: any }[] => {
   const leaves: { text: string; [k: string]: any }[] = [];
@@ -148,6 +162,8 @@ export const withEditorBehaviors = (editor: Editor) => {
     switch (element.type) {
       case BlockElementType.DIVIDER:
       case BlockElementType.IMAGE_BLOCK:
+      case BlockElementType.FILE_BLOCK:
+      case BlockElementType.VIDEO_BLOCK:
         return true;
       default:
         return isVoid(element);
@@ -221,12 +237,13 @@ export const withEditorBehaviors = (editor: Editor) => {
   //  - 否则 → 降级 HEADING_TITLE 后正常插入
   editor.insertFragment = (fragment: any) => {
     const cleaned = downgradeHeadingTitles(fragment as Descendant[]);
+    const withNewIds = regenerateIds(cleaned);
 
     if (getHeadingTitlePath(editor)) {
-      if (handlePasteInsideHeadingTitle(editor, cleaned)) return;
+      if (handlePasteInsideHeadingTitle(editor, withNewIds)) return;
     }
 
-    insertFragment(cleaned as any);
+    insertFragment(withNewIds as any);
     try {
       ensureHeadingTitle(editor);
     } catch {

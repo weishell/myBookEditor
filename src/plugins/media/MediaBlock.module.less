@@ -1,0 +1,489 @@
+.wrapper {
+  position: relative;
+  margin: 4px 0;
+}
+
+/* ============ 悬浮工具栏 ============ */
+.toolbar {
+  position: absolute;
+  top: -46px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px 4px;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  z-index: 10000;
+  white-space: nowrap;
+}
+
+.layerBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+}
+
+.layerBtnActive {
+  background: var(--theme-primary, #1890ff);
+  color: #fff;
+
+  &:hover {
+    background: var(--theme-primary, #1890ff);
+    color: #fff;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background: #e5e7eb;
+  margin: 0 2px;
+}
+
+.toolbarButton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: #111827;
+  }
+}
+
+/* ============ 文本层 ============ */
+.textLayer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--theme-primary, #1890ff) 8%, #f5f5f5);
+  color: #374151;
+  font-size: 14px;
+  cursor: pointer;
+  max-width: 100%;
+  vertical-align: middle;
+
+  &:hover {
+    background: color-mix(in srgb, var(--theme-primary, #1890ff) 14%, #f5f5f5);
+  }
+}
+
+.textLayerIcon {
+  display: inline-flex;
+  color: var(--theme-primary, #1890ff);
+}
+
+.textLayerName {
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 320px;
+}
+
+.textLayerMeta {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+/* ============ 卡片层 ============ */
+.cardLayer {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  max-width: 420px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+
+  &:hover {
+    border-color: var(--theme-primary, #1890ff);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+  }
+}
+
+.cardIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--theme-primary, #1890ff) 10%, #f5f5f5);
+  color: var(--theme-primary, #1890ff);
+  flex-shrink: 0;
+}
+
+.cardInfo {
+  flex: 1;
+  min-width: 0;
+}
+
+.cardName {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  font-size: 12px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.cardNameInput,
+.cardUrlInput {
+  width: 100%;
+  border: 1px solid var(--theme-primary, #1890ff);
+  border-radius: 4px;
+  padding: 2px 6px;
+  font-size: 13px;
+  color: #1f2937;
+  background: #fff;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.cardNameInput {
+  font-weight: 600;
+}
+
+.cardUrlInput {
+  margin-top: 4px;
+  font-size: 11px;
+  color: #6b7280;
+}
+
+.cardActions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.cardAction {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  text-decoration: none;
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f3f4f6;
+    color: var(--theme-primary, #1890ff);
+  }
+}
+
+/* ============ 视图层（行内展开，固定高度 400px） ============ */
+.viewLayer {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #fff;
+  max-width: 100%;
+}
+
+.viewHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-bottom: 1px solid #f0f0f0;
+  color: var(--theme-primary, #1890ff);
+  background: #fafafa;
+}
+
+.viewName {
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+}
+
+.viewBody {
+  height: 400px;
+  overflow: auto;
+  padding: 12px;
+  box-sizing: border-box;
+}
+
+.video {
+  width: 100%;
+  max-height: 400px;
+  border-radius: 4px;
+  background: #000;
+  display: block;
+}
+
+.textContent {
+  margin: 0;
+  height: 100%;
+  overflow: auto;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #1f2937;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.emptyView {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+}
+
+/* ============ 小眼睛：铺满全屏的预览页 ============ */
+.fullPage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #fff;
+  z-index: 2147483000;
+}
+
+.fullPageHeader {
+  display: flex;
+  align-items: center;
+  height: 56px;
+  padding: 0 16px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.fullPageBack {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: #4b5563;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+
+  &:hover {
+    background: #f3f4f6;
+  }
+}
+
+.fullPageTitle {
+  flex: 1;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 0 12px;
+}
+
+.fullPageMeta {
+  color: #9ca3af;
+  font-weight: 400;
+  margin-left: 8px;
+  font-size: 12px;
+}
+
+.fullPageActions {
+  margin-left: auto;
+}
+
+.fullPageBtn {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  color: #4b5563;
+  font-size: 13px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--theme-primary, #1890ff);
+    color: var(--theme-primary, #1890ff);
+  }
+}
+
+.fullPageBody {
+  flex: 1;
+  overflow: auto;
+  padding: 24px;
+}
+
+.fullPageVideo {
+  width: 100%;
+  max-height: 100%;
+  border-radius: 6px;
+  background: #000;
+  display: block;
+}
+
+.fullPageText {
+  margin: 0;
+  min-height: 100%;
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  font-size: 14px;
+  line-height: 1.7;
+  color: #1f2937;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.fullPageEmpty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100%;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ============ 暗黑模式 ============ */
+:global(.dark-mode) {
+  .toolbar {
+    background: #1e2532;
+    border-color: #2b3240;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+  }
+
+  .layerBtn,
+  .toolbarButton {
+    color: #9ca3af;
+
+    &:hover {
+      background: #2b3240;
+      color: #e5e7eb;
+    }
+  }
+
+  .divider {
+    background: #2b3240;
+  }
+
+  .textLayer {
+    background: color-mix(in srgb, var(--theme-primary, #1890ff) 14%, #1a2130);
+    color: #d1d5db;
+  }
+
+  .cardLayer {
+    background: #1a2130;
+    border-color: #2b3240;
+
+    &:hover {
+      border-color: var(--theme-primary, #1890ff);
+    }
+  }
+
+  .cardIcon {
+    background: color-mix(in srgb, var(--theme-primary, #1890ff) 18%, #1a2130);
+  }
+
+  .cardName {
+    color: #e5e7eb;
+  }
+
+  .cardAction:hover {
+    background: #2b3240;
+  }
+
+  .viewLayer {
+    background: #1a2130;
+    border-color: #2b3240;
+  }
+
+  .viewHeader {
+    background: #141a26;
+    border-color: #2b3240;
+  }
+
+  .viewName {
+    color: #e5e7eb;
+  }
+
+  .textContent {
+    color: #d1d5db;
+  }
+
+  .fullPage {
+    background: #1a2130;
+  }
+
+  .fullPageHeader {
+    border-color: #2b3240;
+  }
+
+  .fullPageBack {
+    color: #d1d5db;
+
+    &:hover {
+      background: #2b3240;
+    }
+  }
+
+  .fullPageTitle {
+    color: #e5e7eb;
+  }
+
+  .fullPageBtn {
+    background: #1a2130;
+    border-color: #2b3240;
+    color: #d1d5db;
+
+    &:hover {
+      border-color: var(--theme-primary, #1890ff);
+      color: var(--theme-primary, #1890ff);
+    }
+  }
+
+  .fullPageText {
+    color: #d1d5db;
+  }
+}

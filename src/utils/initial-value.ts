@@ -697,4 +697,36 @@ export const initialValue: Descendant[] = [
       },
     ],
   },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '文件与视频示例' }],
+  },
+  {
+    type: BlockElementType.FILE_BLOCK,
+    id: uuidv4(),
+    attrs: {
+      kind: 'file',
+      src: '/sample.txt',
+      name: 'sample.txt',
+      size: 0,
+      mimeType: 'text/plain',
+      layer: 'card',
+    },
+    children: [{ text: '' }],
+  },
+  {
+    type: BlockElementType.VIDEO_BLOCK,
+    id: uuidv4(),
+    attrs: {
+      kind: 'video',
+      src: '',
+      name: '新建视频.mp4',
+      size: 0,
+      mimeType: 'video/mp4',
+      layer: 'card',
+    },
+    children: [{ text: '' }],
+  },
 ];

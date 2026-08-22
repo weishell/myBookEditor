@@ -10,6 +10,7 @@ import {
   NumberedList,
   BulletedList,
   Image,
+  MediaBlock,
   Divider,
   TodoList,
   Table,
@@ -113,6 +114,16 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
       return <Formula attributes={attributes} element={el as any} readOnly={false} />;
     case BlockElementType.MENTION:
       return <Mention attributes={attributes} element={el as any} readOnly={false} />;
+    case BlockElementType.FILE_BLOCK:
+    case BlockElementType.VIDEO_BLOCK:
+      return (
+        <MediaBlock
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
+      );
     default:
       return (
         <Paragraph attributes={attributes} children={children} pluginId={el.id} element={el} />

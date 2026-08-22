@@ -26,3 +26,4 @@ export * from './font';
 export * from './drawio';
 export * from './formula';
 export * from './mention';
+export * from './media';

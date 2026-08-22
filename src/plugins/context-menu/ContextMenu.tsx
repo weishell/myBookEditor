@@ -8,6 +8,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Popover } from 'antd';
 import { Editor, Element, Node, Transforms } from 'slate';
+import { copyBlockToClipboard } from '@/utils/clipboard';
 import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
 import { BlockElementType } from '@/enums';
@@ -53,7 +54,20 @@ export const ContextMenu = () => {
     }
   }, [visible]);
 
+  // 复制：选中块并写入系统剪贴板（不直接插入）。
+  // 真正的"粘贴"由 editor.insertFragment 处理（解析 x-slate-fragment、逐层重生成 id）。
+  const handleCopy = () => {
+    const path = getTargetPath();
+    if (!path) return;
+    copyBlockToClipboard(editor, path);
+  };
+
   const handleMenuClick = (action: string) => {
+    if (action === 'copy') {
+      handleCopy();
+      closeMenu();
+      return;
+    }
     console.warn(action);
     closeMenu();
   };
@@ -75,7 +89,6 @@ export const ContextMenu = () => {
     'color',
     'comment',
     'cut',
-    'copy',
     'delete',
   ];
 

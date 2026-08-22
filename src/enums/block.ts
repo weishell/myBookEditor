@@ -17,6 +17,8 @@ export const BlockElementType = {
   DRAWIO: 'drawio',
   FORMULA: 'inline-formula',
   MENTION: 'mention',
+  FILE_BLOCK: 'file-block',
+  VIDEO_BLOCK: 'video-block',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];
