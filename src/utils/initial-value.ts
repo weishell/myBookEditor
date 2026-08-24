@@ -753,6 +753,19 @@ export const initialValue: Descendant[] = [
     children: [{ text: '' }],
   },
   {
+    type: BlockElementType.FILE_BLOCK,
+    id: uuidv4(),
+    attrs: {
+      kind: 'file',
+      src: 'https://raw.githubusercontent.com/weishell/myBookEditor/main/eg.docx',
+      name: 'eg.docx',
+      size: 11233,
+      mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      layer: 'card',
+    },
+    children: [{ text: '' }],
+  },
+  {
     type: BlockElementType.VIDEO_BLOCK,
     id: uuidv4(),
     attrs: {
