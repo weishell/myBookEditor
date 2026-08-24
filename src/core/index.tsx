@@ -13,6 +13,7 @@ import { useMemo, useCallback, useEffect } from 'react';
 import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
+import CommentSection from '@/components/comments/CommentSection';
 import {
   MenuProvider,
   ContextMenu,
@@ -133,6 +134,8 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 readOnly={readOnly}
               />
             </div>
+            {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互 */}
+            <CommentSection />
           </DocBarProvider>
         </MenuProvider>
       </SelectionProvider>
