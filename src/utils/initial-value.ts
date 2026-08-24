@@ -20,10 +20,10 @@ const makeDemoParagraph = (text: string): Descendant => ({
   children: [{ text }],
 });
 
-const makeDemoColumn = (title: string, texts: string[]): Descendant => ({
+const makeDemoColumn = (title: string, texts: string[], width: number): Descendant => ({
   type: BlockElementType.COLUMN,
   id: uuidv4(),
-  attrs: {},
+  attrs: { width },
   children: [
     {
       type: BlockElementType.HEADING,
@@ -38,14 +38,15 @@ const makeDemoColumn = (title: string, texts: string[]): Descendant => ({
 const demoColumnGroup: Descendant = {
   type: BlockElementType.COLUMN_GROUP,
   id: uuidv4(),
-  attrs: { widths: [33, 33, 34] },
+  attrs: {},
   children: [
-    makeDemoColumn('计划与目标', ['左侧分栏用于拆分版式，各栏内容独立编辑。']),
-    makeDemoColumn('执行要点', ['拖动分栏之间的分隔线即可调整列宽。']),
-    makeDemoColumn('备注', [
-      '悬停分栏右上角的 × 可删除该栏，宽度会自动分给其余栏。',
-      '点击分隔线上的 + 可新增一栏。',
-    ]),
+    makeDemoColumn('计划与目标', ['左侧分栏用于拆分版式，各栏内容独立编辑。'], 33),
+    makeDemoColumn('执行要点', ['拖动分栏之间的分隔线即可调整列宽。'], 33),
+    makeDemoColumn(
+      '备注',
+      ['悬停分栏右上角的 × 可删除该栏，宽度会自动分给其余栏。', '点击分隔线上的 ▶ 可新增一栏。'],
+      34,
+    ),
   ],
 };
 

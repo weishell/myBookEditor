@@ -43,25 +43,6 @@ export const Column: React.FC<ColumnProps> = ({ attributes, children, element })
   const isLast = colIndex === totalColumns - 1;
   const resolvedWidth = widths[colIndex] ?? Math.round(100 / Math.max(1, totalColumns || 1));
 
-  if (typeof window !== 'undefined') {
-    (window as any).__lastCol = {
-      colIndex,
-      groupPath,
-      widths,
-      resolvedWidth,
-      totalColumns,
-      elId: element.id?.slice(0, 6),
-    };
-    (window as any).__colRenderCount = ((window as any).__colRenderCount || 0) + 1;
-    (window as any).__colRenderLog = (window as any).__colRenderLog || [];
-    (window as any).__colRenderLog.push({
-      elId: element.id?.slice(0, 6),
-      colIndex,
-      resolvedWidth,
-      widths: [...widths],
-    });
-  }
-
   const [dragging, setDragging] = useState(false);
   const columnRef = useRef<HTMLDivElement | null>(null);
 
