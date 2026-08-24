@@ -27,3 +27,4 @@ export * from './drawio';
 export * from './formula';
 export * from './mention';
 export * from './media';
+export * from './columns';

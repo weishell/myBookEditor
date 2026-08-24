@@ -104,3 +104,61 @@
   font-weight: 600;
   color: @text-secondary;
 }
+
+// 分栏选择面板
+.columnPicker {
+  display: flex;
+  gap: @spacing-xs;
+  padding: @spacing-xs;
+}
+
+.columnPreset {
+  flex: 1;
+  min-width: 0;
+  height: 60px;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-sm;
+  background: transparent;
+  cursor: var(--cursor-pointer);
+  padding: 6px;
+  transition: border-color 0.15s ease, background 0.15s ease;
+
+  &:hover {
+    border-color: var(--theme-primary, #1890ff);
+    background: @bg-hover;
+  }
+}
+
+.columnPreview {
+  display: flex;
+  gap: 3px;
+  height: 100%;
+  align-items: stretch;
+}
+
+.columnPreviewBar {
+  flex: 1;
+  border-radius: 2px;
+  background: #e5e7eb;
+
+  &:nth-child(1) {
+    background: var(--theme-primary, #1890ff);
+    opacity: 0.45;
+  }
+}
+
+.columnBack {
+  width: 100%;
+  padding: @spacing-xs @spacing-sm;
+  border: none;
+  background: transparent;
+  color: @text-secondary;
+  cursor: var(--cursor-pointer);
+  text-align: left;
+  font-size: @font-size-sm;
+
+  &:hover {
+    color: @text-primary;
+    background: @bg-hover;
+  }
+}

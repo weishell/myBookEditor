@@ -1,0 +1,17 @@
+.wrapper {
+  position: relative;
+  margin: 4px 0;
+  width: 100%;
+}
+
+// 分栏容器：flex 横排，列与列之间由每列的 margin-right 形成留白（卡片式分栏）
+.group {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+
+  &.groupResizing {
+    cursor: col-resize;
+    user-select: none;
+  }
+}

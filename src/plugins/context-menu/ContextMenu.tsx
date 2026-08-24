@@ -136,7 +136,10 @@ export const ContextMenu = () => {
   };
 
   // 在目标块下方插入新块并聚焦
-  const handleInsertBlock = (type: BlockElementType, options?: { level?: number }) => {
+  const handleInsertBlock = (
+    type: BlockElementType,
+    options?: { level?: number; columns?: number },
+  ) => {
     const path = getTargetPath();
     if (!path) return;
     const insertPath = getInsertPathAfter(path);

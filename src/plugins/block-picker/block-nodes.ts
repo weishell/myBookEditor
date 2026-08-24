@@ -3,9 +3,11 @@
 import { Element } from 'slate';
 import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
+import { createColumnGroup } from '@/plugins/columns';
 
 export interface InsertBlockOptions {
   level?: number;
+  columns?: number;
 }
 
 /** 文本类块类型集合（用于判断"在下方插入"是否可用） */
@@ -90,6 +92,8 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         },
         children: [{ text: '' }],
       } as Element;
+    case BlockElementType.COLUMN_GROUP:
+      return createColumnGroup(options?.columns ?? 2);
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST: {
       // 列表已改为绑定在段落上的 lilist 属性（旧 wrapper 类型废弃）

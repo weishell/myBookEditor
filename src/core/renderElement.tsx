@@ -19,6 +19,8 @@ import {
   Drawio,
   Formula,
   Mention,
+  ColumnGroup,
+  Column,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -123,6 +125,19 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
           pluginId={el.id || ''}
           element={el as any}
         />
+      );
+    case BlockElementType.COLUMN_GROUP:
+      return (
+        <ColumnGroup
+          attributes={attributes}
+          children={children}
+          pluginId={el.id}
+          element={el as any}
+        />
+      );
+    case BlockElementType.COLUMN:
+      return (
+        <Column attributes={attributes} children={children} pluginId={el.id} element={el as any} />
       );
     default:
       return (

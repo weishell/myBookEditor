@@ -13,6 +13,42 @@ const codeLines = codeText.split('\n').map((text, i) => ({
   children: [{ text }, { text: ZERO_WIDTH_SPACE }],
 }));
 
+// —— 分栏示例数据 ——
+const makeDemoParagraph = (text: string): Descendant => ({
+  type: BlockElementType.PARAGRAPH,
+  id: uuidv4(),
+  children: [{ text }],
+});
+
+const makeDemoColumn = (title: string, texts: string[]): Descendant => ({
+  type: BlockElementType.COLUMN,
+  id: uuidv4(),
+  attrs: {},
+  children: [
+    {
+      type: BlockElementType.HEADING,
+      id: uuidv4(),
+      attrs: { level: 3 },
+      children: [{ text: title }],
+    },
+    ...texts.map(makeDemoParagraph),
+  ],
+});
+
+const demoColumnGroup: Descendant = {
+  type: BlockElementType.COLUMN_GROUP,
+  id: uuidv4(),
+  attrs: { widths: [33, 33, 34] },
+  children: [
+    makeDemoColumn('计划与目标', ['左侧分栏用于拆分版式，各栏内容独立编辑。']),
+    makeDemoColumn('执行要点', ['拖动分栏之间的分隔线即可调整列宽。']),
+    makeDemoColumn('备注', [
+      '悬停分栏右上角的 × 可删除该栏，宽度会自动分给其余栏。',
+      '点击分隔线上的 + 可新增一栏。',
+    ]),
+  ],
+};
+
 export const initialValue: Descendant[] = [
   {
     type: BlockElementType.HEADING_TITLE,
@@ -729,4 +765,11 @@ export const initialValue: Descendant[] = [
     },
     children: [{ text: '' }],
   },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '分栏示例' }],
+  },
+  demoColumnGroup,
 ];

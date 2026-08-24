@@ -1,0 +1,130 @@
+// 分栏列 —— 对齐飞书：每列是一块浅灰圆角卡片，列间以留白间隙分隔
+.column {
+  position: relative;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 23, 42, 0.045);
+  border-radius: 10px;
+  padding: 6px;
+  margin-right: 12px; // 列间留白
+  outline: none;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+
+  &:last-child {
+    margin-right: 0;
+  }
+
+  &:hover {
+    background: rgba(15, 23, 42, 0.07);
+    box-shadow: 0 1px 5px rgba(15, 23, 42, 0.05);
+  }
+}
+
+.columnDragging {
+  cursor: col-resize;
+  user-select: none;
+}
+
+.content {
+  flex: 1;
+  padding: 2px 8px;
+  min-height: 44px; // 空列也能保留可点击的卡片高度
+  outline: none;
+}
+
+// 列间空隙中的拖拽手柄：覆盖整段 margin 间隙，悬停/拖动都能命中
+.divider {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: -12px; // 与列间距(margin-right: 12px)等宽，占满间隙
+  width: 12px;
+  cursor: col-resize;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  user-select: none;
+  z-index: 4;
+}
+
+.resizeLine {
+  position: relative;
+  width: 2px;
+  height: 44px;
+  border-radius: 3px;
+  background: transparent;
+  transition: background 0.15s ease, height 0.15s ease;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 7px;
+    height: 16px;
+    margin: -8px 0 0 -3.5px;
+    border-radius: 8px;
+    background: #cdd3dc;
+    transition: background 0.15s ease, height 0.15s ease;
+  }
+}
+
+.column:hover .resizeLine,
+.columnDragging .resizeLine {
+  height: 56px;
+  background: var(--theme-primary, #3370ff);
+
+  &::after {
+    height: 22px;
+    margin-top: -11px;
+    background: var(--theme-primary, #3370ff);
+  }
+}
+
+// 新增分栏按钮 - 悬浮于列间空隙顶部（拖拽线的上方）
+.addButtonRight {
+  position: absolute;
+  top: 4px;
+  right: -3px; // 水平居中于 12px 列间空隙
+  z-index: 10;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 1.5px solid #fff;
+  background: var(--theme-primary, #3370ff);
+  color: #fff;
+  font-size: 14px;
+  line-height: 16px;
+  text-align: center;
+  padding: 0;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.2);
+  transition: opacity 0.12s ease, transform 0.12s ease, background 0.12s ease;
+
+  &:hover {
+    background: #245bdb;
+    transform: scale(1.12);
+  }
+}
+
+.column:hover .addButtonRight {
+  opacity: 1;
+  transform: scale(1);
+}
+
+// 深色模式：卡片底色换成暗灰
+:global(.dark-mode) {
+  .column {
+    background: rgba(255, 255, 255, 0.05);
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .resizeLine::after {
+    background: #3a4150;
+  }
+}

@@ -19,6 +19,8 @@ export const BlockElementType = {
   MENTION: 'mention',
   FILE_BLOCK: 'file-block',
   VIDEO_BLOCK: 'video-block',
+  COLUMN_GROUP: 'column-group',
+  COLUMN: 'column',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

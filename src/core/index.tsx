@@ -29,6 +29,7 @@ import {
   withEditorBehaviors,
   withDelete,
 } from '@/editor-extensions';
+import { withColumns } from '@/plugins';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
@@ -50,9 +51,11 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     () =>
       withDelete(
         withEditorBehaviors(
-          withMention(
-            withInlineFormula(
-              withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+          withColumns(
+            withMention(
+              withInlineFormula(
+                withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+              ),
             ),
           ),
         ),
