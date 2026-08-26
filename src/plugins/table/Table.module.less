@@ -273,6 +273,85 @@
   }
 }
 
+// ========== 悬浮横向滚动条（参考 template-table：中性灰细滑块 + 左右阴影） ==========
+// 仅在真的存在横向溢出时由 JS 控制出现；样式对齐原生滚动条观感（中性灰、非主题色）
+.hScrollOverlay {
+  position: fixed;
+  // 高于 docbar/返回顶部等浮层，避免被遮挡导致"看不到"
+  z-index: 1300;
+  pointer-events: auto;
+  // 热区加高到 18px（视觉滑块仍是 8px 细条），便于 hover 命中与拖动
+  height: 18px;
+  border-radius: 9px;
+  background-color: transparent;
+  user-select: none;
+  cursor: pointer;
+
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.hScrollTrack {
+  position: relative;
+  height: 100%;
+  width: 100%;
+  cursor: pointer;
+}
+
+.hScrollThumb {
+  position: absolute;
+  // 细滑块垂直居中于热区，保持与原生滚动条观感一致
+  top: 5px;
+  height: 8px;
+  border-radius: 4px;
+  background-color: rgba(31, 35, 41, 0.35);
+  cursor: grab;
+  min-width: 36px;
+  transition: background-color 0.15s;
+
+  &:hover {
+    background-color: rgba(31, 35, 41, 0.6);
+  }
+
+  &:active {
+    background-color: rgba(31, 35, 41, 0.6);
+    cursor: grabbing;
+  }
+}
+
+// 右缘渐变阴影：提示右侧还有更多列可以继续滚动（参考模板 .right-shadow）
+.hScrollRightShadow {
+  position: fixed;
+  width: 10px;
+  z-index: 1299;
+  pointer-events: none;
+  user-select: none;
+  border-right: 1px solid rgb(222, 224, 227);
+  background-image: linear-gradient(
+    270deg,
+    rgba(222, 224, 227, 0.5),
+    rgba(222, 224, 227, 0)
+  );
+  transition: opacity 0.2s ease;
+}
+
+// 左缘渐变阴影：左侧还有被遮住的列
+.hScrollLeftShadow {
+  position: fixed;
+  width: 10px;
+  z-index: 1299;
+  pointer-events: none;
+  user-select: none;
+  border-left: 1px solid rgb(222, 224, 227);
+  background-image: linear-gradient(
+    90deg,
+    rgba(222, 224, 227, 0.5),
+    rgba(222, 224, 227, 0)
+  );
+  transition: opacity 0.2s ease;
+}
+
 // ========== 暗黑模式 ==========
 :global(.dark-mode) {
   .scrollContainer {
@@ -333,5 +412,21 @@
   .hoverHighlight {
     background-color: #888;
     opacity: 0.06;
+  }
+
+  .hScrollThumb {
+    background-color: rgba(255, 255, 255, 0.32);
+
+    &:hover,
+    &:active {
+      background-color: rgba(255, 255, 255, 0.6);
+    }
+  }
+
+  .hScrollRightShadow,
+  .hScrollLeftShadow {
+    border-color: rgba(255, 255, 255, 0.14);
+    background-image: none;
+    border-right: none;
   }
 }

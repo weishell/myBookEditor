@@ -68,6 +68,100 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const [draggingCol, setDraggingCol] = useState<number | null>(null);
   const [dragIndicatorX, setDragIndicatorX] = useState<number | null>(null);
 
+  // ============ 悬浮横向滚动条（hover 表格时浮现，解决行多时原生滚动条沉底看不见） ============
+  const [hScrollVisible, setHScrollVisible] = useState(false);
+  const [hScrollRect, setHScrollRect] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  }>({ left: 0, top: 0, width: 0, height: 0 });
+  const hScrollHideTimer = useRef<number | null>(null);
+  const hScrollThumbRef = useRef<HTMLDivElement>(null);
+
+  // 原生横向滚动条是否可见：当表格底部仍在可视区内时，原生滚动条本来就看得见、好用，
+  // 此时悬浮滚动条应完全隐藏、直接沿用原生滚动条，避免两者互相干扰。
+  const [hsNativeVisible, setHsNativeVisible] = useState(true);
+
+  // 实时跟踪表格底部是否落在视口内（决定用原生滚动条还是悬浮滚动条）
+  useEffect(() => {
+    const measure = () => {
+      const sc = scrollRef.current;
+      if (!sc) return;
+      const r = sc.getBoundingClientRect();
+      // 底部一点余量内进入视口 → 原生横向滚动条可见 → 悬浮条不接管
+      setHsNativeVisible(r.bottom <= window.innerHeight - 8);
+    };
+    measure();
+    window.addEventListener('scroll', measure, true);
+    window.addEventListener('resize', measure);
+    const scroller = scrollRef.current;
+    if (scroller) scroller.addEventListener('scroll', measure);
+    return () => {
+      window.removeEventListener('scroll', measure, true);
+      window.removeEventListener('resize', measure);
+      if (scroller) scroller.removeEventListener('scroll', measure);
+    };
+  }, []);
+
+  // 计算悬浮滚动条在视口内的矩形（fixed 定位）。
+  // 表格行多时容器底部可能在视口外，故取「容器可视底部」与「视口底部(留 16px)」的较小值，
+  // 保证 hover 表格任意位置，横向滚动条都浮在当前视口内可见、可拖。
+  const updateHScrollRect = useCallback(() => {
+    const scroller = scrollRef.current;
+    if (!scroller) return;
+    const rect = scroller.getBoundingClientRect();
+    const vh = window.innerHeight;
+    const top = Math.max(rect.top + 40, Math.min(rect.bottom - 12, vh - 16));
+    setHScrollRect({
+      left: rect.left,
+      top,
+      width: rect.width,
+      height: Math.max(0, rect.bottom - rect.top),
+    });
+  }, []);
+
+  const showHScroll = useCallback(() => {
+    if (hScrollHideTimer.current) {
+      window.clearTimeout(hScrollHideTimer.current);
+      hScrollHideTimer.current = null;
+    }
+    updateHScrollRect();
+    setHScrollVisible(true);
+  }, [updateHScrollRect]);
+
+  const hideHScroll = useCallback(() => {
+    if (hScrollHideTimer.current) window.clearTimeout(hScrollHideTimer.current);
+    hScrollHideTimer.current = window.setTimeout(() => {
+      setHScrollVisible(false);
+    }, 400);
+  }, []);
+
+  // hover / 窗口滚动 / 容器滚动时保持悬浮滚动条贴在视口内
+  useEffect(() => {
+    if (!hScrollVisible || !scrollRef.current) return;
+    updateHScrollRect();
+    const update = () => updateHScrollRect();
+    let raf = 0;
+    const onScrollOrResize = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        update();
+      });
+    };
+    window.addEventListener('scroll', onScrollOrResize, true);
+    window.addEventListener('resize', onScrollOrResize);
+    const scroller = scrollRef.current;
+    scroller.addEventListener('scroll', onScrollOrResize);
+    return () => {
+      window.removeEventListener('scroll', onScrollOrResize, true);
+      window.removeEventListener('resize', onScrollOrResize);
+      scroller.removeEventListener('scroll', onScrollOrResize);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [hScrollVisible, updateHScrollRect]);
+
   // 用 ref 存储测量数据，避免拖拽回调的依赖问题
   const colDotsRef = useRef(colDots);
   colDotsRef.current = colDots;
@@ -830,6 +924,13 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       />
     ) : null;
 
+  // 渲染时实时判断横向溢出与滚动边界（替代异步 state，保证 hover 表格必现滚动条/阴影）
+  const hsScroller = scrollRef.current;
+  const overflowNow = !!hsScroller && hsScroller.scrollWidth > hsScroller.clientWidth + 1;
+  const hsMax = hsScroller ? hsScroller.scrollWidth - hsScroller.clientWidth : 0;
+  const hsAtRight = hsScroller ? hsScroller.scrollLeft >= hsMax - 1 : true;
+  const hsAtLeft = hsScroller ? hsScroller.scrollLeft > 1 : false;
+
   return (
     <div
       ref={wrapperRef}
@@ -1044,7 +1145,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           关键：把它们放在 scrollContainer 里后，wrapper 就不再被绝对定位浮层撑宽，
           页面不会出现横向滚动条；表格列超出视口时由本容器自己出横向滚动条。
           横向滚动时这些浮层也会跟着一起移，"左侧点停留不变"的 bug 一并修掉。 */}
-      <div ref={scrollRef} className={styles.scrollContainer}>
+      <div
+        ref={scrollRef}
+        className={styles.scrollContainer}
+        onMouseEnter={showHScroll}
+        onMouseLeave={hideHScroll}
+      >
         {/* 行头选择区（跟随单元格） */}
         {showDots &&
           Array.from({ length: rowCount }, (_, i) => {
@@ -1179,9 +1285,169 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         </div>
       </div>
 
+      {/* 悬浮横向滚动条：渲染时实时判断是否存在横向溢出（不再依赖异步检测，
+          保证 hover 表格一定能出现）；且仅在原生横向滚动条不可见（表格底部滚出视口）时才接管，
+          平时表格底部在可视区内则完全隐藏、沿用原生滚动条 */}
+      {hScrollVisible && overflowNow && !hsNativeVisible && (
+        <div
+          className={styles.hScrollOverlay}
+          style={{ left: hScrollRect.left, top: hScrollRect.top, width: hScrollRect.width }}
+          onMouseEnter={showHScroll}
+          onMouseLeave={hideHScroll}
+        >
+          <FloatingHScrollBar
+            scrollRef={scrollRef}
+            thumbRef={hScrollThumbRef}
+            onScrubStart={showHScroll}
+          />
+        </div>
+      )}
+
+      {/* 左右缘渐变阴影：有溢出未到尽头且原生滚动条不可见时提示「还有更多列」 */}
+      {overflowNow && hScrollVisible && !hsNativeVisible && !hsAtRight && (
+        <div
+          className={styles.hScrollRightShadow}
+          style={{
+            left: hScrollRect.left + hScrollRect.width - 10,
+            top: hScrollRect.top,
+            height: Math.min(hScrollRect.height, window.innerHeight - hScrollRect.top),
+          }}
+        />
+      )}
+      {overflowNow && hScrollVisible && !hsNativeVisible && hsAtLeft && (
+        <div
+          className={styles.hScrollLeftShadow}
+          style={{
+            left: hScrollRect.left,
+            top: hScrollRect.top,
+            height: Math.min(hScrollRect.height, window.innerHeight - hScrollRect.top),
+          }}
+        />
+      )}
+
       <TableContextMenu visible={menuVisible} position={menuPosition} onClose={handleCloseMenu} />
     </div>
   );
 };
 
 export type { TableProps };
+
+// 悬浮横向滚动条：根据容器滚动进度绘制 track + thumb，点击 track 或拖动 thumb 同步滚动
+interface FloatingHScrollBarProps {
+  scrollRef: React.RefObject<HTMLDivElement | null>;
+  thumbRef: React.RefObject<HTMLDivElement | null>;
+  onScrubStart: () => void;
+}
+
+const FloatingHScrollBar: React.FC<FloatingHScrollBarProps> = ({
+  scrollRef,
+  thumbRef,
+  onScrubStart,
+}) => {
+  const [progress, setProgress] = useState(0);
+  // 拖拽状态：pointerId / 按下位置 / 起始滚动 / 是否已产生位移（未位移放起视为单击跳转）
+  const dragStateRef = useRef<{
+    pointerId: number;
+    startClientX: number;
+    startScrollLeft: number;
+    moved: boolean;
+  } | null>(null);
+
+  // 同步 thumb 位置到滚动进度
+  const sync = useCallback(() => {
+    const sc = scrollRef.current;
+    if (!sc) return;
+    const max = sc.scrollWidth - sc.clientWidth;
+    setProgress(max > 0 ? sc.scrollLeft / max : 0);
+  }, [scrollRef]);
+
+  useEffect(() => {
+    sync();
+    const sc = scrollRef.current;
+    if (!sc) return;
+    sc.addEventListener('scroll', sync, { passive: true });
+    return () => sc.removeEventListener('scroll', sync);
+  }, [sync, scrollRef]);
+
+  const sc = scrollRef.current;
+  const viewport = sc ? sc.clientWidth : 0;
+  const maxScroll = sc ? sc.scrollWidth - sc.clientWidth : 0;
+  // 滑块宽度 = 可视/内容比例，留最小宽度便于点按
+  const thumbWidth = maxScroll > 0 ? Math.max(36, viewport * (viewport / sc!.scrollWidth)) : 36;
+
+  // 仅"滑块"可拖（比例映射，贴近原生滚动条手感）。事件只绑在滑块上，
+  // 轨道不再拦截整条拖拽 → 鼠标在滑块之外的空处按住不会被误拖。
+  const onThumbPointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+    if (!(e.button === 0)) return;
+    try {
+      (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    } catch {
+      /* 忽略捕获失败 */
+    }
+    dragStateRef.current = {
+      pointerId: e.pointerId,
+      startClientX: e.clientX,
+      startScrollLeft: scrollRef.current ? scrollRef.current.scrollLeft : 0,
+      moved: false,
+    };
+    onScrubStart();
+  };
+
+  const onThumbPointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+    const st = dragStateRef.current;
+    const sc = scrollRef.current;
+    if (!st || !sc || st.pointerId !== e.pointerId) return;
+    // 只有左键真正按下才滚（松手后 buttons=0，任何移动都不会再滚）
+    if (!(e.buttons & 1)) return;
+    const dx = e.clientX - st.startClientX;
+    if (!st.moved && Math.abs(dx) < 2) return;
+    st.moved = true;
+    const travel = viewport - thumbWidth;
+    const factor = travel > 0 && maxScroll > 0 ? maxScroll / travel : 1;
+    sc.scrollLeft = Math.min(Math.max(0, st.startScrollLeft + dx * factor), maxScroll);
+  };
+
+  const onThumbPointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+    dragStateRef.current = null;
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch {
+      /* 未捕获则忽略 */
+    }
+  };
+
+  // 捕获丢失（系统中断、切换标签页、指针被抢占）时清空拖拽状态
+  const onLostCapture = () => {
+    dragStateRef.current = null;
+  };
+
+  // 窗口级兜底：指针在滚动条外松开 / 系统中断取消时也清空拖拽状态
+  useEffect(() => {
+    const endDrag = () => {
+      dragStateRef.current = null;
+    };
+    window.addEventListener('pointerup', endDrag);
+    window.addEventListener('pointercancel', endDrag);
+    return () => {
+      window.removeEventListener('pointerup', endDrag);
+      window.removeEventListener('pointercancel', endDrag);
+    };
+  }, []);
+
+  return (
+    <div className={styles.hScrollTrack} onMouseEnter={onScrubStart}>
+      <div
+        ref={thumbRef}
+        className={styles.hScrollThumb}
+        style={{
+          left: progress * (viewport - thumbWidth),
+          width: thumbWidth,
+        }}
+        onPointerDown={onThumbPointerDown}
+        onPointerMove={onThumbPointerMove}
+        onPointerUp={onThumbPointerUp}
+        onLostPointerCapture={onLostCapture}
+      />
+    </div>
+  );
+};
