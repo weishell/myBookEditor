@@ -12,12 +12,30 @@ interface SvgIconProps {
   size?: number;
 }
 
-const HeadingIcon = ({ color, size = 14, level = 1 }: SvgIconProps & { level?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+// 通用线性图标样式（对齐飞书简洁线性风格）
+const lineProps = {
+  fill: 'none',
+  strokeWidth: 1.8,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
+
+// 段落：无背景字母 T，直接融入文档（参考飞书 docbar）
+const ParagraphIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24">
+    <text x="12" y="17" fontSize="13.5" fill={color} textAnchor="middle" fontWeight="bold">
+      T
+    </text>
+  </svg>
+);
+
+// 标题 H1-H9：无背景字母 H{level}，直接融入文档（参考飞书 docbar）
+const HeadingIcon = ({ color, size = 18, level = 1 }: SvgIconProps & { level?: number }) => (
+  <svg width={size} height={size} viewBox="0 0 24 24">
     <text
       x="12"
-      y="16"
-      fontSize={Math.max(8, 13 - level)}
+      y="17"
+      fontSize={level > 9 ? 9.5 : 11.5}
       fill={color}
       textAnchor="middle"
       fontWeight="bold"
@@ -27,101 +45,84 @@ const HeadingIcon = ({ color, size = 14, level = 1 }: SvgIconProps & { level?: n
   </svg>
 );
 
-const ParagraphIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <text x="12" y="16" fontSize="12" fill={color} textAnchor="middle" fontWeight="bold">
-      T
-    </text>
+// 文档标题：T 形线性图标
+const TitleIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M7 5.5h10M12 5.5v13" />
   </svg>
 );
 
-const EmptyIcon = ({ color, size = 14 }: SvgIconProps) => (
+// 空块：虚线框 + 加号
+const EmptyIcon = ({ color, size = 16 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
     <rect
-      x="7"
-      y="7"
-      width="10"
-      height="10"
+      x="6"
+      y="6"
+      width="12"
+      height="12"
       rx="3"
       stroke={color}
       strokeWidth="1.5"
       strokeDasharray="3 2"
     />
-    <path d="M12 8v8M8 12h8" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M12 9v6M9 12h6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
   </svg>
 );
 
-const QuoteIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-    <polyline points="14 2 14 8 20 8" />
-    <line x1="16" y1="13" x2="8" y2="13" />
-    <line x1="16" y1="17" x2="8" y2="17" />
-    <polyline points="10 9 9 9 8 9" />
+// 引用：双引号
+const QuoteIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M10.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6H8.4c0-1.2.7-2 2.1-2" />
+    <path d="M18.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6h-2.2c0-1.2.7-2 2.1-2" />
   </svg>
 );
 
-const CodeIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <polyline points="16 18 22 12 16 6" />
-    <polyline points="8 6 2 12 8 18" />
+// 代码块：</> 折线
+const CodeIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M8 8l-4 4 4 4M16 8l4 4-4 4" />
   </svg>
 );
 
+// 任务列表：方框 + 勾
 const TodoListIcon = ({ color, size = 16 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <rect x="7" y="7" width="10" height="10" rx="2" stroke={color} strokeWidth="2" fill={color} />
-    <path
-      d="M8 12l2 2 4-4"
-      stroke="white"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-    />
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="5.5" y="5.5" width="13" height="13" rx="2" />
+    <path d="M9 12l2 2 4-4" />
   </svg>
 );
 
-const TableIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
-    <line x1="3" y1="9" x2="21" y2="9" />
-    <line x1="3" y1="15" x2="21" y2="15" />
-    <line x1="9" y1="3" x2="9" y2="21" />
-    <line x1="15" y1="3" x2="15" y2="21" />
+// 表格：表格线
+const TableIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
+    <path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17" />
   </svg>
 );
 
-const ImageIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <rect x="3" y="3" width="18" height="18" rx="2" />
+// 图片：框 + 山 + 太阳
+const ImageIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
     <circle cx="8.5" cy="8.5" r="1.5" />
-    <polyline points="21 15 16 10 5 21" />
+    <path d="M21 15.5l-5-5L5 21" />
   </svg>
 );
 
-const DrawioIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke={color}
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="14" width="7" height="7" rx="1" />
-    <path d="M6.5 10v3a2 2 0 0 0 2 2h3" />
-    <path d="M10 6.5h3a2 2 0 0 1 2 2v3" />
+// 流程图：菱形 + 矩形 + 连线（参考飞书流程图图标）
+const DrawioIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="9" y="2.5" width="6" height="6" rx="1" transform="rotate(45 12 5.5)" />
+    <rect x="3" y="15.5" width="7" height="6" rx="1" />
+    <rect x="14" y="15.5" width="7" height="6" rx="1" />
+    <path d="M12 8.5v3M12 11.5H6.5v4M12 11.5h5.5v4" />
   </svg>
 );
 
-const DragIcon = ({ color = '#999', size = 12 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke={color} strokeWidth="2">
-    <line x1="9" y1="18" x2="15" y2="18" />
-    <line x1="9" y1="12" x2="15" y2="12" />
-    <line x1="9" y1="6" x2="15" y2="6" />
+// 拖拽手柄
+const DragIcon = ({ color = '#999', size = 14 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M9 6h6M9 12h6M9 18h6" />
   </svg>
 );
 
@@ -129,14 +130,6 @@ interface IconConfig {
   component: React.FC<SvgIconProps & { level?: number }>;
   props?: { level?: number };
 }
-
-const TitleIcon = ({ color, size = 14 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <text x="12" y="17" fontSize="12" fill={color} textAnchor="middle" fontWeight="bold">
-      T
-    </text>
-  </svg>
-);
 
 const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean): IconConfig => {
   // lilist 判断：列表绑定在段落/标题宿主上（与正文共用同一块类型），
@@ -182,17 +175,10 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: ImageIcon };
     case BlockElementType.FILE_BLOCK:
     case BlockElementType.VIDEO_BLOCK: {
-      const MediaIcon = ({ color, size = 14 }: SvgIconProps) => (
-        <svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={color}
-          strokeWidth="2"
-        >
-          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <polyline points="14 2 14 8 20 8" />
+      const MediaIcon = ({ color, size = 16 }: SvgIconProps) => (
+        <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+          <path d="M14 2.5H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+          <path d="M14 2.5V8h5.5" />
         </svg>
       );
       return { component: MediaIcon };
@@ -289,10 +275,14 @@ export const DocBar = () => {
     };
   }, [activeElement, iconHovered, hoveringMenu, closeMenu]);
 
-  const shouldShow =
-    !isScrolling && (activeElement || iconHovered || hoveringMenu) && !hasSelection;
-
   const currentElement = activeElement || lastElementRef.current;
+
+  // 文档标题（HEADING_TITLE）不需要 DocBar
+  const shouldShow =
+    !isScrolling &&
+    (activeElement || iconHovered || hoveringMenu) &&
+    !hasSelection &&
+    currentElement?.type !== BlockElementType.HEADING_TITLE;
 
   if (!shouldShow || !currentElement) {
     return null;
