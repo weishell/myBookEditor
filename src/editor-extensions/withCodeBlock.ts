@@ -1,42 +1,47 @@
 import { Transforms, Element, Editor } from 'slate';
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 
+/** 递归提取任意节点（文本 / 段落等元素）的全部叶子文本 */
+const collectLeafText = (n: any): string => {
+  if (n == null) return '';
+  if (typeof n.text === 'string') return n.text;
+  if (Array.isArray(n.children)) return n.children.map(collectLeafText).join('');
+  return '';
+};
+
 export const withCodeBlock = (editor: Editor) => {
   const { normalizeNode, deleteBackward, insertBreak, insertData } = editor;
 
   editor.normalizeNode = ([node, path]) => {
     if (Element.isElement(node) && (node as any).type === BlockElementType.CODE_BLOCK) {
       const children = (node as any).children || [];
-      const hasTextNodes = children.some((child: any) => !Element.isElement(child));
+      // 只要存在非 CODE_LINE 的子节点（裸文本节点 / 段落等元素）就统一重建
+      const needRebuild = children.some(
+        (child: any) => !Element.isElement(child) || child.type !== BlockElementType.CODE_LINE,
+      );
 
-      if (hasTextNodes) {
+      if (needRebuild) {
         const newChildren: any[] = [];
 
         children.forEach((child: any) => {
-          if (!Element.isElement(child)) {
-            const text = child.text || '';
-            const lines = text.split('\n');
-
-            lines.forEach((lineText: string) => {
-              newChildren.push({
-                type: BlockElementType.CODE_LINE,
-                id: `${(node as any).id}-line-${crypto.randomUUID()}`,
-                children: [{ text: lineText }, { text: ZERO_WIDTH_SPACE }],
-              });
-            });
-          } else {
+          // 已是 CODE_LINE 的保留原样，避免重复转换/无限循环
+          if (Element.isElement(child) && child.type === BlockElementType.CODE_LINE) {
             newChildren.push(child);
+            return;
           }
+
+          const text = Element.isElement(child) ? collectLeafText(child) : child.text || '';
+          text.split('\n').forEach((lineText: string) => {
+            newChildren.push({
+              type: BlockElementType.CODE_LINE,
+              id: `${(node as any).id}-line-${crypto.randomUUID()}`,
+              children: [{ text: lineText }, { text: ZERO_WIDTH_SPACE }],
+            });
+          });
         });
 
-        const hasChanged = newChildren.some(
-          (child: any) => child.type === BlockElementType.CODE_LINE,
-        );
-
-        if (hasChanged) {
-          Transforms.setNodes(editor, { children: newChildren }, { at: path });
-          return;
-        }
+        Transforms.setNodes(editor, { children: newChildren }, { at: path });
+        return;
       }
     }
 

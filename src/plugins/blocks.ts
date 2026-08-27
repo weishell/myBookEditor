@@ -1,5 +1,5 @@
-import { Editor, Transforms, Element } from 'slate';
-import { BlockElementType } from '@/enums';
+import { Editor, Transforms, Element, Node as SlateNode, Path } from 'slate';
+import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 import { toggleLilist, LilistType, getLilist } from '@/plugins/lilist';
 
 interface ToggleBlockOptions {
@@ -46,6 +46,65 @@ export const toggleBlock = (
   }
 
   const isActive = isBlockActive(editor, format, options);
+
+  if (format === BlockElementType.CODE_BLOCK) {
+    // 直接切换回段落
+    if (isActive) {
+      Transforms.setNodes(editor, { type: BlockElementType.PARAGRAPH } as Partial<Element>, {
+        match: (n) => Element.isElement(n) && (editor as any).isBlock(n),
+      });
+      return;
+    }
+    // 代码块必须包含合法的 CODE_LINE 子节点（否则行号无法渲染）。
+    // setNodes 直接覆盖 children 在跳类型时会被 Slate 途中机制还原，故采用“删除原块 + 原位插入新代码块”。
+    const matches = Array.from(
+      (editor as any).nodes({
+        mode: 'highest',
+        match: (n) =>
+          Element.isElement(n) &&
+          (n as any).type !== BlockElementType.HEADING_TITLE &&
+          (editor as any).isBlock(n),
+      }),
+    ) as [any, number[]][];
+    Editor.withoutNormalizing(editor, () => {
+      for (let i = matches.length - 1; i >= 0; i--) {
+        const [n, p] = matches[i];
+        const rawText = SlateNode.string(n) || '';
+        const textLines = rawText.split(/\r?\n/);
+        const codeLines = textLines.map((lt) => ({
+          type: BlockElementType.CODE_LINE,
+          id: `code-line-${crypto.randomUUID()}`,
+          children: [{ text: lt }, { text: ZERO_WIDTH_SPACE }],
+        }));
+        if (codeLines.length === 0) {
+          codeLines.push({
+            type: BlockElementType.CODE_LINE,
+            id: `code-line-${crypto.randomUUID()}`,
+            children: [{ text: '' }, { text: ZERO_WIDTH_SPACE }],
+          });
+        }
+        Transforms.insertNodes(
+          editor,
+          {
+            type: BlockElementType.CODE_BLOCK,
+            attrs: { language: 'javascript', wrap: true },
+            children: codeLines,
+          } as any,
+          { at: p, select: false },
+        );
+        Transforms.removeNodes(editor, { at: Path.next(p) } as any);
+      }
+    });
+    try {
+      const firstPath = matches[0]?.[1];
+      if (firstPath) {
+        Transforms.select(editor, Editor.start(editor, firstPath));
+      }
+    } catch {
+      /* ignore */
+    }
+    return;
+  }
 
   if (format === BlockElementType.HEADING && options?.level) {
     Transforms.setNodes(
