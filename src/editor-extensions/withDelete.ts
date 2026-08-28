@@ -13,6 +13,7 @@ import { Transforms, Node, Element, type Editor, type Path, Range } from 'slate'
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { getLilist, sortLilist } from '@/plugins/lilist';
+import { relinkAfterDelete } from '@/plugins/hyperlink/hyperlink-utils';
 
 const DEFAULT_TITLE_ATTRS = {
   date: new Date().toISOString().slice(0, 10),
@@ -321,6 +322,9 @@ export const withDelete = (editor: Editor) => {
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
       sortLilist(editor, affected.ids, affected.fromIndex);
+      // 选区删除走的是 Transforms.delete，不会经过 editor.deleteFragment，
+      // 这里补一次重新识别：选中 www.2.comf 里的 f 删掉 → 恢复成链接
+      relinkAfterDelete(editor);
       return;
     }
     deleteBackward(unit);
@@ -335,6 +339,8 @@ export const withDelete = (editor: Editor) => {
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
       sortLilist(editor, affected.ids, affected.fromIndex);
+      // 同 deleteBackward：选区删除后补一次超链接重新识别
+      relinkAfterDelete(editor);
       return;
     }
     deleteForward(unit);

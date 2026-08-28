@@ -244,31 +244,68 @@ export const autoLinkify = (editor: Editor): boolean => {
   const { selection } = editor;
   if (!selection || !Range.isCollapsed(selection)) return false;
   const { anchor } = selection;
-  const [node, path] = Editor.node(editor, anchor.path) as readonly [any, number[]];
-  if (typeof node.text !== 'string') return false;
 
-  const text = node.text as string;
-  const cursor = anchor.offset;
-  if (cursor <= 0) return false;
-  // 若光标已在链接叶子内，不重复识别
+  let entry: any;
+  try {
+    entry = Editor.node(editor, anchor.path);
+  } catch {
+    return false;
+  }
+  const [node, path] = entry as readonly [any, number[]];
+  if (typeof node.text !== 'string') return false;
+  // 若光标已在链接叶子内，不重复识别（手动/自动链接都不动）
   if (node[HYPERLINK_KEY]) return false;
 
+  const text = node.text as string;
+  if (!text) return false;
+  const cursor = Math.max(0, Math.min(anchor.offset, text.length));
+
+  // 取「光标所在的连续 URL 字符区间」：向左右两侧同时扩展。
+  // 只向后扫会在「中间删除字符」时漏判（如 www.2.comf 把光标放在 com 后删掉 f，
+  // 只看光标左侧得到 www.2.co，永远识别不回来），所以必须整段一起判定：
+  // 整段是合法 URL → 恢复链接；整段不合法 → 维持纯文本。
   let start = cursor;
   while (start > 0 && URL_TOKEN_CHARS.test(text[start - 1])) start--;
-  const word = text.slice(start, cursor);
-  if (!word || start === cursor) return false;
+  let end = cursor;
+  while (end < text.length && URL_TOKEN_CHARS.test(text[end])) end++;
+
+  const word = text.slice(start, end);
+  if (!word) return false;
   if (!isAutoLinkText(word)) return false;
 
-  Transforms.select(editor, {
-    anchor: { path, offset: start },
-    focus: { path, offset: cursor },
-  });
-  Editor.addMark(editor, HYPERLINK_KEY, word);
-  Editor.addMark(editor, HYPERLINK_AUTO_KEY, true);
-  // 光标回到链接末尾，方便继续输入
-  Transforms.collapse(editor, { edge: 'end' });
+  // 记录光标位置，打完 mark 后还原（打 mark 会按区间切分叶子，路径/偏移会变）
+  const cursorRef = Editor.pointRef(editor, { path, offset: cursor }, { affinity: 'forward' });
+  let point = null;
+  try {
+    Transforms.select(editor, {
+      anchor: { path, offset: start },
+      focus: { path, offset: end },
+    });
+    Editor.addMark(editor, HYPERLINK_KEY, word);
+    Editor.addMark(editor, HYPERLINK_AUTO_KEY, true);
+    point = cursorRef.current;
+  } finally {
+    cursorRef.unref();
+  }
+  if (point) {
+    Transforms.select(editor, point);
+  } else {
+    Transforms.collapse(editor, { edge: 'end' });
+  }
   clearActiveHyperlink(editor);
   return true;
+};
+
+/**
+ * 删除后重新识别链接：删掉让 URL 失效的字符（www.2.comf 的 f / www.2.coxm 的 x）
+ * 之后，需要把「整段文本重新变回合法 URL」的情况补回链接。
+ */
+export const relinkAfterDelete = (editor: Editor): boolean => {
+  try {
+    return autoLinkify(editor);
+  } catch {
+    return false;
+  }
 };
 
 /* ------------------------------------------------------------------ */

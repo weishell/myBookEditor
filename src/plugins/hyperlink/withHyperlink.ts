@@ -3,20 +3,24 @@ import {
   HYPERLINK_KEY,
   HYPERLINK_AUTO_KEY,
   autoLinkify,
+  relinkAfterDelete,
   getUrlPrefixEnd,
   isAutoLinkText,
 } from './hyperlink-utils';
 
 /**
  * 超链接作为文本叶子上的 mark 存在：
- *  - insertText：每次输入后，把光标前的完整合法 URL 自动识别并打上链接 mark
+ *  - insertText：每次输入后，把光标所在的完整合法 URL 自动识别并打上链接 mark
+ *  - deleteBackward / deleteForward / deleteFragment：
+ *    删除后必须重新判定！例如 www.2.comf（非法→纯文本）删掉 f 变回 www.2.com
+ *    要恢复链接；www.2.coxm 删掉 x 变回 www.2.com 同样要恢复。
  *  - normalizeNode：自动识别出来的链接，按「URL 边界规则」收敛：
  *    · 链接段之后接入中文/空格等边界字符时，把尾部拆成普通文本，链接段保持链接
  *    · 链接段只有英文/数字继续连着（如删掉小数点、或 ascii 使域名非法）时，
  *      才整体降级为纯文本
  */
 export const withHyperlink = (editor: Editor) => {
-  const { insertText, normalizeNode } = editor;
+  const { insertText, normalizeNode, deleteBackward, deleteForward, deleteFragment } = editor;
 
   editor.insertText = (text) => {
     insertText(text);
@@ -26,6 +30,21 @@ export const withHyperlink = (editor: Editor) => {
     } catch {
       /* 忽略归一化冲突 */
     }
+  };
+
+  editor.deleteBackward = (unit) => {
+    deleteBackward(unit);
+    relinkAfterDelete(editor);
+  };
+
+  editor.deleteForward = (unit) => {
+    deleteForward(unit);
+    relinkAfterDelete(editor);
+  };
+
+  editor.deleteFragment = (options) => {
+    deleteFragment(options);
+    relinkAfterDelete(editor);
   };
 
   editor.normalizeNode = (entry) => {
