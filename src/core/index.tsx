@@ -22,6 +22,7 @@ import {
   DocBar,
   withInlineFormula,
   withMention,
+  withHyperlink,
   MentionController,
 } from '@/plugins';
 import {
@@ -52,10 +53,12 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     () =>
       withDelete(
         withEditorBehaviors(
-          withColumns(
-            withMention(
-              withInlineFormula(
-                withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+          withHyperlink(
+            withColumns(
+              withMention(
+                withInlineFormula(
+                  withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+                ),
               ),
             ),
           ),

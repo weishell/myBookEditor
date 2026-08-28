@@ -27,6 +27,10 @@ export interface CustomText extends BaseText {
   highlight?: string;
   fontFamily?: string;
   artText?: string;
+  /** 超链接：值为跳转地址（文本叶子上的 mark） */
+  hyperlink?: string;
+  /** 是否为输入时自动识别生成的链接（其文本必须一直保持合法 URL） */
+  hyperlinkAuto?: boolean;
 }
 
 declare module 'slate' {

@@ -1,0 +1,105 @@
+// 超链接编辑弹层（手动新增 / 修改已有链接）
+
+.editor {
+  position: fixed;
+  width: 320px;
+  background-color: #fff;
+  border: 1px solid rgba(31, 35, 41, 0.15);
+  border-radius: 8px;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.15),
+    0 0 2px rgba(0, 0, 0, 0.05);
+  padding: 12px;
+  z-index: 10010;
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 12px;
+  color: #646a73;
+}
+
+.input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  border: 1px solid #d0d3d6;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1f2329;
+  background-color: #fff;
+  outline: none;
+
+  &:focus {
+    border-color: var(--theme-primary, #1677ff);
+  }
+}
+
+.urlPreview {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px 8px;
+  font-size: 12px;
+  color: var(--theme-primary, #1677ff);
+  background-color: #f7f8fa;
+  border-radius: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.removeBtn {
+  margin-right: auto;
+  padding: 5px 10px;
+  border: none;
+  background: transparent;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #d54941;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    background-color: rgba(213, 73, 65, 0.08);
+  }
+}
+
+.primaryBtn {
+  padding: 5px 14px;
+  border: none;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #fff;
+  background-color: var(--theme-primary, #1677ff);
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.secondaryBtn {
+  padding: 5px 12px;
+  border: 1px solid #d0d3d6;
+  background-color: #fff;
+  border-radius: 4px;
+  font-size: 13px;
+  color: #1f2329;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    background-color: #f2f3f5;
+  }
+}

@@ -26,5 +26,6 @@ export * from './font';
 export * from './drawio';
 export * from './formula';
 export * from './mention';
+export * from './hyperlink';
 export * from './media';
 export * from './columns';

@@ -1,6 +1,7 @@
 import type { RenderLeafProps } from 'slate-react';
 import { CODE_TOKEN_COLORS } from '@/utils/code-decoration';
 import { useTheme } from '@/context/ThemeContext';
+import { HYPERLINK_KEY, getLinkColor, HyperlinkLeaf } from '@/plugins/hyperlink';
 
 const TOKEN_COLOR_ENTRIES = Object.entries(CODE_TOKEN_COLORS).map(([tokenType, color]) => ({
   color,
@@ -43,7 +44,9 @@ export { DARK_TEXT_PATTERN, LIGHT_BG_PATTERN, SOFT_WHITE, SOFT_WHITE_SECONDARY, 
 
 export const RenderLeaf = (props: RenderLeafProps) => {
   const { attributes, children, leaf } = props;
-  const { isDarkMode } = useTheme();
+  const { isDarkMode, themeColor } = useTheme();
+
+  const linkUrl = (leaf as any)[HYPERLINK_KEY] as string | undefined;
 
   let codeColor: string | undefined;
   for (const entry of TOKEN_COLOR_ENTRIES) {
@@ -69,6 +72,9 @@ export const RenderLeaf = (props: RenderLeafProps) => {
     }
   } else if (codeColor) {
     style.color = codeColor;
+  } else if (linkUrl) {
+    // 超链接叶子：显示链接色（仅当前叶子，不影响后续普通文本）
+    style.color = getLinkColor(isDarkMode, themeColor);
   } else {
     // 默认字色（非用户指定）——暗黑模式下柔和浅白
     style.color = isDarkMode ? SOFT_WHITE_SECONDARY : '#333';
@@ -133,9 +139,23 @@ export const RenderLeaf = (props: RenderLeafProps) => {
     }
   }
 
-  return (
+  const leafContent = (
     <span {...attributes} style={style}>
       {children}
     </span>
   );
+
+  if (linkUrl) {
+    return (
+      <HyperlinkLeaf
+        url={linkUrl}
+        attributes={attributes as unknown as Record<string, unknown>}
+        style={style}
+      >
+        {children}
+      </HyperlinkLeaf>
+    );
+  }
+
+  return leafContent;
 };

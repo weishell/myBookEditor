@@ -15,6 +15,7 @@ import FontPicker from '@/components/FontPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
 import { insertTable } from '@/plugins/table/table-operations';
 import { insertFormula, FormulaEditor } from '@/plugins';
+import { insertHyperlink, HyperlinkEditor } from '@/plugins';
 import styles from './FloatBar.module.less';
 
 /**
@@ -47,6 +48,7 @@ export default function FloatBar() {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
   const [formulaOpen, setFormulaOpen] = useState(false);
+  const [linkOpen, setLinkOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
   const rafRef = useRef<number | null>(null);
 
@@ -69,8 +71,8 @@ export default function FloatBar() {
 
   useEffect(() => {
     const handleMouseUp = () => {
-      // 公式编辑器打开时：不因选区变化收起 FloatBar（否则会连带卸载公式弹层）
-      if (formulaOpen) return;
+      // 公式/超链接编辑器打开时：不因选区变化收起 FloatBar（否则会连带卸载弹层）
+      if (formulaOpen || linkOpen) return;
       // 等下一帧再算位置：确保选区/DOM 已稳定；同帧多次触发自动合并，不用拍脑袋的毫秒数
       if (rafRef.current !== null) {
         window.cancelAnimationFrame(rafRef.current);
@@ -82,8 +84,8 @@ export default function FloatBar() {
     };
 
     const handleSelectionChange = () => {
-      // 公式编辑器打开时：保持 FloatBar 可见（避免点击输入框导致选区丢失而隐藏）
-      if (formulaOpen) return;
+      // 公式/超链接编辑器打开时：保持 FloatBar 可见（避免点击输入框导致选区丢失而隐藏）
+      if (formulaOpen || linkOpen) return;
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) {
         setVisible(false);
@@ -92,11 +94,16 @@ export default function FloatBar() {
 
     const handleClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
-      // 公式编辑器弹层也算浮层区域，点击不关闭 FloatBar
-      if (!target.closest('.float-bar') && !target.closest('[data-formula-editor]')) {
+      // 公式/超链接编辑器弹层也算浮层区域，点击不关闭 FloatBar
+      if (
+        !target.closest('.float-bar') &&
+        !target.closest('[data-formula-editor]') &&
+        !target.closest('[data-hyperlink-editor]')
+      ) {
         setVisible(false);
         setActiveMenu(null);
         setFormulaOpen(false);
+        setLinkOpen(false);
       }
     };
 
@@ -130,11 +137,11 @@ export default function FloatBar() {
         window.cancelAnimationFrame(scrollRafId);
       }
     };
-  }, [calculatePosition, visible, formulaOpen]);
+  }, [calculatePosition, visible, formulaOpen, linkOpen]);
 
   // 选区在 HEADING_TITLE 独立标题中：完全不显示 FloatBar（禁用所有格式化能力）
-  // 公式弹层打开时始终渲染，避免 FloatBar 提前 return null 导致弹层被卸载消失
-  if ((!visible || isSelectionInHeadingTitle(editor)) && !formulaOpen) return null;
+  // 公式/超链接弹层打开时始终渲染，避免 FloatBar 提前 return null 导致弹层被卸载消失
+  if ((!visible || isSelectionInHeadingTitle(editor)) && !formulaOpen && !linkOpen) return null;
 
   const handleFormatClick = (format: string, isMark: boolean, level?: number) => {
     const selection = window.getSelection();
@@ -369,7 +376,13 @@ export default function FloatBar() {
             setVisible(false);
           }}
         />
-        <ToolButton icon="🔗" onClick={() => {}} disabled />
+        <ToolButton
+          icon="🔗"
+          onClick={() => {
+            setActiveMenu(null);
+            setLinkOpen(true);
+          }}
+        />
         <ToolButton icon="💬" onClick={() => {}} disabled />
       </div>
       {formulaOpen && (
@@ -382,6 +395,22 @@ export default function FloatBar() {
             setVisible(false);
           }}
           onCancel={() => setFormulaOpen(false)}
+        />
+      )}
+      {linkOpen && (
+        <HyperlinkEditor
+          initialText={window.getSelection()?.toString().trim() ?? ''}
+          initialUrl=""
+          anchorRef={toolbarRef}
+          onCommit={(text, url) => {
+            insertHyperlink(editor, { text, url });
+            setLinkOpen(false);
+            setVisible(false);
+          }}
+          onCancel={() => {
+            setLinkOpen(false);
+            setVisible(false);
+          }}
         />
       )}
     </div>

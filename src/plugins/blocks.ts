@@ -51,7 +51,7 @@ export const toggleBlock = (
     // 直接切换回段落
     if (isActive) {
       Transforms.setNodes(editor, { type: BlockElementType.PARAGRAPH } as Partial<Element>, {
-        match: (n) => Element.isElement(n) && (editor as any).isBlock(n),
+        match: (n: unknown) => Element.isElement(n) && (editor as any).isBlock(n),
       });
       return;
     }
@@ -60,7 +60,7 @@ export const toggleBlock = (
     const matches = Array.from(
       (editor as any).nodes({
         mode: 'highest',
-        match: (n) =>
+        match: (n: any) =>
           Element.isElement(n) &&
           (n as any).type !== BlockElementType.HEADING_TITLE &&
           (editor as any).isBlock(n),
