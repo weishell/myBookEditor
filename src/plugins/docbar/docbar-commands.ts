@@ -27,6 +27,12 @@ export type DocBarConvertTarget =
   | 'h1'
   | 'h2'
   | 'h3'
+  | 'h4'
+  | 'h5'
+  | 'h6'
+  | 'h7'
+  | 'h8'
+  | 'h9'
   | 'numbered-list'
   | 'bulleted-list'
   | 'checkbox'
@@ -337,8 +343,14 @@ export const convertDocBarBlock = (
       }
       case 'h1':
       case 'h2':
-      case 'h3': {
-        const level = target === 'h1' ? 1 : target === 'h2' ? 2 : 3;
+      case 'h3':
+      case 'h4':
+      case 'h5':
+      case 'h6':
+      case 'h7':
+      case 'h8':
+      case 'h9': {
+        const level = Number(target.slice(1)); // 'h1' -> 1, 'h9' -> 9
         if (node.type === BlockElementType.HEADING && node.attrs?.level === level) {
           if (curLilist?.list_type === LilistType.UL) removeLilist(editor, path);
           Transforms.setNodes(

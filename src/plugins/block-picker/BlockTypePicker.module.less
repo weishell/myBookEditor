@@ -2,9 +2,10 @@
 // 基础组为按钮组（与左侧菜单顶部 toolbar 视觉一致），常用组为列表项
 
 .picker {
-  width: 180px;
+  // 宽度 = 6×36 + 5×2 = 226；与左侧 DocBar 块类型区 .btn (36) 容器对齐
+  width: 226px;
   box-sizing: border-box;
-  padding: @spacing-xs;
+  padding: 0;
 }
 
 .group {
@@ -27,10 +28,16 @@
 
 // 基础组按钮组
 .toolbar {
-  padding: @spacing-xs;
+  padding: 0;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
+
+  // SVG 图标与字符按钮等大（跟 ContextMenu 一致）
+  svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .btn {

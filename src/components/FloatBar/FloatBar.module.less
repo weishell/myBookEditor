@@ -37,6 +37,13 @@
   gap: 2px;
   color: @text-primary;
 
+  // 主工具栏里 SVG 图标强制 18×18，与字符按钮（B / I / U）视觉一致；
+  // 下拉里的 svg 不受这条规则影响，仍保持 16×16 紧凑尺寸。
+  & > svg {
+    width: 18px;
+    height: 18px;
+  }
+
   &:hover {
     background-color: @bg-hover;
   }
@@ -111,10 +118,110 @@
   cursor: var(--cursor-pointer);
   font-size: @font-size-base;
   border-radius: @radius-sm;
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
 
   &:hover {
     background-color: @bg-hover;
   }
+}
+
+// 菜单项图标槽（固定宽度让 label/check 排版对齐）
+.menuItemIcon {
+  width: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: @text-secondary;
+  flex-shrink: 0;
+}
+
+// 菜单项标签（占满剩余空间，把 ✓ 推到最右）
+.menuItemLabel {
+  flex: 1;
+  min-width: 0;
+}
+
+// 当前块类型激活态：主题色文字 + 右侧 ✓ 对勾
+.menuItemActive {
+  color: @color-primary;
+  font-weight: 600;
+
+  .menuItemIcon {
+    color: @color-primary;
+  }
+
+  // 激活态上 hover 不应变成普通 bg-hover，避免冲淡主色；让父 .menuItem:hover
+  // 在这里被覆盖（less 后定义者赢 + 同特异性）
+  &:hover {
+    background-color: transparent;
+  }
+}
+
+.menuItemCheck {
+  margin-left: auto;
+  color: @color-primary;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+// 文本下拉菜单
+.dropdownText {
+  min-width: 200px;
+}
+
+// 列表下拉菜单
+.dropdownList {
+  min-width: 160px;
+}
+
+// 字体下拉菜单
+.dropdownFont {
+  min-width: 180px;
+}
+
+// 块类型合并菜单（飞书款）：比字体下拉略宽，容纳 ✓ 对勾
+.dropdownBlock {
+  min-width: 180px;
+}
+
+// 含子菜单的菜单项（"其他标题"）
+.menuItemWithSub {
+  position: relative;
+
+  &.open > .menuItem,
+  &:hover > .menuItem {
+    background-color: @bg-hover;
+  }
+}
+
+// 子菜单：从父项右侧弹出
+.submenu {
+  display: none;
+  position: absolute;
+  top: -4px;
+  left: 100%;
+  min-width: 140px;
+  margin-left: @spacing-xs;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  box-shadow: @shadow-md;
+  padding: @spacing-xs;
+  z-index: 10002;
+}
+
+.menuItemWithSub.open .submenu {
+  display: block;
+}
+
+.submenuArrow {
+  margin-left: auto;
+  color: @text-tertiary;
+  font-size: 14px;
+  flex-shrink: 0;
 }
 
 // 标题菜单项（font-size 动态，保留 inline）

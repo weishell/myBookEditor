@@ -108,6 +108,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
           <DocBarProvider>
             <DocBar />
             <div
+              data-paper
               style={{
                 maxWidth: PAGE_WIDTH_NORMAL,
                 margin: '0 auto',

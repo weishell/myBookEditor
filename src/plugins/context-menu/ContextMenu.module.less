@@ -18,6 +18,17 @@
   padding: 0;
   z-index: 1001;
   min-width: 180px;
+  // 菜单过高时 adjustPosition 会设 maxHeight + overflowY:auto；
+  // contain 让滚动到边界后不把滚动"链接"给下面的页面（含触摸板惯性滚动），
+  // 与 ContextMenu 里的 wheel 拦截互为双保险。
+  overscroll-behavior: contain;
+
+  // 块类型区 SVG 图标强制 18×18，跟旁边的字符按钮（H1-H9）视觉一致；
+  // 与 FloatBar 的 .toolButton > svg 是同一套处理。
+  button > svg {
+    width: 18px;
+    height: 18px;
+  }
 }
 
 .toolbar {

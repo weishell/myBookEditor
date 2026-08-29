@@ -3,7 +3,8 @@
 // 常用组：列表项，非文本类占位禁用
 import React, { useState } from 'react';
 import { BlockElementType } from '@/enums';
-import { OlListIcon, UlListIcon } from '@/plugins/lilist';
+import { blockTypeIcon } from '@/components/FloatBar/blockTypeIcons';
+import type { BlockType } from '@/components/FloatBar/blockType';
 import styles from './BlockTypePicker.module.less';
 
 export interface BlockTypeOption {
@@ -20,18 +21,40 @@ interface BlockTypePickerProps {
   onSelect: (type: BlockElementType, options?: { level?: number; columns?: number }) => void;
 }
 
-// 基础组（文本类，可用）- 按钮组风格
+// 基础组（文本类，可用）：H1-H9 完整展示，与 ContextMenu 块类型区一致。
+// 图标统一从 FloatBar 的 blockTypeIcons 走，跨组件单源（避免再分头维护 SVG）。
 const BASIC_ITEMS: BlockTypeOption[] = [
-  { type: BlockElementType.PARAGRAPH, label: '正文', icon: 'T' },
-  { type: BlockElementType.HEADING, label: '一级标题', icon: 'H1', level: 1 },
-  { type: BlockElementType.HEADING, label: '二级标题', icon: 'H2', level: 2 },
-  { type: BlockElementType.HEADING, label: '三级标题', icon: 'H3', level: 3 },
-  { type: BlockElementType.BULLETED_LIST, label: '无序列表', icon: <UlListIcon size={18} /> },
-  { type: BlockElementType.NUMBERED_LIST, label: '有序列表', icon: <OlListIcon size={18} /> },
-  { type: BlockElementType.TODO_LIST, label: '待办事项', icon: '☐' },
-  { type: BlockElementType.BLOCKQUOTE, label: '引用块', icon: '❝' },
-  { type: BlockElementType.CODE_BLOCK, label: '代码块', icon: '</>', mono: true },
+  { type: BlockElementType.PARAGRAPH, label: '正文', icon: blockTypeIcon('paragraph') },
+  ...([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map<BlockTypeOption>((level) => ({
+    type: BlockElementType.HEADING,
+    label: `${toChineseLevel(level)}级标题`,
+    level,
+    icon: blockTypeIcon(`h${level}` as BlockType),
+  })),
+  {
+    type: BlockElementType.BULLETED_LIST,
+    label: '无序列表',
+    icon: blockTypeIcon('bulleted'),
+  },
+  {
+    type: BlockElementType.NUMBERED_LIST,
+    label: '有序列表',
+    icon: blockTypeIcon('numbered'),
+  },
+  { type: BlockElementType.TODO_LIST, label: '待办事项', icon: blockTypeIcon('todo') },
+  { type: BlockElementType.BLOCKQUOTE, label: '引用块', icon: blockTypeIcon('quote') },
+  {
+    type: BlockElementType.CODE_BLOCK,
+    label: '代码块',
+    icon: blockTypeIcon('code-block'),
+    mono: true,
+  },
 ];
+
+/** 1-9 → 一/二/.../九，10+ 回退到 "N" */
+function toChineseLevel(n: number): string {
+  return ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'][n] || String(n);
+}
 
 // 常用组（非文本类，占位禁用）- 列表项风格
 const COMMON_ITEMS: BlockTypeOption[] = [

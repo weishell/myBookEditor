@@ -15,24 +15,27 @@ export interface FloatBarLayout {
   y: number;
 }
 
+export interface ContainerClamp {
+  /** 文档容器左边（视口坐标）—— 浮栏 left 必须 ≥ this + MIN_MARGIN */
+  left: number;
+  /** 文档容器右边（视口坐标）—— 浮栏 right 必须 ≤ this - MIN_MARGIN */
+  right: number;
+}
+
 /**
  * 根据当前选区计算 FloatBar 的目标位置。
  * 返回 null 表示选区不满足显示条件（折叠 / 取不到 range），调用方应收起浮栏。
  *
- * 核心约束：**纵向严格跟随选区，不做任何钳制。**
- *   页面滚动时选区的 rect.top 会持续变化，滚出视口后变成负数；浮栏必须原样跟随，
- *   这样它才会跟着选区一起自然移出视口（position: fixed + 负 top = 在视口外）。
- *   一旦对 y 做 `Math.max(下限, y)` 这类钳制，浮栏就会"钉"在那个下限上，
- *   产生"选区已经滚走了、浮栏还挂在视口顶部"的粘连感 —— 这正是要修的 bug。
- *   所以纵向既不做下限钳制，也不在"顶部空间不够"时翻到选区下方
- *   （翻转会让它改用 rect.bottom 定位，等于在顶部多停留一段，又变成钉住）。
- *
- * 横向仍然钳制：页面不会横向滚动，而浮栏宽 TOOLBAR_WIDTH，
- * 选区贴近左右边缘时需要收进视口内，否则会被裁掉一截。
+ * 约束层级（由外向内）：
+ *   1. 视口：浮栏必须落在视口内 [MIN_MARGIN, viewport.w - TOOLBAR_WIDTH]
+ *   2. 文档容器（可选）：若传了 containerClamp，浮栏还要落在容器内
+ *      [container.left + MIN_MARGIN, container.right - TOOLBAR_WIDTH - MIN_MARGIN]
+ *   3. 纵向：严格跟随选区上沿，不做任何钳制 —— 否则会出现"选区走了浮栏还挂着"的粘连感。
  */
 export function computeFloatBarPosition(
   selection: Selection | null,
-  viewportWidth: number,
+  viewport: { w: number; h: number },
+  containerClamp?: ContainerClamp,
 ): FloatBarLayout | null {
   if (!selection || selection.rangeCount === 0 || selection.isCollapsed) {
     return null;
@@ -48,13 +51,21 @@ export function computeFloatBarPosition(
     if (rects.length > 0) rect = rects[0];
   }
 
-  // 横向：以选区中心为锚点，收进 [MIN_MARGIN, viewportWidth - TOOLBAR_WIDTH]
-  const x = rect.left + rect.width / 2 - TOOLBAR_HALF_WIDTH;
+  // 横向：以选区中心为锚点
+  const xRaw = rect.left + rect.width / 2 - TOOLBAR_HALF_WIDTH;
+
+  // 横向取值范围 = 视口范围 ∩ 容器范围（两者都存在时取交集）
+  let minX = MIN_MARGIN;
+  let maxX = viewport.w - TOOLBAR_WIDTH;
+  if (containerClamp) {
+    minX = Math.max(minX, containerClamp.left + MIN_MARGIN);
+    maxX = Math.min(maxX, containerClamp.right - TOOLBAR_WIDTH - MIN_MARGIN);
+  }
+  // 容器被横向缩到比浮栏还窄时理论上没法放，这里取中点兜底（实际不会出现）
+  const x = minX > maxX ? Math.round((minX + maxX) / 2) : Math.max(minX, Math.min(xRaw, maxX));
+
   // 纵向：严格跟随选区上沿，不做任何钳制
   const y = rect.top - TOOLBAR_HEIGHT - VIEWPORT_GAP;
 
-  return {
-    x: Math.max(MIN_MARGIN, Math.min(x, viewportWidth - TOOLBAR_WIDTH)),
-    y,
-  };
+  return { x, y };
 }

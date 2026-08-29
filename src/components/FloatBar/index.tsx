@@ -17,7 +17,10 @@ import { insertTable } from '@/plugins/table/table-operations';
 import { insertFormula, FormulaEditor } from '@/plugins';
 import { insertHyperlink, HyperlinkEditor } from '@/plugins';
 import styles from './FloatBar.module.less';
-import { computeFloatBarPosition } from './layout';
+import { computeFloatBarPosition, TOOLBAR_WIDTH } from './layout';
+import type { BlockType } from './blockType';
+import { getActiveBlockType, resolveBlockTypeKey } from './blockType';
+import { blockTypeIcon, blockTypeIconComponent } from './blockTypeIcons';
 
 /**
  * 判断当前选区是否位于 HEADING_TITLE 独立标题块中
@@ -43,11 +46,137 @@ const isSelectionInHeadingTitle = (editor: any): boolean => {
   }
 };
 
+// 重新导出，方便外部组件直接 import 此文件复用
+export type { BlockType };
+export { getActiveBlockType, resolveBlockTypeKey };
+
+/** 合并菜单项 → toggleBlock 参数的映射 */
+const CONVERT_TARGETS: Record<BlockType, { format: BlockElementType; level?: number }> = {
+  paragraph: { format: BlockElementType.PARAGRAPH },
+  h1: { format: BlockElementType.HEADING, level: 1 },
+  h2: { format: BlockElementType.HEADING, level: 2 },
+  h3: { format: BlockElementType.HEADING, level: 3 },
+  h4: { format: BlockElementType.HEADING, level: 4 },
+  h5: { format: BlockElementType.HEADING, level: 5 },
+  h6: { format: BlockElementType.HEADING, level: 6 },
+  h7: { format: BlockElementType.HEADING, level: 7 },
+  h8: { format: BlockElementType.HEADING, level: 8 },
+  h9: { format: BlockElementType.HEADING, level: 9 },
+  numbered: { format: BlockElementType.NUMBERED_LIST },
+  bulleted: { format: BlockElementType.BULLETED_LIST },
+  todo: { format: BlockElementType.TODO_LIST },
+  quote: { format: BlockElementType.BLOCKQUOTE },
+  'code-block': { format: BlockElementType.CODE_BLOCK },
+};
+
+/**
+ * 合并后的"块类型"下拉菜单（飞书同款：一行一项，主色高亮当前类型 + ✓ 对勾，
+ * "其他标题"为右侧 hover 弹出的二级子菜单）。
+ *
+ * 内部用 React state 控制子菜单展开，避免 CSS :hover 跨越子菜单边界时掉层。
+ */
+interface BlockTypeDropdownProps {
+  activeBlockKey: BlockType | null;
+  onConvert: (key: BlockType) => void;
+}
+
+const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps) => {
+  const [submenu, setSubmenu] = useState<'more' | null>(null);
+
+  const closeSubmenu = () => setSubmenu(null);
+  const openSubmenu = () => setSubmenu('more');
+
+  const Item = ({
+    Icon,
+    label,
+    target,
+  }: {
+    Icon: React.ComponentType<{ color?: string; size?: number }>;
+    label: string;
+    target: BlockType;
+  }) => {
+    const active = activeBlockKey === target;
+    return (
+      <button
+        className={`${styles.menuItem} ${active ? styles.menuItemActive : ''}`}
+        onClick={(e) => {
+          e.stopPropagation();
+          onConvert(target);
+        }}
+      >
+        <span className={styles.menuItemIcon}>
+          <Icon size={16} />
+        </span>
+        <span className={styles.menuItemLabel}>{label}</span>
+        {active && <span className={styles.menuItemCheck}>✓</span>}
+      </button>
+    );
+  };
+
+  // "其他标题"父项本身不可点（不能等同于某个具体级别），只承载子菜单
+  const moreActive =
+    activeBlockKey === 'h4' ||
+    activeBlockKey === 'h5' ||
+    activeBlockKey === 'h6' ||
+    activeBlockKey === 'h7' ||
+    activeBlockKey === 'h8' ||
+    activeBlockKey === 'h9';
+
+  return (
+    <div className={`${styles.dropdown} ${styles.dropdownBlock}`}>
+      <Item Icon={blockTypeIconComponent('paragraph')!} label="正文" target="paragraph" />
+      <Item Icon={blockTypeIconComponent('h1')!} label="一级标题" target="h1" />
+      <Item Icon={blockTypeIconComponent('h2')!} label="二级标题" target="h2" />
+      <Item Icon={blockTypeIconComponent('h3')!} label="三级标题" target="h3" />
+
+      <div
+        className={`${styles.menuItemWithSub} ${submenu === 'more' ? styles.open : ''}`}
+        onMouseEnter={openSubmenu}
+        onMouseLeave={closeSubmenu}
+      >
+        <div className={`${styles.menuItem} ${moreActive ? styles.menuItemActive : ''}`}>
+          <span className={styles.menuItemIcon}>
+            {/* "Hn" 用文字版（无需独立 SVG），跟其它图标 16px 占位对齐 */}
+            <span style={{ fontSize: 11, fontWeight: 'bold', color: 'currentColor' }}>Hn</span>
+          </span>
+          <span className={styles.menuItemLabel}>其他标题</span>
+          {moreActive && <span className={styles.menuItemCheck}>✓</span>}
+          <span className={styles.submenuArrow}>›</span>
+        </div>
+        {submenu === 'more' && (
+          <div className={styles.submenu}>
+            <Item Icon={blockTypeIconComponent('h4')!} label="四级标题" target="h4" />
+            <Item Icon={blockTypeIconComponent('h5')!} label="五级标题" target="h5" />
+            <Item Icon={blockTypeIconComponent('h6')!} label="六级标题" target="h6" />
+            <Item Icon={blockTypeIconComponent('h7')!} label="七级标题" target="h7" />
+            <Item Icon={blockTypeIconComponent('h8')!} label="八级标题" target="h8" />
+            <Item Icon={blockTypeIconComponent('h9')!} label="九级标题" target="h9" />
+          </div>
+        )}
+      </div>
+
+      <div className={styles.dividerHorizontal} />
+      <Item Icon={blockTypeIconComponent('numbered')!} label="有序列表" target="numbered" />
+      <Item Icon={blockTypeIconComponent('bulleted')!} label="无序列表" target="bulleted" />
+      <Item Icon={blockTypeIconComponent('todo')!} label="任务" target="todo" />
+
+      <div className={styles.dividerHorizontal} />
+      <Item Icon={blockTypeIconComponent('code-block')!} label="代码块" target="code-block" />
+      <Item Icon={blockTypeIconComponent('quote')!} label="引用" target="quote" />
+    </div>
+  );
+};
+
 export default function FloatBar() {
   const editor = useSlate();
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
+  // 当前选区所在的块类型 key（用于合并菜单中主题色高亮 + ✓ 标记）。
+  // 用本地 state 而不是 useSlate 派生：BookEditor 把 onChange 改成了 no-op，
+  // 单靠 Slate 自身 context 不会触发重渲染。这里在 mouseup/selectionchange 里
+  // 主动刷新，配合 onClick 触发块切换后的下一次 mouseup 自然同步。
+  const [activeBlockKey, setActiveBlockKey] = useState<BlockType | null>(null);
   const [formulaOpen, setFormulaOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -55,7 +184,26 @@ export default function FloatBar() {
 
   const calculatePosition = useCallback(() => {
     const selection = window.getSelection();
-    const next = computeFloatBarPosition(selection, window.innerWidth);
+    // 文档纸张容器约束（<div data-paper> 在 core/index.tsx 里）；
+    // 浮栏必须落在文档区域内，不跑到侧边栏/壁纸上去。
+    // 每次重算都重新 querySelector，确保 DOM 变化（比如纸张宽度自适应窗口）时
+    // 约束也始终是最新值。开销可忽略（RAF 节流 + 极少触发）。
+    let containerClamp: { left: number; right: number } | undefined;
+    if (typeof document !== 'undefined') {
+      const paper = document.querySelector<HTMLElement>('[data-paper]');
+      if (paper) {
+        const r = paper.getBoundingClientRect();
+        // 容器不可见或宽 < 浮栏宽度时跳过容器约束，退回单纯视口钳制
+        if (r.width > TOOLBAR_WIDTH) {
+          containerClamp = { left: r.left, right: r.right };
+        }
+      }
+    }
+    const next = computeFloatBarPosition(
+      selection,
+      { w: window.innerWidth, h: window.innerHeight },
+      containerClamp,
+    );
     if (!next) {
       setVisible(false);
       return;
@@ -63,6 +211,10 @@ export default function FloatBar() {
     setPosition(next);
     setVisible(true);
   }, []);
+
+  const refreshActive = useCallback(() => {
+    setActiveBlockKey(getActiveBlockType(editor));
+  }, [editor]);
 
   useEffect(() => {
     const handleMouseUp = () => {
@@ -75,6 +227,7 @@ export default function FloatBar() {
       rafRef.current = window.requestAnimationFrame(() => {
         rafRef.current = null;
         calculatePosition();
+        refreshActive();
       });
     };
 
@@ -84,7 +237,9 @@ export default function FloatBar() {
       const selection = window.getSelection();
       if (!selection || selection.isCollapsed) {
         setVisible(false);
+        return;
       }
+      refreshActive();
     };
 
     const handleClick = (e: MouseEvent) => {
@@ -132,7 +287,9 @@ export default function FloatBar() {
         window.cancelAnimationFrame(scrollRafId);
       }
     };
-  }, [calculatePosition, visible, formulaOpen, linkOpen]);
+    // refreshActive 也要进 deps：它是 useCallback([editor])，editor 引用稳定，
+    // 所以不会导致监听器反复重挂；但 lint 规则要求闭包里用到的值都列出来。
+  }, [calculatePosition, refreshActive, visible, formulaOpen, linkOpen]);
 
   // 选区在 HEADING_TITLE 独立标题中：完全不显示 FloatBar（禁用所有格式化能力）
   // 公式/超链接弹层打开时始终渲染，避免 FloatBar 提前 return null 导致弹层被卸载消失
@@ -191,82 +348,23 @@ export default function FloatBar() {
       >
         <div className={styles.wrapper}>
           <ToolButton
-            icon="T"
-            onClick={() => setActiveMenu(activeMenu === 'text' ? null : 'text')}
+            // 主工具栏的"块类型"按钮：跟随当前选区所在块动态变化（H5 → H5 图、
+            // 有序列表 → OlListIcon，等等），无选区时 fallback 到 'T' 文本。
+            icon={blockTypeIcon(activeBlockKey) ?? 'T'}
+            onClick={() => setActiveMenu(activeMenu === 'block' ? null : 'block')}
             hasDropdown
           />
-          {activeMenu === 'text' && (
-            <div className={`${styles.dropdown} ${styles.dropdownText}`}>
-              <div className={styles.menuTitle}>标题</div>
-              {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((level) => (
-                <button
-                  key={level}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handleFormatClick(BlockElementType.HEADING, false, level);
-                    setActiveMenu(null);
-                  }}
-                  className={styles.menuItemHeading}
-                  style={{
-                    fontSize: `${Math.max(10, 18 - level)}px`,
-                  }}
-                >
-                  H{level} 标题
-                </button>
-              ))}
-              <div className={styles.dividerHorizontal} />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.PARAGRAPH, false);
-                  setActiveMenu(null);
-                }}
-                className={styles.menuItem}
-              >
-                正文
-              </button>
-            </div>
-          )}
-        </div>
-        <div className={styles.wrapper}>
-          <ToolButton
-            icon="☰"
-            onClick={() => setActiveMenu(activeMenu === 'list' ? null : 'list')}
-            hasDropdown
-          />
-          {activeMenu === 'list' && (
-            <div className={`${styles.dropdown} ${styles.dropdownList}`}>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.BULLETED_LIST, false);
-                  setActiveMenu(null);
-                }}
-                className={styles.menuItem}
-              >
-                • 无序列表
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.NUMBERED_LIST, false);
-                  setActiveMenu(null);
-                }}
-                className={styles.menuItem}
-              >
-                1. 有序列表
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFormatClick(BlockElementType.TODO_LIST, false);
-                  setActiveMenu(null);
-                }}
-                className={styles.menuItem}
-              >
-                ☑ 待办事项
-              </button>
-            </div>
+          {activeMenu === 'block' && (
+            <BlockTypeDropdown
+              activeBlockKey={activeBlockKey}
+              onConvert={(key) => {
+                const m = CONVERT_TARGETS[key];
+                toggleBlock(editor, m.format, m.level ? { level: m.level } : undefined);
+                // 主动同步高亮：core 把 onChange 改成了 no-op，不依赖 Slate 自身通知
+                setActiveBlockKey(getActiveBlockType(editor));
+                setActiveMenu(null);
+              }}
+            />
           )}
         </div>
         <div className={styles.divider} />
