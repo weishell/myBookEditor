@@ -152,6 +152,63 @@ export const initialValue: Descendant[] = [
     type: BlockElementType.HEADING,
     id: uuidv4(),
     attrs: { level: 2 },
+    children: [{ text: '超链接示例' }],
+  },
+  {
+    // 自动识别链接：输入完整网址后自动变链接，hyperlinkAuto 标记其文本必须一直是合法 URL
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '自动识别：输入完整网址会自动变成链接，例如 ' },
+      {
+        text: 'https://www.baidu.com',
+        hyperlink: 'https://www.baidu.com',
+        hyperlinkAuto: true,
+      },
+      { text: ' 和 ' },
+      { text: 'www.zhihu.com', hyperlink: 'www.zhihu.com', hyperlinkAuto: true },
+      { text: '。继续往后输入字母让网址非法（如 www.zhihu.comf）会自动取消链接，' },
+      { text: '把多余字符删掉后又会重新变回链接。' },
+    ],
+  },
+  {
+    // 手动链接：文字与地址可以不同，不带 hyperlinkAuto，因此不会被自动降级
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '自定义文字：链接文字可以和地址不同，比如 ' },
+      { text: '前往 Slate 官方文档', hyperlink: 'https://docs.slatejs.org' },
+      { text: '；链接也能和其它样式叠加：' },
+      { text: '加粗链接', hyperlink: 'https://react.dev', bold: true },
+      { text: '、' },
+      { text: '彩色链接', hyperlink: 'https://vitejs.dev', color: '#e83e8c' },
+      { text: '、' },
+      { text: '带高亮的链接', hyperlink: 'https://cn.vitejs.dev/', highlight: '#fff5b1' },
+      { text: '。选中文字后即可添加链接。' },
+    ],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      { text: '边界规则：中文、空格和标点都是链接的边界 —— ' },
+      { text: 'https://cn.bing.com', hyperlink: 'https://cn.bing.com', hyperlinkAuto: true },
+      { text: ' 后面接着写的中文不会带上链接色，网址本身依然是完整链接。' },
+    ],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '操作方式：直接点击链接即可在新标签页打开；鼠标悬停会弹出浮层，可打开、修改地址或移除链接。',
+      },
+    ],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
     children: [{ text: '待办事项示例' }],
   },
   {
