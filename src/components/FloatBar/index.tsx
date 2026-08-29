@@ -17,6 +17,7 @@ import { insertTable } from '@/plugins/table/table-operations';
 import { insertFormula, FormulaEditor } from '@/plugins';
 import { insertHyperlink, HyperlinkEditor } from '@/plugins';
 import styles from './FloatBar.module.less';
+import { computeFloatBarPosition } from './layout';
 
 /**
  * 判断当前选区是否位于 HEADING_TITLE 独立标题块中
@@ -54,18 +55,12 @@ export default function FloatBar() {
 
   const calculatePosition = useCallback(() => {
     const selection = window.getSelection();
-    if (!selection || selection.isCollapsed) {
+    const next = computeFloatBarPosition(selection, window.innerWidth);
+    if (!next) {
       setVisible(false);
       return;
     }
-
-    const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
-
-    const x = rect.left + rect.width / 2 - 180;
-    const y = rect.top - 44;
-
-    setPosition({ x: Math.max(20, Math.min(x, window.innerWidth - 380)), y: Math.max(20, y) });
+    setPosition(next);
     setVisible(true);
   }, []);
 

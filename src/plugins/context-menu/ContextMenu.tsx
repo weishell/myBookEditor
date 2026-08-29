@@ -14,12 +14,33 @@ import { setBlockFont } from '@/plugins/font';
 import { BlockElementType } from '@/enums';
 import { BlockTypePicker, createBlockNode, isTextBlockType } from '@/plugins/block-picker';
 import FontPicker from '@/components/FontPicker';
+import {
+  convertDocBarBlock,
+  type DocBarConvertTarget,
+  CONVERTIBLE_BLOCK_TYPES,
+} from '@/plugins/docbar/docbar-commands';
 import styles from './ContextMenu.module.less';
 
 export const ContextMenu = () => {
   const { visible, position, closeMenu, forceCloseMenu, setHoveringMenu, targetId } = useMenu();
   const menuRef = useRef<HTMLDivElement>(null);
   const editor = useSlateStatic();
+
+  // DocBar 场景：按 element.id 直接遍历 Slate 文档树找路径
+  const getTargetPath = (): number[] | undefined => {
+    if (!targetId) return undefined;
+    const entries = Array.from(Editor.nodes(editor, { at: [] }));
+    for (const [node, path] of entries) {
+      if (Element.isElement(node) && (node as any).id === targetId) {
+        return path;
+      }
+    }
+    return undefined;
+  };
+
+  const targetPath = getTargetPath();
+  const targetNode = targetPath ? (Node.get(editor, targetPath) as any) : null;
+
   const [fontOpen, setFontOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
 
@@ -68,12 +89,33 @@ export const ContextMenu = () => {
       closeMenu();
       return;
     }
+
+    const convertActions = new Set<string>([
+      'text',
+      'h1',
+      'h2',
+      'h3',
+      'numbered-list',
+      'bulleted-list',
+      'checkbox',
+      'quote',
+      'code-block',
+    ]);
+    if (convertActions.has(action)) {
+      const targetPath = getTargetPath();
+      if (targetPath) {
+        convertDocBarBlock(editor, action as DocBarConvertTarget, targetPath);
+      }
+      closeMenu();
+      return;
+    }
+
     console.warn(action);
     closeMenu();
   };
 
-  // 所有功能目前只有 console.warn，全部标记为 disabled，字体除外（真正实现了 setBlockFont）
-  const DISABLED_ACTIONS = [
+  // 类型转换按钮对“可转换块”启用；其余按钮按当前实现状态保持禁用
+  const CONVERT_ACTIONS = [
     'text',
     'h1',
     'h2',
@@ -81,33 +123,21 @@ export const ContextMenu = () => {
     'numbered-list',
     'bulleted-list',
     'checkbox',
-    'code',
     'quote',
     'code-block',
-    'link',
+  ];
+
+  const isConvertibleBlock = !!targetNode && CONVERTIBLE_BLOCK_TYPES.includes(targetNode.type);
+
+  const DISABLED_ACTIONS = [
+    'code',
     'indent',
     'color',
     'comment',
     'cut',
     'delete',
+    ...(!isConvertibleBlock ? CONVERT_ACTIONS : []),
   ];
-
-  // DocBar 场景：按 element.id 直接遍历 Slate 文档树找路径
-  // 使用 Editor.nodes() 从根节点遍历所有节点，因为 Node.get(editor, [])
-  // 返回的 editor 对象不是 Element 类型（Editor.isEditor 返回 true），
-  // 导致 Element.isElement(editor) 返回 false，递归搜索无法进入子节点
-  const getTargetPath = (): number[] | undefined => {
-    if (!targetId) return undefined;
-
-    // 遍历所有节点，找到 id 匹配的 Element
-    const entries = Array.from(Editor.nodes(editor, { at: [] }));
-    for (const [node, path] of entries) {
-      if (Element.isElement(node) && (node as any).id === targetId) {
-        return path;
-      }
-    }
-    return undefined;
-  };
 
   // 字体选择回调：DocBar 场景只改当前 hover 的块
   const handleFontChange = (fontFamily: string) => {
@@ -153,8 +183,6 @@ export const ContextMenu = () => {
   if (!visible) return null;
 
   // "在下方插入"仅对非空文本类块可用
-  const targetPath = getTargetPath();
-  const targetNode = targetPath ? (Node.get(editor, targetPath) as any) : null;
   const canInsertBelow =
     !!targetNode &&
     Element.isElement(targetNode) &&
@@ -245,13 +273,6 @@ export const ContextMenu = () => {
             disabled={DISABLED_ACTIONS.includes('code-block')}
           >
             &lt;/&gt;
-          </button>
-          <button
-            onClick={() => handleMenuClick('link')}
-            className={styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('link')}
-          >
-            🔗
           </button>
         </div>
         <div className={styles.divider} />
