@@ -438,7 +438,7 @@ export default function FloatBar() {
           onClick={() => handleFormatClick(BlockElementType.BLOCKQUOTE, false)}
         />
         <ToolButton
-          icon="</>"
+          icon="{}"
           onClick={() => handleFormatClick(BlockElementType.CODE_BLOCK, false)}
         />
         <ToolButton
