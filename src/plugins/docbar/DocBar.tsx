@@ -120,6 +120,15 @@ const DrawioIcon = ({ color, size = 16 }: SvgIconProps) => (
   </svg>
 );
 
+// 倒计时：沙漏（对齐飞书倒计时图标）
+const CountdownIcon = ({ color, size = 16 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M5 22h14M5 2h14" />
+    <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
+    <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
+  </svg>
+);
+
 // 拖拽手柄
 const DragIcon = ({ color = '#999', size = 14 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -186,6 +195,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
     }
     case BlockElementType.DRAWIO:
       return { component: DrawioIcon };
+    case BlockElementType.COUNTDOWN:
+      return { component: CountdownIcon };
     default:
       return { component: ParagraphIcon };
   }

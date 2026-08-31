@@ -19,6 +19,7 @@ import {
   Drawio,
   Formula,
   Mention,
+  Countdown,
   ColumnGroup,
   Column,
 } from '@/plugins';
@@ -116,6 +117,15 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
       return <Formula attributes={attributes} element={el as any} readOnly={false} />;
     case BlockElementType.MENTION:
       return <Mention attributes={attributes} element={el as any} readOnly={false} />;
+    case BlockElementType.COUNTDOWN:
+      return (
+        <Countdown
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
+      );
     case BlockElementType.FILE_BLOCK:
     case BlockElementType.VIDEO_BLOCK:
       return (

@@ -19,6 +19,7 @@ export const BlockElementType = {
   MENTION: 'mention',
   FILE_BLOCK: 'file-block',
   VIDEO_BLOCK: 'video-block',
+  COUNTDOWN: 'countdown',
   COLUMN_GROUP: 'column-group',
   COLUMN: 'column',
 } as const;

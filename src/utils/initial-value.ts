@@ -843,4 +843,21 @@ export const initialValue: Descendant[] = [
     children: [{ text: '分栏示例' }],
   },
   demoColumnGroup,
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '倒计时示例' }],
+  },
+  {
+    type: BlockElementType.COUNTDOWN,
+    id: uuidv4(),
+    attrs: {
+      mode: 'datetime',
+      duration: { days: 2, hours: 0, minutes: 0, seconds: 0 },
+      targetDate: Date.now() + 2 * 86400000,
+      notify: true,
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
 ];

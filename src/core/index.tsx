@@ -23,6 +23,7 @@ import {
   withInlineFormula,
   withMention,
   withHyperlink,
+  withCountdown,
   MentionController,
 } from '@/plugins';
 import {
@@ -52,12 +53,14 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
   const editor = useMemo(
     () =>
       withDelete(
-        withEditorBehaviors(
-          withHyperlink(
-            withColumns(
-              withMention(
-                withInlineFormula(
-                  withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+        withCountdown(
+          withEditorBehaviors(
+            withHyperlink(
+              withColumns(
+                withMention(
+                  withInlineFormula(
+                    withMarkdownShortcuts(withCodeBlock(withHistory(withReact(createEditor())))),
+                  ),
                 ),
               ),
             ),

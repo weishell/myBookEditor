@@ -64,6 +64,18 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         attrs: { checked: false },
         children: [{ text: '' }],
       } as Element;
+    case BlockElementType.COUNTDOWN:
+      return {
+        type,
+        id,
+        attrs: {
+          mode: 'duration',
+          duration: { days: 0, hours: 0, minutes: 0, seconds: 0 },
+          targetDate: null,
+          notify: true,
+        },
+        children: [{ text: ZERO_WIDTH_SPACE }],
+      } as Element;
     case BlockElementType.FILE_BLOCK:
       return {
         type,
