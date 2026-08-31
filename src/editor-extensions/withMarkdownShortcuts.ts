@@ -1,6 +1,37 @@
-import { Editor, Transforms, Range, Element } from 'slate';
-import { BlockElementType } from '@/enums';
-import { convertBlockToLilist, LilistType, MAX_LIST_NUMBER } from '@/plugins/lilist';
+import { Editor, Transforms, Range, Element, Path } from 'slate';
+import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
+import { convertBlockToLilist, isLilistHost, LilistType, MAX_LIST_NUMBER } from '@/plugins/lilist';
+
+/** Markdown 代码围栏常用名 → 受支持语言 id（空/未知 → plaintext） */
+const FENCE_LANG_ALIASES: Record<string, string> = {
+  js: 'javascript',
+  javascript: 'javascript',
+  jsx: 'javascript',
+  ts: 'typescript',
+  typescript: 'typescript',
+  tsx: 'typescript',
+  py: 'python',
+  python: 'python',
+  java: 'java',
+  css: 'css',
+  json: 'json',
+  html: 'markup',
+  markup: 'markup',
+  sql: 'sql',
+  sh: 'bash',
+  bash: 'bash',
+  shell: 'bash',
+  go: 'go',
+  rust: 'rust',
+  rs: 'rust',
+};
+
+/** 生成一个代码行节点（含行号所需零宽字符） */
+const makeCodeLine = (text = ''): any => ({
+  type: BlockElementType.CODE_LINE,
+  id: `code-line-${crypto.randomUUID()}`,
+  children: [{ text }, { text: ZERO_WIDTH_SPACE }],
+});
 
 export const withMarkdownShortcuts = (editor: Editor) => {
   const { insertText } = editor;
@@ -33,12 +64,14 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     }
 
     const [node, blockPath] = result as [any, number[]];
-    const blockType = (node as any)?.type;
 
-    // 只处理段落块（包括没有type字段的默认段落）
-    const isParagraph =
-      blockType === BlockElementType.PARAGRAPH || blockType === undefined || blockType === null;
-    if (!isParagraph) {
+    // 段落与 H 标题都可作为快捷触发源；其它块（代码/表格等）不触发
+    const blockType = (node as any)?.type as BlockElementType | undefined;
+    const effectiveType =
+      blockType === undefined || blockType === null ? BlockElementType.PARAGRAPH : blockType;
+    const isConvertible =
+      effectiveType === BlockElementType.PARAGRAPH || effectiveType === BlockElementType.HEADING;
+    if (!isConvertible) {
       insertText(text);
       return;
     }
@@ -102,6 +135,54 @@ export const withMarkdownShortcuts = (editor: Editor) => {
       return;
     }
 
+    // 检测代码围栏：``` 或 ```js 等，按语言id映射，未知/空 → plaintext
+    const fenceMatch = beforeSpace.match(/^(`{3,}|\uFF40{3,})([A-Za-z0-9_-]*)$/);
+    if (fenceMatch) {
+      const langKey = (fenceMatch[2] || '').toLowerCase();
+      const language = FENCE_LANG_ALIASES[langKey] || 'plaintext';
+
+      // 删除围栏文本
+      Transforms.delete(editor, {
+        at: {
+          anchor: { path: [...blockPath, 0], offset: 0 },
+          focus: { path: [...blockPath, 0], offset: beforeSpace.length },
+        },
+      });
+
+      // 用代码块整体替换当前段落（代码块需合法 CODE_LINE 子节点）
+      const codeBlock = {
+        type: BlockElementType.CODE_BLOCK,
+        attrs: { language, wrap: true },
+        children: [makeCodeLine()],
+      };
+      Transforms.insertNodes(editor, codeBlock as any, { at: blockPath, select: false });
+      Transforms.removeNodes(editor, { at: Path.next(blockPath) } as any);
+      try {
+        Transforms.select(editor, Editor.start(editor, blockPath));
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+
+    // 检测待办事项语法：[ ] / [x] / []（无横线前缀）
+    const bareTodoMatch = beforeSpace.match(/^\[(\s*[x]?)\]\s*$/i);
+    if (bareTodoMatch) {
+      const isChecked = (bareTodoMatch[1] || '').trim().toLowerCase() === 'x';
+      Transforms.delete(editor, {
+        at: {
+          anchor: { path: [...blockPath, 0], offset: 0 },
+          focus: { path: [...blockPath, 0], offset: beforeSpace.length },
+        },
+      });
+      Transforms.setNodes(
+        editor,
+        { type: BlockElementType.TODO_LIST, attrs: { checked: isChecked } } as any,
+        { at: blockPath },
+      );
+      return;
+    }
+
     // 检测待办事项语法：- [ ] 或 - [x]
     const todoMatch = beforeSpace.match(/^-\s*\[([ x])\]\s*$/);
     if (todoMatch) {
@@ -128,6 +209,11 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     // 检测有序列表语法：数字 + .（如 "1."、"3."），任意位数数字都支持
     const olMatch = beforeSpace.match(/^(\d+)\.$/);
     if (olMatch) {
+      // 仅当宿主块支持有序列表（段落/标题）才转换，否则照常插入空格避免误删文本
+      if (!isLilistHost(LilistType.OL, effectiveType)) {
+        insertText(text);
+        return;
+      }
       // 起始数字超过上限（MAX_LIST_NUMBER）时从 1 开始
       const parsed = parseInt(olMatch[1], 10);
       const startNumber = parsed > MAX_LIST_NUMBER ? 1 : parsed;
@@ -147,6 +233,11 @@ export const withMarkdownShortcuts = (editor: Editor) => {
 
     // 检测无序列表语法：-（注意排在 --- 分割线、- [ ] 待办之后）
     if (/^-$/.test(beforeSpace)) {
+      // 无序列表仅段落支持（标题无序不在模型内），不支持时照常插入空格避免误删
+      if (!isLilistHost(LilistType.UL, effectiveType)) {
+        insertText(text);
+        return;
+      }
       Transforms.delete(editor, {
         at: {
           anchor: { path: [...blockPath, 0], offset: 0 },

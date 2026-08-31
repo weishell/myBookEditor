@@ -11,8 +11,10 @@
 //   - 其余按键：不拦截，走 Slate 默认行为
 import { Transforms, Editor, Range, Point } from 'slate';
 import type { Location } from 'slate';
+import { isHotkey } from 'is-hotkey';
 import { BlockElementType } from '@/enums';
-import { getLilist, removeLilist } from '@/plugins/lilist';
+import { getLilist, removeLilist, toggleLilist, LilistType } from '@/plugins/lilist';
+import { toggleBlock } from '@/plugins/blocks';
 import { handleEnter } from './handleEnter';
 import { handleTabIndent } from './handleTab';
 
@@ -106,6 +108,75 @@ const handleSelectAll = (editor: Editor, e: React.KeyboardEvent): boolean => {
 };
 
 /**
+ * Ctrl+Alt+0 → 段落：若在列表项内，先解绑列表（自动重排剩余编号）再回落成段落
+ */
+const handleToParagraph = (editor: Editor): void => {
+  const { selection } = editor;
+  if (selection) {
+    try {
+      const match = (editor as any).above({
+        match: (n: any) => (editor as any).isBlock(n),
+        mode: 'lowest',
+      });
+      if (match) {
+        const [node, path] = match as [any, number[]];
+        if (getLilist(node)) {
+          removeLilist(editor, path); // 内部会重排原组剩余编号
+          return;
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+  toggleBlock(editor, BlockElementType.PARAGRAPH);
+};
+
+/**
+ * 块的格式快捷键（跨平台，is-hotkey 的 mod = Mac 的 Cmd / Windows 的 Ctrl）：
+ *  - mod+alt+1~9 → H1~H9
+ *  - mod+alt+0   → 段落
+ *  - mod+shift+7 → 有序列表
+ *  - mod+shift+8 → 无序列表
+ * 列表开关走 toggleLilist：把段落转有序会与相邻有序合并成组、转段落时会重排剩余编号
+ * @returns 是否已消费该按键
+ */
+const handleBlockFormatShortcut = (editor: Editor, e: React.KeyboardEvent): boolean => {
+  if (isHotkey('mod+alt+0', e)) {
+    handleToParagraph(editor);
+    console.log('[keydown] mod+alt+0 → 段落');
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  }
+  // H1~H9
+  for (let level = 1; level <= 9; level++) {
+    if (isHotkey(`mod+alt+${level}`, e)) {
+      toggleBlock(editor, BlockElementType.HEADING, { level });
+      console.log(`[keydown] mod+alt+${level} → H${level}`);
+      e.preventDefault();
+      e.stopPropagation();
+      return true;
+    }
+  }
+  if (isHotkey('mod+shift+7', e)) {
+    toggleLilist(editor, LilistType.OL);
+    console.log('[keydown] mod+shift+7 → 有序列表');
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  }
+  if (isHotkey('mod+shift+8', e)) {
+    toggleLilist(editor, LilistType.UL);
+    console.log('[keydown] mod+shift+8 → 无序列表');
+    e.preventDefault();
+    e.stopPropagation();
+    return true;
+  }
+  return false;
+};
+
+/**
  * 列表项行首退格 → 退出列表（保留文字），与 Word / 飞书行为一致
  */
 const handleLilistBackspace = (editor: Editor): boolean => {
@@ -133,10 +204,14 @@ export const createKeyDownHandler = (editor: Editor) => {
     const keyLabel = describeKey(e);
     const blockType = getCurrentBlockType(editor) as BlockElementType | undefined;
 
-    // 组合键：Ctrl+A 全选需要手动同步 Slate selection，其余登记但不拦截
+    // 组合键：Ctrl+A 全选需要手动同步 Slate selection；块格式快捷键需拦截，其余登记但不拦截
     if (e.ctrlKey || e.metaKey || e.altKey) {
       if (handleSelectAll(editor, e)) {
         console.log('[keydown] ctrl/cmd+A → 手动同步 Slate 全选', { blockType });
+        return;
+      }
+      if (handleBlockFormatShortcut(editor, e)) {
+        console.log('[keydown] 块格式快捷键已消费', { key: keyLabel });
         return;
       }
       console.log('[keydown] 组合键（未拦截）', { key: keyLabel, blockType });
