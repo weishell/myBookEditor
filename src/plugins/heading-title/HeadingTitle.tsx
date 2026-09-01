@@ -17,6 +17,7 @@ interface HeadingTitleProps {
 interface TitleAttrs {
   coverUrl?: string;
   coverId?: string;
+  coverOffsetY?: number;
   icon?: string;
   author?: string;
   date?: string;
@@ -42,6 +43,12 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
   // anchor 使用 ref 保存，不触发 re-render
   const iconAnchorRef = useRef<HTMLButtonElement | null>(null);
   const coverAnchorRef = useRef<HTMLButtonElement | null>(null);
+
+  // 封面拖拽调整位置
+  const coverAreaRef = useRef<HTMLDivElement | null>(null);
+  const coverImgRef = useRef<HTMLImageElement | null>(null);
+  const liveCoverPosRef = useRef<number | null>(null);
+  const [isDraggingCover, setIsDraggingCover] = useState(false);
 
   const [showCoverPicker, setShowCoverPicker] = useState(false);
   const [showIconPicker, setShowIconPicker] = useState(false);
@@ -95,6 +102,55 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
     setShowCoverPicker(true);
   };
 
+  // 封面位置：拖动中用实时值，否则用 attrs.coverOffsetY（默认 50% = 居中）
+  const COVER_POS_DEFAULT = 50;
+  const coverPos =
+    liveCoverPosRef.current ??
+    (typeof attrs.coverOffsetY === 'number' ? attrs.coverOffsetY : COVER_POS_DEFAULT);
+
+  const handleCoverMouseDown = (e: React.MouseEvent<HTMLImageElement>) => {
+    if (e.button !== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    const startY = e.clientY;
+    const startPos = coverPos;
+    const containerH = coverAreaRef.current?.getBoundingClientRect().height ?? 240;
+    // 实际溢出 = 图片按 cover 缩放后的渲染高度 - 容器高度
+    // 3:1 图片在 3.74:1 容器里，溢出 ~ 容器宽/3 - 容器高
+    const containerW = coverAreaRef.current?.getBoundingClientRect().width ?? 800;
+    const imgRenderedH = containerW / 3; // 3:1 图片按宽度填满的高度
+    const scrollable = Math.max(1, imgRenderedH - containerH);
+    const sensitivity = 100 / scrollable;
+
+    liveCoverPosRef.current = startPos;
+    setIsDraggingCover(true);
+
+    const onMove = (ev: MouseEvent) => {
+      const deltaY = ev.clientY - startY;
+      // 鼠标向下拖 → 露出图片上方更多 → pos 减小
+      const next = Math.max(0, Math.min(100, startPos - deltaY * sensitivity));
+      liveCoverPosRef.current = next;
+      if (coverImgRef.current) {
+        coverImgRef.current.style.setProperty('--cover-pos', `${next}%`);
+      }
+    };
+
+    const onUp = () => {
+      window.removeEventListener('mousemove', onMove);
+      window.removeEventListener('mouseup', onUp);
+      const final = liveCoverPosRef.current;
+      if (final !== null) {
+        updateAttrs({ coverOffsetY: Math.round(final) });
+      }
+      liveCoverPosRef.current = null;
+      setIsDraggingCover(false);
+    };
+
+    window.addEventListener('mousemove', onMove);
+    window.addEventListener('mouseup', onUp);
+  };
+
   const displayDate = attrs.date || new Date().toISOString().slice(0, 10);
   const displayAuthor = attrs.author || '青柠脉动';
 
@@ -109,14 +165,20 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
     >
       {/* 封面区域 */}
       {attrs.coverUrl ? (
-        <div className={styles.coverArea}>
+        <div
+          ref={coverAreaRef}
+          className={`${styles.coverArea} ${isDraggingCover ? styles.coverAreaDragging : ''}`}
+        >
           <img
+            ref={coverImgRef}
             src={attrs.coverUrl}
             alt="cover"
             className={styles.coverImg}
+            style={{ '--cover-pos': `${coverPos}%` } as React.CSSProperties}
             draggable={false}
-            onMouseDown={(e) => e.preventDefault()}
+            onMouseDown={handleCoverMouseDown}
           />
+          <div className={styles.coverHint}>拖动调整位置</div>
           <div className={styles.coverActions}>
             <button
               type="button"
