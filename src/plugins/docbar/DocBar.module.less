@@ -1,7 +1,7 @@
 ﻿// DocBar 组件样式
 .docbar {
   position: fixed;
-  height: 24px;
+  height: 26px;
   display: flex;
   align-items: center;
   z-index: 1000;
@@ -9,8 +9,8 @@
 }
 
 .iconButton {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border: none;
   background: @bg-base;
   display: flex;
@@ -20,15 +20,16 @@
   box-shadow: @shadow-sm;
   padding: 0;
   cursor: var(--cursor-pointer);
+  border-radius: @radius-sm;
 
-  &:first-child {
+  &:first-child:not(:last-child) {
     border-radius: @radius-sm 0 0 @radius-sm;
   }
 }
 
 .dragButton {
-  width: 24px;
-  height: 24px;
+  width: 26px;
+  height: 26px;
   border: none;
   display: flex;
   align-items: center;

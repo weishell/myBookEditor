@@ -21,7 +21,7 @@ const lineProps = {
 };
 
 // 段落：无背景字母 T，直接融入文档（参考飞书 docbar）
-const ParagraphIcon = ({ color, size = 18 }: SvgIconProps) => (
+const ParagraphIcon = ({ color, size = 20 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24">
     <text x="12" y="17" fontSize="13.5" fill={color} textAnchor="middle" fontWeight="bold">
       T
@@ -30,7 +30,7 @@ const ParagraphIcon = ({ color, size = 18 }: SvgIconProps) => (
 );
 
 // 标题 H1-H9：无背景字母 H{level}，直接融入文档（参考飞书 docbar）
-const HeadingIcon = ({ color, size = 18, level = 1 }: SvgIconProps & { level?: number }) => (
+const HeadingIcon = ({ color, size = 20, level = 1 }: SvgIconProps & { level?: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24">
     <text
       x="12"
@@ -46,31 +46,21 @@ const HeadingIcon = ({ color, size = 18, level = 1 }: SvgIconProps & { level?: n
 );
 
 // 文档标题：T 形线性图标
-const TitleIcon = ({ color, size = 16 }: SvgIconProps) => (
+const TitleIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <path d="M7 5.5h10M12 5.5v13" />
   </svg>
 );
 
-// 空块：虚线框 + 加号
-const EmptyIcon = ({ color, size = 16 }: SvgIconProps) => (
+// 空块（仅段落）：纯 + 字，无背景
+const EmptyIcon = ({ color, size = 22 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <rect
-      x="6"
-      y="6"
-      width="12"
-      height="12"
-      rx="3"
-      stroke={color}
-      strokeWidth="1.5"
-      strokeDasharray="3 2"
-    />
-    <path d="M12 9v6M9 12h6" stroke={color} strokeWidth="1.5" strokeLinecap="round" />
+    <path d="M12 5v14M5 12h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
   </svg>
 );
 
 // 引用：双引号
-const QuoteIcon = ({ color, size = 16 }: SvgIconProps) => (
+const QuoteIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <path d="M10.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6H8.4c0-1.2.7-2 2.1-2" />
     <path d="M18.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6h-2.2c0-1.2.7-2 2.1-2" />
@@ -78,7 +68,7 @@ const QuoteIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 代码块：{} 花括号（对齐飞书）
-const CodeIcon = ({ color, size = 16 }: SvgIconProps) => (
+const CodeIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
     <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
@@ -86,7 +76,7 @@ const CodeIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 任务列表：方框 + 勾
-const TodoListIcon = ({ color, size = 16 }: SvgIconProps) => (
+const TodoListIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <rect x="5.5" y="5.5" width="13" height="13" rx="2" />
     <path d="M9 12l2 2 4-4" />
@@ -94,7 +84,7 @@ const TodoListIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 表格：表格线
-const TableIcon = ({ color, size = 16 }: SvgIconProps) => (
+const TableIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
     <path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17" />
@@ -102,7 +92,7 @@ const TableIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 图片：框 + 山 + 太阳
-const ImageIcon = ({ color, size = 16 }: SvgIconProps) => (
+const ImageIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
     <circle cx="8.5" cy="8.5" r="1.5" />
@@ -111,7 +101,7 @@ const ImageIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 流程图：菱形 + 矩形 + 连线（参考飞书流程图图标）
-const DrawioIcon = ({ color, size = 16 }: SvgIconProps) => (
+const DrawioIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <rect x="9" y="2.5" width="6" height="6" rx="1" transform="rotate(45 12 5.5)" />
     <rect x="3" y="15.5" width="7" height="6" rx="1" />
@@ -121,7 +111,7 @@ const DrawioIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 倒计时：沙漏（对齐飞书倒计时图标）
-const CountdownIcon = ({ color, size = 16 }: SvgIconProps) => (
+const CountdownIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <path d="M5 22h14M5 2h14" />
     <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
@@ -130,7 +120,7 @@ const CountdownIcon = ({ color, size = 16 }: SvgIconProps) => (
 );
 
 // 拖拽手柄
-const DragIcon = ({ color = '#999', size = 14 }: SvgIconProps) => (
+const DragIcon = ({ color = '#999', size = 16 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
     <path d="M9 6h6M9 12h6M9 18h6" />
   </svg>
@@ -149,13 +139,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
     return { component: lilist.list_type === LilistType.OL ? OlListIcon : UlListIcon };
   }
 
-  // 当标题或段落为空时，显示加号图标
-  if (
-    isEmpty &&
-    (type === BlockElementType.HEADING ||
-      type === BlockElementType.HEADING_TITLE ||
-      type === BlockElementType.PARAGRAPH)
-  ) {
+  // 只有"段落"空行才显示 +；其他类型空行仍展示对应类型的图标
+  if (isEmpty && type === BlockElementType.PARAGRAPH) {
     return { component: EmptyIcon };
   }
 
@@ -305,15 +290,15 @@ export const DocBar = () => {
     currentElement.attrs,
     currentElement.isEmpty,
   );
-  // 空块图标：浅色模式用深灰（接近主题黑），暗黑模式不能写死深色，否则暗底上看不见
-  const iconColor = currentElement.isEmpty && !isDarkMode ? '#262626' : getElementColor(isDarkMode);
+  // 全部使用主题色（空行也要展示主题色，与正文图标保持一致）
+  const iconColor = getElementColor(isDarkMode);
 
   return (
     <div
       data-docbar-area
       className={styles.docbar}
       style={{
-        left: currentElement.rect.left - 52,
+        left: currentElement.rect.left - (currentElement.isEmpty ? 30 : 56),
         top: currentElement.rect.top + 4,
       }}
       onMouseEnter={handleIconMouseEnter}
@@ -322,14 +307,17 @@ export const DocBar = () => {
       <div className={styles.iconButton}>
         <IconComponent color={iconColor} {...props} />
       </div>
-      <button
-        className={styles.dragButton}
-        disabled
-        title="拖拽排序功能开发中"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <DragIcon color="#999" />
-      </button>
+      {/* 空行不显示拖拽手柄（功能未开放且占用空间），非空行才显示但保持禁用态 */}
+      {!currentElement.isEmpty && (
+        <button
+          className={styles.dragButton}
+          disabled
+          title="拖拽排序功能开发中"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <DragIcon color="#999" />
+        </button>
+      )}
     </div>
   );
 };

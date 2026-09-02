@@ -115,7 +115,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
               style={{
                 maxWidth: PAGE_WIDTH_NORMAL,
                 margin: '0 auto',
-                padding: '40px 50px',
+                padding: '40px 65px',
                 // 暗黑模式：编辑纸去掉背景和边框，让底层壁纸透出来
                 border: isDarkMode ? 'none' : '1px solid #e8e8e8',
                 borderRadius: '8px',
