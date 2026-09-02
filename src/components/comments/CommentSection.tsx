@@ -102,10 +102,30 @@ const IconSend = () => (
   </svg>
 );
 
+const IconTrash = () => (
+  <svg
+    width="15"
+    height="15"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3 6h18" />
+    <path d="M8 6V4h8v2" />
+    <path d="M6 6l1 14h10l1-14" />
+    <path d="M10 11v5M14 11v5" />
+  </svg>
+);
+
 const CommentSection: React.FC = () => {
   const [comments, setComments] = useState<CommentItem[]>(loadComments);
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
+  // 待确认删除的评论 id（null 表示无待确认项）
+  const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
   useEffect(() => {
     try {
@@ -131,6 +151,20 @@ const CommentSection: React.FC = () => {
     setValue('');
   };
 
+  // 删除评论：从列表移除并同步 localStorage（useEffect 自动落盘）
+  const removeComment = (id: string) => {
+    setComments((c) => c.filter((item) => item.id !== id));
+    setPendingDelete((cur) => (cur === id ? null : cur));
+  };
+
+  // 点击页面空白处取消待确认状态
+  useEffect(() => {
+    if (!pendingDelete) return;
+    const onDocClick = () => setPendingDelete(null);
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [pendingDelete]);
+
   return (
     <section className={styles.section}>
       <header className={styles.header}>
@@ -141,7 +175,10 @@ const CommentSection: React.FC = () => {
       <div className={styles.list}>
         {comments.length === 0 && <div className={styles.empty}>暂无评论，快来抢沙发～</div>}
         {comments.map((c) => (
-          <div key={c.id} className={styles.item}>
+          <div
+            key={c.id}
+            className={`${styles.item} ${pendingDelete === c.id ? styles.itemConfirming : ''}`}
+          >
             <div className={styles.avatar} style={{ backgroundColor: c.color }}>
               {c.author.slice(0, 1)}
             </div>
@@ -149,8 +186,39 @@ const CommentSection: React.FC = () => {
               <div className={styles.meta}>
                 <span className={styles.name}>{c.author}</span>
                 <span className={styles.time}>{formatTime(c.createTime)}</span>
+                {pendingDelete !== c.id && (
+                  <button
+                    type="button"
+                    className={styles.deleteBtn}
+                    title="删除评论"
+                    aria-label="删除评论"
+                    onMouseDown={(e) => e.stopPropagation()}
+                    onClick={() => setPendingDelete((cur) => (cur === c.id ? null : c.id))}
+                  >
+                    <IconTrash />
+                  </button>
+                )}
               </div>
               <div className={styles.text}>{c.content}</div>
+              {pendingDelete === c.id && (
+                <div className={styles.confirmBar} onMouseDown={(e) => e.stopPropagation()}>
+                  <span className={styles.confirmText}>确认删除这条评论？</span>
+                  <button
+                    type="button"
+                    className={styles.confirmAction}
+                    onClick={() => setPendingDelete(null)}
+                  >
+                    取消
+                  </button>
+                  <button
+                    type="button"
+                    className={`${styles.confirmAction} ${styles.danger}`}
+                    onClick={() => removeComment(c.id)}
+                  >
+                    删除
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         ))}

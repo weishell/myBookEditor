@@ -55,6 +55,82 @@
   padding: 12px 0;
 }
 
+// 删除按钮：默认隐藏，鼠标悬浮到该条评论时才出现（对齐飞书）
+.deleteBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: auto; // 靠右
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #8f959e;
+  cursor: var(--cursor-pointer);
+  opacity: 0;
+  transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #f0f1f3;
+    color: #e5484d;
+  }
+}
+
+.item:hover .deleteBtn {
+  opacity: 1;
+}
+
+// 处于确认删除态时，该条评论常驻高亮底色
+.itemConfirming {
+  background-color: rgba(15, 23, 42, 0.03);
+  border-radius: 6px;
+  padding-left: 8px;
+  padding-right: 8px;
+}
+
+.confirmBar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.confirmText {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: #8f959e;
+}
+
+.confirmAction {
+  height: 26px;
+  padding: 0 12px;
+  border: 1px solid #dee0e3;
+  border-radius: 4px;
+  background: #fff;
+  color: #1f2329;
+  font-size: 13px;
+  cursor: var(--cursor-pointer);
+  transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #f0f1f3;
+  }
+}
+
+.danger {
+  border-color: #e5484d;
+  background: #e5484d;
+  color: #fff;
+
+  &:hover {
+    background: color-mix(in srgb, #e5484d 85%, #000);
+    border-color: color-mix(in srgb, #e5484d 85%, #000);
+  }
+}
+
 .avatar {
   flex-shrink: 0;
   width: 32px;
@@ -221,6 +297,31 @@
   .inputBox {
     background-color: transparent;
     border-color: #2b3240;
+  }
+
+  .itemConfirming {
+    background-color: rgba(255, 255, 255, 0.05);
+  }
+
+  .confirmAction {
+    border-color: #2b3240;
+    background: transparent;
+    color: #e5e7eb;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .danger {
+    border-color: #e5484d;
+    background: #e5484d;
+    color: #fff;
+  }
+
+  .deleteBtn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #e5484d;
   }
 
   .actionBtn:hover {

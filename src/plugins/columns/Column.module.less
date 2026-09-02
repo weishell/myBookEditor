@@ -1,10 +1,11 @@
-// 分栏列 —— 对齐飞书：每列是一块浅灰圆角卡片，列间以留白间隙分隔
+// 分栏列 —— 对齐飞书：默认与正常文本一致（无底色），
+// 仅在鼠标悬浮时才显示浅灰背景，提示当前列的可交互区域
 .column {
   position: relative;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  background: rgba(15, 23, 42, 0.045);
+  background: transparent;
   border-radius: 10px;
   padding: 6px;
   margin-right: 12px; // 列间留白
@@ -16,7 +17,7 @@
   }
 
   &:hover {
-    background: rgba(15, 23, 42, 0.07);
+    background: rgba(15, 23, 42, 0.045);
     box-shadow: 0 1px 5px rgba(15, 23, 42, 0.05);
   }
 }
@@ -65,7 +66,7 @@
     height: 16px;
     margin: -8px 0 0 -3.5px;
     border-radius: 8px;
-    background: #cdd3dc;
+    background: transparent; // 默认隐藏悬浮手柄，只有列被悬浮时再显示
     transition: background 0.15s ease, height 0.15s ease;
   }
 }
@@ -73,7 +74,7 @@
 .column:hover .resizeLine,
 .columnDragging .resizeLine {
   height: 56px;
-  background: var(--theme-primary, #3370ff);
+  background: transparent;
 
   &::after {
     height: 22px;
@@ -114,17 +115,17 @@
   transform: scale(1);
 }
 
-// 深色模式：卡片底色换成暗灰
+// 深色模式：默认同样透明，悬浮时显示暗灰底色
 :global(.dark-mode) {
   .column {
-    background: rgba(255, 255, 255, 0.05);
+    background: transparent;
 
     &:hover {
-      background: rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.05);
     }
   }
 
   .resizeLine::after {
-    background: #3a4150;
+    background: transparent; // 深色模式同样默认隐藏手柄，悬浮时再由上面的 .column:hover 规则覆盖
   }
 }
