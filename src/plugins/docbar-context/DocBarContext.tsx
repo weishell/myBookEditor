@@ -20,6 +20,7 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
   const timerRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const hoveredElementRef = useRef<HTMLElement | null>(null);
+  const suppressRef = useRef(false);
 
   useEffect(() => {
     const updateActiveElement = (element: HTMLElement) => {
@@ -57,6 +58,11 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const handleMouseMove = (e: MouseEvent) => {
+      // 表格内拖选单元格等高优先级场景：整段拖拽期间完全屏蔽 DocBar
+      if (suppressRef.current) {
+        return;
+      }
+
       const target = e.target as HTMLElement;
 
       if (timerRef.current) {
@@ -102,6 +108,24 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
       if (frameRef.current) {
         cancelAnimationFrame(frameRef.current);
       }
+    };
+  }, []);
+
+  // 表格内跨单元格拖拽选中（合并单元格等场景）时，压制 DocBar 弹出
+  useEffect(() => {
+    const onTableCellSelect = (e: Event) => {
+      const selecting = (e as CustomEvent<{ selecting?: boolean }>).detail?.selecting;
+      suppressRef.current = !!selecting;
+      if (selecting) {
+        hoveredElementRef.current = null;
+        if (timerRef.current) clearTimeout(timerRef.current);
+        if (frameRef.current) cancelAnimationFrame(frameRef.current);
+        setActiveElement(null);
+      }
+    };
+    window.addEventListener('trae:table-cell-select', onTableCellSelect as EventListener);
+    return () => {
+      window.removeEventListener('trae:table-cell-select', onTableCellSelect as EventListener);
     };
   }, []);
 

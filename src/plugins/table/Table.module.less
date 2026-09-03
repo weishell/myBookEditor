@@ -199,6 +199,30 @@
   }
 }
 
+// ========== 跨单元格整格选区（拖拽选中） ==========
+.cellRangeHighlight {
+  position: absolute;
+  z-index: 4;
+  pointer-events: none;
+
+  &::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: @color-primary;
+    opacity: 0.12;
+  }
+
+  &::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    box-sizing: border-box;
+    border: 1.5px solid @color-primary;
+    opacity: 0.55;
+  }
+}
+
 // ========== 删除工具栏 ==========
 .selectionToolbar {
   position: absolute;

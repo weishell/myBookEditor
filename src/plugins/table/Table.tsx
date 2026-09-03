@@ -54,6 +54,21 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const [selectedRow, setSelectedRow] = useState<number | null>(null);
   const [selectedCol, setSelectedCol] = useState<number | null>(null);
 
+  // 跨单元格拖拽选中的矩形范围（合并/拆分等操作的基础）。r0/c0=锚点格，r1/c1=当前格。
+  const [cellRange, setCellRange] = useState<{
+    r0: number;
+    c0: number;
+    r1: number;
+    c1: number;
+  } | null>(null);
+  const cellDragRef = useRef<{
+    anchorRow: number;
+    anchorCol: number;
+    moved: boolean;
+    startX: number;
+    startY: number;
+  } | null>(null);
+
   // hover 预览状态
   const [hoveredRow, setHoveredRow] = useState<number | null>(null);
   const [hoveredCol, setHoveredCol] = useState<number | null>(null);
@@ -165,6 +180,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 用 ref 存储测量数据，避免拖拽回调的依赖问题
   const colDotsRef = useRef(colDots);
   colDotsRef.current = colDots;
+  const rowDotsRef = useRef(rowDots);
+  rowDotsRef.current = rowDots;
   const tableSizeRef = useRef(tableSize);
   tableSizeRef.current = tableSize;
 
@@ -244,6 +261,46 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     return out;
   }, [colDots]);
 
+  // 跨格选中：把视口坐标换算成「内容坐标」，再对照 colDots/rowDots 命中行列。
+  // 用纯几何而非 elementFromPoint/DOM 属性，天然免疫 docbar 等悬浮覆盖层，锚点和移动保持一致。
+  const getCellFromPoint = useCallback((clientX: number, clientY: number) => {
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return null;
+    const scroller = scrollRef.current;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const scrollTop = scroller ? scroller.scrollTop : 0;
+    const scrollLeft = scroller ? scroller.scrollLeft : 0;
+    const cy = clientY - wrapperRect.top + scrollTop;
+    const cx = clientX - wrapperRect.left + scrollLeft;
+    const rd = rowDotsRef.current;
+    const cd = colDotsRef.current;
+
+    let row = -1;
+    for (let i = 0; i < rd.length - 1; i++) {
+      if (cy >= rd[i].top && cy < rd[i + 1].top) {
+        row = i;
+        break;
+      }
+    }
+    if (row === -1 && rd.length >= 2 && cy >= rd[rd.length - 2].top - 0.5) {
+      row = rd.length - 2; // 命中最后一行
+    }
+
+    let col = -1;
+    for (let i = 0; i < cd.length - 1; i++) {
+      if (cx >= cd[i].left && cx < cd[i + 1].left) {
+        col = i;
+        break;
+      }
+    }
+    if (col === -1 && cd.length >= 2 && cx >= cd[cd.length - 2].left - 0.5) {
+      col = cd.length - 2;
+    }
+
+    if (row < 0 || col < 0) return null;
+    return { row, col };
+  }, []);
+
   // 合并 Slate ref 和本地 ref
   const setSlateDivRef = useCallback(
     (el: HTMLDivElement | null) => {
@@ -308,6 +365,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         setShowDots(false);
         setSelectedRow(null);
         setSelectedCol(null);
+        setCellRange(null);
       }
     };
     document.addEventListener('mousedown', handleOutsideMouseDown);
@@ -589,6 +647,66 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     [editor, element],
   );
 
+  // ========== 跨单元格拖拽选中 ==========
+  // 抑制 DocBar：拖选期间让 docbar-context 清空 activeElement，避免"选中整格区域"时误弹块工具栏
+  const setDocbarCellSelect = useCallback((selecting: boolean) => {
+    window.dispatchEvent(new CustomEvent('trae:table-cell-select', { detail: { selecting } }));
+  }, []);
+
+  useEffect(() => {
+    const takeOver = () => {
+      // 接管拖拽：清掉浏览器/Slate 正在做的文本选区，避免后续误选文字或光标乱跑
+      const sel = window.getSelection();
+      if (sel && sel.rangeCount > 0) sel.removeAllRanges();
+      Transforms.deselect(editor);
+      setDocbarCellSelect(true);
+    };
+
+    const resolveCell = (e: MouseEvent) => getCellFromPoint(e.clientX, e.clientY);
+
+    const onMouseMove = (e: MouseEvent) => {
+      const drag = cellDragRef.current;
+      if (!drag) return;
+      if (!(e.buttons & 1)) {
+        // 鼠标已抬起但 move 最后触发 → 按抬起处理
+        if (cellDragRef.current) cellDragRef.current = null;
+        return;
+      }
+      const cell = resolveCell(e);
+      if (!cell) return;
+      // 只有指针真正进入「不同」的单元格，才进入整格选中。
+      // 仍停在锚点格内时不做任何接管，保留浏览器原生文本选择（同格内可正常选字）。
+      if (!drag.moved) {
+        if (cell.row === drag.anchorRow && cell.col === drag.anchorCol) return;
+        drag.moved = true;
+        takeOver();
+      }
+      setCellRange({
+        r0: drag.anchorRow,
+        c0: drag.anchorCol,
+        r1: cell.row,
+        c1: cell.col,
+      });
+    };
+
+    const onMouseUp = () => {
+      const drag = cellDragRef.current;
+      if (!drag) return;
+      // 单击（无位移）→ 回到单格编辑，清空范围
+      if (!drag.moved) setCellRange(null);
+      cellDragRef.current = null;
+      setDocbarCellSelect(false);
+    };
+
+    document.addEventListener('mousemove', onMouseMove, true);
+    document.addEventListener('mouseup', onMouseUp, true);
+    return () => {
+      document.removeEventListener('mousemove', onMouseMove, true);
+      document.removeEventListener('mouseup', onMouseUp, true);
+      setDocbarCellSelect(false);
+    };
+  }, [editor, setDocbarCellSelect, getCellFromPoint]);
+
   // ========== 行列选中 ==========
   const handleSelectRow = useCallback(
     (rowIndex: number, e: React.MouseEvent) => {
@@ -596,6 +714,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setSelectedRow((prev) => (prev === rowIndex ? null : rowIndex));
       setSelectedCol(null);
+      setCellRange(null);
       setHoveredCol(null);
       setHoveredRow(null);
       setIsPinned(true);
@@ -618,6 +737,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
       setSelectedCol((prev) => (prev === colIndex ? null : colIndex));
       setSelectedRow(null);
+      setCellRange(null);
       setHoveredCol(null);
       setHoveredRow(null);
       setIsPinned(true);
@@ -924,6 +1044,30 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       />
     ) : null;
 
+  // 跨单元格拖拽选中的矩形高亮（整格选中，便于合并/拆分）
+  const cellRangeHighlight =
+    cellRange !== null &&
+    colDots.length > Math.max(cellRange.c0, cellRange.c1) + 1 &&
+    rowDots.length > Math.max(cellRange.r0, cellRange.r1) + 1
+      ? (() => {
+          const top = rowDots[Math.min(cellRange.r0, cellRange.r1)]?.top || 0;
+          const bottom = rowDots[Math.max(cellRange.r0, cellRange.r1) + 1]?.top || top;
+          const left = colDots[Math.min(cellRange.c0, cellRange.c1)]?.left || 0;
+          const right = colDots[Math.max(cellRange.c0, cellRange.c1) + 1]?.left || left;
+          return (
+            <div
+              className={styles.cellRangeHighlight}
+              style={{
+                top,
+                left,
+                width: Math.max(0, right - left),
+                height: Math.max(0, bottom - top),
+              }}
+            />
+          );
+        })()
+      : null;
+
   // 渲染时实时判断横向溢出与滚动边界（替代异步 state，保证 hover 表格必现滚动条/阴影）
   const hsScroller = scrollRef.current;
   const overflowNow = !!hsScroller && hsScroller.scrollWidth > hsScroller.clientWidth + 1;
@@ -940,6 +1084,17 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleWrapperMouseMove}
       onMouseDown={(e) => {
+        // 记录锚点：在单元格内按下即可能开始拖选（跨格才接管，单击仍正常编辑）
+        const anchorCell = getCellFromPoint(e.clientX, e.clientY);
+        if (anchorCell) {
+          cellDragRef.current = {
+            anchorRow: anchorCell.row,
+            anchorCol: anchorCell.col,
+            moved: false,
+            startX: e.clientX,
+            startY: e.clientY,
+          };
+        }
         // Bug 1：点击 wrapper 内非单元格、非交互控件时，事件会冒泡到外层
         // Slate contentEditable 并产生光标。仅对白名单节点放行：
         const t = e.target as HTMLElement;
@@ -1250,6 +1405,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         {/* 选中高亮 */}
         {selectedRowHighlight}
         {selectedColHighlight}
+
+        {/* 跨单元格整格选区 */}
+        {cellRangeHighlight}
 
         <div
           ref={setSlateDivRef}
