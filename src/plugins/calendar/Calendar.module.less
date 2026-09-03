@@ -1,0 +1,659 @@
+// 日历块样式。
+// 布局要点：每个「周行」用 grid 画 7 个格子，日程条单独一层绝对定位浮在
+// 格子上方（.eventLayer），因此跨日期的日程在一周之内是连续不断的一条，
+// 跨周时才断开成两段（左段右圆角、右段左圆角）。
+
+.calendar {
+  --cell-head-h: 44px; // 日期数字 + 副标题区
+  --cell-events-h: 64px; // 日程条区
+  --bar-h: 18px; // 单条日程高度
+  --bar-gap: 3px; // 日程条间距
+  --cell-w: 7;
+
+  box-sizing: border-box;
+  position: relative;
+  width: 100%;
+  padding: 12px 14px 14px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 13px;
+  color: #1f2329;
+  user-select: none;
+}
+
+// ---------- 头部 ----------
+.header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.title {
+  min-width: 108px;
+  font-size: 16px;
+  font-weight: 600;
+  text-align: center;
+}
+
+.iconBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #646a73;
+  cursor: var(--cursor-pointer);
+  transition: background 0.15s ease, color 0.15s ease;
+
+  &:hover {
+    background: #f0f1f3;
+    color: var(--theme-primary, #3370ff);
+  }
+}
+
+.todayBtn {
+  height: 26px;
+  padding: 0 10px;
+  border: 1px solid #dee0e3;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  color: #1f2329;
+  cursor: var(--cursor-pointer);
+  transition: all 0.15s ease;
+
+  &:hover {
+    border-color: var(--theme-primary, #3370ff);
+    color: var(--theme-primary, #3370ff);
+  }
+}
+
+.spacer {
+  flex: 1;
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  background: transparent;
+  font-size: 12px;
+  color: #8f959e;
+  cursor: var(--cursor-pointer);
+  transition: all 0.15s ease;
+
+  &:hover {
+    background: #f0f1f3;
+  }
+
+  &.toggleOn {
+    border-color: var(--theme-primary, #3370ff);
+    color: var(--theme-primary, #3370ff);
+    background: color-mix(in srgb, var(--theme-primary, #3370ff) 8%, transparent);
+  }
+}
+
+// ---------- 星期栏 ----------
+.weekdays {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 28px;
+  margin-bottom: 2px;
+
+  div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    color: #8f959e;
+  }
+
+  .weekendHead {
+    color: #e5484d;
+  }
+}
+
+// ---------- 月历主体 ----------
+.body {
+  display: flex;
+  flex-direction: column;
+}
+
+.weekRow {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: calc(var(--cell-head-h) + var(--cell-events-h));
+}
+
+.cell {
+  position: relative;
+  box-sizing: border-box;
+  border-top: 1px solid #eef0f2;
+  border-left: 1px solid #eef0f2;
+  cursor: var(--cursor-pointer);
+  transition: background 0.12s ease;
+
+  &:last-child {
+    border-right: 1px solid #eef0f2;
+  }
+
+  &:hover {
+    background: rgba(51, 112, 255, 0.05);
+  }
+}
+
+.weekRow:last-child .cell {
+  border-bottom: 1px solid #eef0f2;
+}
+
+// 非本月补白
+.cellPad {
+  background: #fafbfc;
+
+  .dayNum {
+    color: #c3c7cd;
+  }
+
+  .subLabel {
+    color: #d0d4d9;
+  }
+}
+
+// 周末底色
+.cellWeekend {
+  background: #fcfcfd;
+}
+
+.cellPad.cellWeekend {
+  background: #f7f8fa;
+}
+
+.cellHead {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 3px 6px 0;
+  box-sizing: border-box;
+}
+
+.dayNum {
+  // 今天：主题色实心圆点
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 4px;
+  border-radius: 10px;
+  font-size: 13px;
+  line-height: 1;
+  color: #1f2329;
+  box-sizing: border-box;
+}
+
+// 周末日期数字：与工作日区分（红色系）
+.dayNumWeekend {
+  color: #e5484d;
+}
+
+.dayNumPad {
+  color: #c3c7cd;
+}
+
+.dayNumToday {
+  background: var(--theme-primary, #3370ff);
+  color: #fff;
+  font-weight: 600;
+}
+
+.subLabel {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  font-size: 11px;
+  line-height: 1;
+  color: #a5a9b0;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+// 节日副标题：主题色 + 加粗
+.subFestival {
+  color: #e5484d;
+  font-weight: 500;
+}
+
+// 节气副标题
+.subTerm {
+  color: #41b584;
+}
+
+.festivalEmoji {
+  margin-right: 1px;
+  font-size: 10px;
+}
+
+// 法定节日：格子加一层淡色底
+.cellFestival {
+  background: rgba(229, 72, 77, 0.045);
+
+  &.cellWeekend {
+    background: rgba(229, 72, 77, 0.06);
+  }
+}
+
+// ---------- 日程条层 ----------
+.eventLayer {
+  position: absolute;
+  top: var(--cell-head-h);
+  left: 0;
+  right: 0;
+  height: var(--cell-events-h);
+  // 让空白处的点击穿透到下面的格子（用于新建日程）
+  pointer-events: none;
+}
+
+.eventBar {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  height: var(--bar-h);
+  padding: 0 5px;
+  border-radius: 4px;
+  font-size: 11px;
+  line-height: 1;
+  color: #fff;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: var(--cursor-pointer);
+  // 条本身需要接收点击
+  pointer-events: auto;
+  box-sizing: border-box;
+  transition: filter 0.12s ease, box-shadow 0.12s ease;
+
+  &:hover {
+    filter: brightness(1.08);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.18);
+  }
+}
+
+// 跨周断开时的圆角处理：续接的一侧改为直角
+.barContinuesLeft {
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+}
+
+.barContinuesRight {
+  border-top-right-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.barActive {
+  outline: 2px solid var(--theme-primary, #3370ff);
+  outline-offset: 1px;
+}
+
+.overflowTip {
+  position: absolute;
+  right: 2px;
+  height: 14px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 10px;
+  line-height: 14px;
+  color: #8f959e;
+  pointer-events: none;
+}
+
+// ---------- 日程编辑面板 ----------
+.panel {
+  position: absolute;
+  top: 52px;
+  right: 14px;
+  z-index: 20;
+  width: 250px;
+  padding: 12px;
+  border: 1px solid #e8e8e8;
+  border-radius: 8px;
+  background: #fff;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.14);
+  user-select: text;
+}
+
+.panelTitle {
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.field {
+  margin-bottom: 10px;
+}
+
+.label {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 11px;
+  color: #8f959e;
+}
+
+.input,
+.dateInput {
+  box-sizing: border-box;
+  width: 100%;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid #dee0e3;
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: inherit;
+  color: #1f2329;
+  background: #fff;
+  outline: none;
+  transition: border-color 0.15s ease;
+
+  &:focus {
+    border-color: var(--theme-primary, #3370ff);
+  }
+}
+
+.dateRow {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dateSep {
+  color: #8f959e;
+  font-size: 12px;
+}
+
+.colors {
+  display: flex;
+  gap: 6px;
+}
+
+.colorDot {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 50%;
+  cursor: var(--cursor-pointer);
+  transition: transform 0.12s ease;
+
+  &:hover {
+    transform: scale(1.12);
+  }
+
+  &.colorActive {
+    border-color: #1f2329;
+  }
+}
+
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.btnPrimary {
+  flex: 1;
+  height: 28px;
+  border: none;
+  border-radius: 4px;
+  background: var(--theme-primary, #3370ff);
+  color: #fff;
+  font-size: 12px;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    filter: brightness(0.94);
+  }
+}
+
+.btnGhost {
+  height: 28px;
+  padding: 0 12px;
+  border: 1px solid #dee0e3;
+  border-radius: 4px;
+  background: #fff;
+  font-size: 12px;
+  color: #1f2329;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    background: #f0f1f3;
+  }
+}
+
+.btnDanger {
+  height: 28px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 4px;
+  background: #e5484d;
+  color: #fff;
+  font-size: 12px;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    filter: brightness(0.94);
+  }
+}
+
+.hint {
+  margin-top: 10px;
+  font-size: 11px;
+  color: #a5a9b0;
+}
+
+// ---------- 日程查看面板 ----------
+.detailHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.detailDot {
+  flex-shrink: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.detailMeta {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.detailMetaLabel {
+  flex-shrink: 0;
+  color: #8f959e;
+}
+
+.detailMetaValue {
+  color: #1f2329;
+  word-break: break-word;
+}
+
+.detailSep {
+  color: #a5a9b0;
+}
+
+.detailActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+// ---------- 深色模式 ----------
+:global(.dark-mode) {
+  .calendar {
+    border-color: #2b3240;
+    background: transparent;
+    color: #e5e7eb;
+  }
+
+  .iconBtn {
+    color: #8f959e;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--theme-primary, #3370ff);
+    }
+  }
+
+  .todayBtn {
+    border-color: #2b3240;
+    background: transparent;
+    color: #e5e7eb;
+  }
+
+  .toggle {
+    color: #5f6670;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .weekdays div {
+    color: #5f6670;
+  }
+
+  .weekendHead {
+    color: #f07d82;
+  }
+
+  .cell {
+    border-top-color: #232936;
+    border-left-color: #232936;
+
+    &:last-child {
+      border-right-color: #232936;
+    }
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.05);
+    }
+  }
+
+  .weekRow:last-child .cell {
+    border-bottom-color: #232936;
+  }
+
+  .cellPad {
+    background: rgba(255, 255, 255, 0.02);
+
+    .dayNum {
+      color: #4a525f;
+    }
+
+    .subLabel {
+      color: #3f4753;
+    }
+  }
+
+  .cellWeekend {
+    background: rgba(255, 255, 255, 0.015);
+  }
+
+  .dayNum {
+    color: #e5e7eb;
+  }
+
+  .dayNumWeekend {
+    color: #f07d82;
+  }
+
+  .dayNumPad {
+    color: #4a525f;
+  }
+
+  .subLabel {
+    color: #6b7280;
+  }
+
+  .subFestival {
+    color: #f07d82;
+  }
+
+  .subTerm {
+    color: #52c41a;
+  }
+
+  .cellFestival {
+    background: rgba(240, 125, 130, 0.08);
+  }
+
+  .overflowTip {
+    background: rgba(255, 255, 255, 0.08);
+    color: #6b7280;
+  }
+
+  .panel {
+    border-color: #2b3240;
+    background: #121721;
+    box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+  }
+
+  .panelTitle {
+    color: #e5e7eb;
+  }
+
+  .input,
+  .dateInput {
+    border-color: #2b3240;
+    background: transparent;
+    color: #e5e7eb;
+  }
+
+  .btnGhost {
+    border-color: #2b3240;
+    background: transparent;
+    color: #e5e7eb;
+
+    &:hover {
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+
+  .hint {
+    color: #4a525f;
+  }
+
+  .detailMetaLabel {
+    color: #5f6670;
+  }
+
+  .detailMetaValue {
+    color: #e5e7eb;
+  }
+
+  .detailSep {
+    color: #4a525f;
+  }
+}

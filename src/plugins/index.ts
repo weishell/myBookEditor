@@ -30,3 +30,4 @@ export * from './hyperlink';
 export * from './countdown';
 export * from './media';
 export * from './columns';
+export * from './calendar';

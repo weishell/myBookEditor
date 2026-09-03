@@ -22,6 +22,7 @@ export const BlockElementType = {
   COUNTDOWN: 'countdown',
   COLUMN_GROUP: 'column-group',
   COLUMN: 'column',
+  CALENDAR: 'calendar',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

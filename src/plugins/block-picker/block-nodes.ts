@@ -76,6 +76,20 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         },
         children: [{ text: ZERO_WIDTH_SPACE }],
       } as Element;
+    case BlockElementType.CALENDAR:
+      return {
+        type,
+        id,
+        attrs: {
+          year: new Date().getFullYear(),
+          month: new Date().getMonth() + 1,
+          events: [],
+          showLunar: true,
+          showTerm: true,
+          weekStart: 1,
+        },
+        children: [{ text: ZERO_WIDTH_SPACE }],
+      } as Element;
     case BlockElementType.FILE_BLOCK:
       return {
         type,

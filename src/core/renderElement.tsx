@@ -22,6 +22,7 @@ import {
   Countdown,
   ColumnGroup,
   Column,
+  Calendar,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -148,6 +149,15 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
     case BlockElementType.COLUMN:
       return (
         <Column attributes={attributes} children={children} pluginId={el.id} element={el as any} />
+      );
+    case BlockElementType.CALENDAR:
+      return (
+        <Calendar
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
       );
     default:
       return (

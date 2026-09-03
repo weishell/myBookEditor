@@ -860,4 +860,86 @@ export const initialValue: Descendant[] = [
     },
     children: [{ text: ZERO_WIDTH_SPACE }],
   },
+
+  // —— 日历示例（含农历/节气/节日 + 跨日期日程）——
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '日历示例' }],
+  },
+  {
+    type: BlockElementType.CALENDAR,
+    id: uuidv4(),
+    attrs: {
+      // 默认展示当月，让示例日程一打开就能看到
+      year: new Date().getFullYear(),
+      month: new Date().getMonth() + 1,
+      events: makeDemoCalendarEvents(),
+      showLunar: true,
+      showTerm: true,
+      weekStart: 1,
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
 ];
+
+/**
+ * 构造一组贴合"当前展示月"的示例日程（相对当月日期动态生成，
+ * 保证任何月份打开都能在当前视图里看到日程条）：
+ *  - 单日事件（与另一条单日事件同日，演示泳道叠放）
+ *  - 跨 3 天事件（演示连续横条）
+ *  - 跨周边界事件（演示周断、圆角续接）
+ *  - 跨月事件（演示视口裁剪）
+ */
+function makeDemoCalendarEvents() {
+  const now = new Date();
+  const y = now.getFullYear();
+  const m = now.getMonth() + 1; // 1-12
+  const pad2 = (n: number) => String(n).padStart(2, '0');
+  const iso = (year: number, month: number, day: number) => `${year}-${pad2(month)}-${pad2(day)}`;
+  const lastDay = new Date(y, m, 0).getDate();
+  // 上月/下月（用于跨月事件）
+  const prev = new Date(y, m - 2, 1);
+  const next = new Date(y, m, 1);
+
+  const day = (d: number) => iso(y, m, Math.min(lastDay, Math.max(1, d)));
+
+  return [
+    {
+      id: 'cal-ev-1',
+      title: '团队周会',
+      start: day(3),
+      end: day(3),
+      color: '#3370ff',
+    },
+    {
+      id: 'cal-ev-2',
+      title: '需求评审',
+      start: day(3),
+      end: day(3),
+      color: '#f2a54a',
+    },
+    {
+      id: 'cal-ev-3',
+      title: '产品发布准备',
+      start: day(10),
+      end: day(12),
+      color: '#41b584',
+    },
+    {
+      id: 'cal-ev-4',
+      title: '项目总结',
+      start: day(Math.min(lastDay, 26)),
+      end: iso(next.getFullYear(), next.getMonth() + 1, 3),
+      color: '#e85a71',
+    },
+    {
+      id: 'cal-ev-5',
+      title: '上月收尾',
+      start: iso(prev.getFullYear(), prev.getMonth() + 1, 28),
+      end: day(2),
+      color: '#7b6cf0',
+    },
+  ];
+}
