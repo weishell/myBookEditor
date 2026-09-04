@@ -122,7 +122,9 @@ export const Countdown: React.FC<CountdownProps> = ({
                     {value}
                   </span>
                 </div>
-                <span className={styles.label}>{ABBR[i]}</span>
+                <span className={styles.label} style={{ color: accent }}>
+                  {ABBR[i]}
+                </span>
               </div>
             </React.Fragment>
           ))}
