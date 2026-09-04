@@ -119,6 +119,27 @@ const CountdownIcon = ({ color, size = 18 }: SvgIconProps) => (
   </svg>
 );
 
+// 日历：方框 + 顶部双耳 + 圆点日期（对齐飞书日历图标）
+const CalendarIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="3.5" y="5" width="17" height="15" rx="2" />
+    <path d="M3.5 10h17M8 3v4M16 3v4" />
+    <circle cx="8" cy="14" r="1" fill={color} stroke="none" />
+    <circle cx="12" cy="14" r="1" fill={color} stroke="none" />
+    <circle cx="16" cy="14" r="1" fill={color} stroke="none" />
+  </svg>
+);
+
+// 时间轴：三个圆点 + 虚线连接（对齐飞书时间轴图标）
+const TimelineIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M3 12h18" strokeDasharray="2 2" />
+    <circle cx="6" cy="12" r="1.6" fill={color} stroke="none" />
+    <circle cx="12" cy="12" r="1.6" fill={color} stroke="none" />
+    <circle cx="18" cy="12" r="1.6" fill={color} stroke="none" />
+  </svg>
+);
+
 // 拖拽手柄
 const DragIcon = ({ color = '#999', size = 16 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -182,6 +203,10 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: DrawioIcon };
     case BlockElementType.COUNTDOWN:
       return { component: CountdownIcon };
+    case BlockElementType.CALENDAR:
+      return { component: CalendarIcon };
+    case BlockElementType.TIMELINE:
+      return { component: TimelineIcon };
     default:
       return { component: ParagraphIcon };
   }
