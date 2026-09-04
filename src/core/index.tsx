@@ -34,6 +34,7 @@ import {
   withEditorBehaviors,
   withDelete,
 } from '@/editor-extensions';
+import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
 import { withColumns } from '@/plugins';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
@@ -148,6 +149,8 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 onKeyDown={handleKeyDown}
                 readOnly={readOnly}
               />
+              {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}
+              {!readOnly && <TrailingAddZone />}
             </div>
             {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互 */}
             <CommentSection />
