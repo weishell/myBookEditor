@@ -1,0 +1,494 @@
+// Timeline 时间轴组件样式 —— 对齐飞书视觉规格
+
+// ===== 四色主题（蓝 / 绿 / 紫 / 青）=====
+@dot-blue: #3370ff;
+@dot-green: #34c724;
+@dot-purple: #7f3bf5;
+@dot-cyan: #0fa9ac;
+
+@card-blue: #e1eaff;
+@card-green: #e3f4e7;
+@card-purple: #f0e9fe;
+@card-cyan: #dff8fb;
+
+@axis-color: #d4d7dc;
+@hover-line: #3370ff;
+@time-text: #8f959e;
+
+.wrapper {
+  margin: @spacing-sm 0;
+  display: flex;
+  user-select: none;
+  width: 100%;
+  position: relative;
+}
+
+// ===== 编辑器级悬浮工具栏 =====
+.toolbar {
+  position: absolute;
+  top: -44px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0;
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  padding: 2px;
+  z-index: 10000;
+  box-shadow: @shadow-md;
+  border: 1px solid @border-color-light;
+  white-space: nowrap;
+}
+
+.toolbarButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background-color: transparent;
+  border-radius: @radius-sm;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+// ===== 主容器 =====
+.frame {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+
+.container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  background-color: @bg-base;
+}
+
+.containerSelected {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px @color-primary;
+}
+
+// ===== 右上角操作栏（fixed 在 frame 内，不随 container 滚动）=====
+.topRightBar {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  z-index: 100;
+  border-radius: @radius-sm;
+  white-space: nowrap;
+}
+
+.commentBtn,
+.iconBtn {
+  height: 28px;
+  border: none;
+  background: transparent;
+  border-radius: @radius-sm;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: @text-secondary;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  padding: 0 4px;
+
+  &:hover {
+    background: @bg-hover;
+    color: @text-primary;
+  }
+}
+
+.commentBtn {
+  width: auto;
+  gap: 4px;
+  padding: 0 6px;
+}
+
+.commentText {
+  font-size: @font-size-sm;
+}
+
+// ===== 设置面板（fixed 在 frame 内，不随 container 滚动）=====
+.settingsPanel {
+  position: absolute;
+  top: 40px;
+  right: 12px;
+  background: @bg-base;
+  border-radius: @radius-md;
+  box-shadow: @shadow-lg;
+  border: 1px solid @border-color-light;
+  padding: 6px 0;
+  z-index: 101;
+  min-width: 140px;
+}
+
+.settingsItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 7px 16px;
+  cursor: var(--cursor-pointer);
+  font-size: @font-size-sm;
+  color: @text-primary;
+  transition: background 0.15s;
+
+  &:hover {
+    background: @bg-hover;
+  }
+}
+
+.settingsLabel {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkIcon {
+  color: @color-primary;
+  font-size: 13px;
+}
+
+.settingsDivider {
+  height: 1px;
+  background: @border-color-light;
+  margin: 4px 0;
+}
+
+// ============================================================
+// 横向布局
+// ============================================================
+.canvasH {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 16px 24px;
+  display: flex;
+  align-items: stretch;
+}
+
+.trackH {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  flex: 1;
+  min-width: max-content;
+}
+
+// 节点：三行 grid（上半区 / 圆点 / 下半区），圆点恒在轴线中央
+.nodeH {
+  display: grid;
+  grid-template-rows: 1fr auto 1fr;
+  width: 208px;
+  flex-shrink: 0;
+}
+
+.halfTop {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end; // 内容贴轴
+  padding-bottom: 14px;
+  min-height: 0;
+}
+
+.halfBottom {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start; // 内容贴轴
+  padding-top: 8px; // 时间标签贴轴更紧
+  min-height: 0;
+}
+
+.dotRow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+// 节点之间的连接线段 —— 默认圆点虚线（动态：节点插入 → 段出现；节点删除 → 段消失）
+.gapH {
+  position: relative;
+  width: 56px;
+  align-self: stretch;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 4px;
+    transform: translateY(-50%);
+    background-image: radial-gradient(circle, @axis-color 1.2px, transparent 1.6px);
+    background-size: 7px 4px;
+    background-repeat: repeat-x;
+    background-position: 0 center;
+  }
+
+  &:hover::before {
+    background: @hover-line;
+  }
+}
+
+.gapWideH {
+  width: 110px;
+}
+
+// 悬浮出现的 + 按钮
+.gapAddBtn {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: @hover-line;
+  color: #fff;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 15px;
+  line-height: 1;
+  padding: 0;
+  box-shadow: 0 2px 6px rgba(51, 112, 255, 0.4);
+  z-index: 5;
+
+  &:hover {
+    transform: translate(-50%, -50%) scale(1.12);
+  }
+}
+
+// ============================================================
+// 纵向布局
+// ============================================================
+.canvasV {
+  position: relative;
+  min-width: 100%;
+  min-height: 100%;
+  padding: 24px 32px;
+  display: flex;
+  justify-content: center;
+}
+
+.trackV {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: max-content;
+}
+
+// 节点：三列 grid（左半区 / 圆点 / 右半区）
+.nodeV {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.colLeft {
+  display: flex;
+  justify-content: flex-end; // 卡片贴轴
+  padding-right: 16px;
+}
+
+.colRight {
+  display: flex;
+  justify-content: flex-start; // 时间贴轴
+  padding-left: 16px;
+}
+
+.dotCol {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gapV {
+  position: relative;
+  height: 52px;
+  width: 100%;
+  flex-shrink: 0;
+  cursor: pointer;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    transform: translateX(-50%);
+    background-image: radial-gradient(circle, @axis-color 1.2px, transparent 1.6px);
+    background-size: 4px 7px;
+    background-repeat: repeat-y;
+    background-position: center 0;
+  }
+
+  &:hover::before {
+    background: @hover-line;
+  }
+}
+
+.gapWideV {
+  height: 96px;
+}
+
+// ===== 圆点 =====
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+
+  &.dotBlue { background: @dot-blue; }
+  &.dotGreen { background: @dot-green; }
+  &.dotPurple { background: @dot-purple; }
+  &.dotCyan { background: @dot-cyan; }
+}
+
+// ===== 卡片 =====
+.card {
+  position: relative;
+  width: 176px;
+  border-radius: 8px;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: box-shadow 0.2s ease;
+  border: none;
+}
+
+.card:hover {
+  box-shadow: 0 4px 12px rgba(31, 35, 41, 0.1);
+}
+
+.cardBlue { background: @card-blue; }
+.cardGreen { background: @card-green; }
+.cardPurple { background: @card-purple; }
+.cardCyan { background: @card-cyan; }
+
+.cardSelected {
+  box-shadow: 0 0 0 2px @color-primary;
+}
+
+.cardTitle {
+  font-size: @font-size-md;
+  font-weight: 500;
+  color: #1f2329;
+  outline: none;
+  border: 1px solid transparent;
+  border-radius: @radius-sm;
+  padding: 2px 4px;
+  margin: -2px -4px;
+  word-break: break-word;
+
+  &:focus {
+    border-color: @color-primary;
+    background: @bg-base;
+  }
+  &:empty::before {
+    content: attr(data-placeholder);
+    color: #b8bcc4;
+    font-weight: 400;
+  }
+}
+
+.cardDetail {
+  font-size: @font-size-sm;
+  color: #646a73;
+  outline: none;
+  border: 1px solid transparent;
+  border-radius: @radius-sm;
+  padding: 2px 4px;
+  margin: 1px -4px -2px;
+  word-break: break-word;
+
+  &:focus {
+    border-color: @color-primary;
+    background: @bg-base;
+  }
+  &:empty::before {
+    content: attr(data-placeholder);
+    color: #b8bcc4;
+  }
+}
+
+// ===== 时间标签（与卡片分居轴两侧）=====
+.timeLabel {
+  font-size: @font-size-sm;
+  color: @time-text;
+  outline: none;
+  border: 1px solid transparent;
+  border-radius: @radius-sm;
+  padding: 2px 8px;
+  text-align: center;
+  min-width: 44px;
+  background: transparent;
+  word-break: break-word;
+
+  &:hover {
+    border-color: @border-color;
+  }
+  &:focus {
+    border-color: @color-primary;
+    background: @bg-base;
+    color: @text-primary;
+  }
+  &:empty::before {
+    content: attr(data-placeholder);
+    color: #b8bcc4;
+  }
+}
+
+// ===== 删除按钮（hover 卡片显示）=====
+.deleteBtn {
+  position: absolute;
+  top: -9px;
+  right: -9px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 1px solid @border-color;
+  background: @bg-base;
+  color: @text-secondary;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  padding: 0;
+  opacity: 0;
+  transition: all 0.15s ease;
+  z-index: 3;
+
+  &:hover {
+    background: #ff4d4f;
+    border-color: #ff4d4f;
+    color: #fff;
+  }
+}
+
+.card:hover .deleteBtn {
+  opacity: 1;
+}

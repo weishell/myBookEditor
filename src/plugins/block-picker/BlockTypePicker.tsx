@@ -65,6 +65,7 @@ const COMMON_ITEMS: BlockTypeOption[] = [
   { type: BlockElementType.COLUMN_GROUP, label: '分栏', icon: '▦', isColumn: true },
   { type: BlockElementType.COUNTDOWN, label: '倒计时', icon: '⏳' },
   { type: BlockElementType.CALENDAR, label: '日历', icon: '📅' },
+  { type: BlockElementType.TIMELINE, label: '时间轴', icon: '📎' },
   { type: BlockElementType.DRAWIO, label: '流程图', icon: '⇄', disabled: true },
   { type: BlockElementType.DIVIDER, label: '分隔线', icon: '—', disabled: true },
 ];

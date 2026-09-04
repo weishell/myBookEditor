@@ -90,6 +90,44 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         },
         children: [{ text: ZERO_WIDTH_SPACE }],
       } as Element;
+    case BlockElementType.TIMELINE:
+      return {
+        type,
+        id,
+        attrs: {
+          width: 700,
+          height: 280,
+          direction: 'horizontal' as const,
+          sideMode: 'alternate' as const,
+          items: [
+            {
+              id: uuidv4(),
+              title: '项目启动',
+              detail: '完成需求调研与立项评审',
+              time: '2023年1月',
+            },
+            {
+              id: uuidv4(),
+              title: '原型设计',
+              detail: '输出高保真原型并通过评审',
+              time: '2023年3月',
+            },
+            {
+              id: uuidv4(),
+              title: '开发阶段',
+              detail: '核心功能模块开发与联调',
+              time: '2023年6月',
+            },
+            {
+              id: uuidv4(),
+              title: '测试上线',
+              detail: '完成验收测试并正式发布',
+              time: '2023年9月',
+            },
+          ],
+        },
+        children: [{ text: ZERO_WIDTH_SPACE }],
+      } as Element;
     case BlockElementType.FILE_BLOCK:
       return {
         type,

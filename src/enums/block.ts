@@ -23,6 +23,7 @@ export const BlockElementType = {
   COLUMN_GROUP: 'column-group',
   COLUMN: 'column',
   CALENDAR: 'calendar',
+  TIMELINE: 'timeline',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

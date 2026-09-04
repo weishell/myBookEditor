@@ -882,6 +882,63 @@ export const initialValue: Descendant[] = [
     },
     children: [{ text: ZERO_WIDTH_SPACE }],
   },
+
+  // —— 时间轴示例（横向 + 交替布局）——
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '时间轴示例' }],
+  },
+  {
+    type: BlockElementType.TIMELINE,
+    id: uuidv4(),
+    attrs: {
+      width: 700,
+      height: 300,
+      direction: 'horizontal',
+      sideMode: 'alternate',
+      items: [
+        { id: uuidv4(), title: '项目启动', detail: '完成需求调研与立项评审', time: '2023年1月' },
+        { id: uuidv4(), title: '原型设计', detail: '输出高保真原型并通过评审', time: '2023年3月' },
+        { id: uuidv4(), title: '开发阶段', detail: '核心功能模块开发与联调', time: '2023年6月' },
+        { id: uuidv4(), title: '测试上线', detail: '完成验收测试并正式发布', time: '2023年9月' },
+      ],
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '点击时间轴右上角的齿轮图标可切换「交替 / 同侧」和「水平 / 垂直」排列。卡片上的标题、详情、时间均可直接点击编辑，时间支持中文（如「第二年」）和数字（如「2024」）任意输入。',
+      },
+    ],
+  },
+
+  // —— 时间轴示例（纵向 + 同侧布局）——
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [{ text: '下方是纵向 + 同侧排列的时间轴：' }],
+  },
+  {
+    type: BlockElementType.TIMELINE,
+    id: uuidv4(),
+    attrs: {
+      width: 900,
+      height: 520,
+      direction: 'vertical',
+      sideMode: 'same',
+      items: [
+        { id: uuidv4(), title: '第一阶段', detail: '搭建基础框架', time: '第一年' },
+        { id: uuidv4(), title: '第二阶段', detail: '完善核心功能', time: '第二年' },
+        { id: uuidv4(), title: '第三阶段', detail: '性能优化与推广', time: '第三年' },
+      ],
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
 ];
 
 /**
