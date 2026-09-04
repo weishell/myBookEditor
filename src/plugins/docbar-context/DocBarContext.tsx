@@ -1,4 +1,12 @@
-import { createContext, useContext, useState, useEffect, useRef, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import { BlockElementType } from '@/enums';
 
 interface ActiveElementInfo {
@@ -7,10 +15,12 @@ interface ActiveElementInfo {
   attrs?: any;
   isEmpty?: boolean;
   rect: DOMRect;
+  el?: HTMLElement;
 }
 
 interface DocBarContextType {
   activeElement: ActiveElementInfo | null;
+  refreshActiveElement: () => void;
 }
 
 const DocBarContext = createContext<DocBarContextType | null>(null);
@@ -53,7 +63,14 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
           return current;
         }
 
-        return { id: pluginId, type: blockType, attrs, isEmpty, rect };
+        return {
+          id: pluginId,
+          type: blockType,
+          attrs,
+          isEmpty,
+          rect,
+          el: element,
+        };
       });
     };
 
@@ -129,7 +146,32 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
     };
   }, []);
 
-  return <DocBarContext.Provider value={{ activeElement }}>{children}</DocBarContext.Provider>;
+  // 滚动停止后重新测量 activeElement 的真实位置（滚动期间 rect 会过期）；
+  // 若已被滚出可视区则隐藏。存入 el 供此处复测。
+  const refreshActiveElement = useCallback(() => {
+    setActiveElement((current) => {
+      if (!current?.el) return current;
+      const rect = current.el.getBoundingClientRect();
+      const visible =
+        rect.width > 0 && rect.height > 0 && rect.bottom > 0 && rect.top < window.innerHeight;
+      if (!visible) return null;
+      if (
+        rect.left === current.rect.left &&
+        rect.top === current.rect.top &&
+        rect.width === current.rect.width &&
+        rect.height === current.rect.height
+      ) {
+        return current; // 引用不变，React 跳过重渲染
+      }
+      return { ...current, rect };
+    });
+  }, []);
+
+  return (
+    <DocBarContext.Provider value={{ activeElement, refreshActiveElement }}>
+      {children}
+    </DocBarContext.Provider>
+  );
 };
 
 export const useDocBar = () => {

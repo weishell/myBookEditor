@@ -218,7 +218,7 @@ const getElementColor = (isDarkMode: boolean): string => {
 };
 
 export const DocBar = () => {
-  const { activeElement } = useDocBar();
+  const { activeElement, refreshActiveElement } = useDocBar();
   const { openMenu, closeMenu, hoveringMenu } = useMenu();
   const { hasSelection } = useSelection();
   const { isDarkMode } = useTheme();
@@ -235,6 +235,8 @@ export const DocBar = () => {
         clearTimeout(scrollTimerRef.current);
       }
       scrollTimerRef.current = window.setTimeout(() => {
+        // 滚动停止：重新测量 activeElement 的真实位置，再恢复显示
+        refreshActiveElement();
         setIsScrolling(false);
       }, 200);
     };
@@ -245,7 +247,7 @@ export const DocBar = () => {
         clearTimeout(scrollTimerRef.current);
       }
     };
-  }, []);
+  }, [refreshActiveElement]);
 
   useEffect(() => {
     return () => {
