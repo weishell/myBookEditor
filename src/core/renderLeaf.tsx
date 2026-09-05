@@ -2,6 +2,7 @@ import type { RenderLeafProps } from 'slate-react';
 import { CODE_TOKEN_COLORS } from '@/utils/code-decoration';
 import { useTheme } from '@/context/ThemeContext';
 import { HYPERLINK_KEY, getLinkColor, HyperlinkLeaf } from '@/plugins/hyperlink';
+import codeStyles from '@/plugins/leaf/Leaf.module.less';
 
 const TOKEN_COLOR_ENTRIES = Object.entries(CODE_TOKEN_COLORS).map(([tokenType, color]) => ({
   color,
@@ -151,9 +152,16 @@ export const RenderLeaf = (props: RenderLeafProps) => {
     }
   }
 
+  // 行内代码：包一层 <code>（背景/字体栈等样式见 Leaf.module.less 的 .code，自动适配暗黑模式）。
+  // 注意：核心渲染入口是 renderLeaf.tsx 的 RenderLeaf，Leaf.tsx 组件未接入编辑器，不能依赖它。
+  let content = children;
+  if ((leaf as any).code) {
+    content = <code className={codeStyles.code}>{content}</code>;
+  }
+
   const leafContent = (
     <span {...attributes} style={style}>
-      {children}
+      {content}
     </span>
   );
 
@@ -164,7 +172,7 @@ export const RenderLeaf = (props: RenderLeafProps) => {
         attributes={attributes as unknown as Record<string, unknown>}
         style={style}
       >
-        {children}
+        {content}
       </HyperlinkLeaf>
     );
   }

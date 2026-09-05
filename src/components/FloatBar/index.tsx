@@ -432,7 +432,14 @@ export default function FloatBar() {
           />
         </div>
         <div className={styles.divider} />
-        <ToolButton icon="{" onClick={() => handleFormatClick(MarkTypes.CODE, true)} />
+        <ToolButton
+          icon={
+            <span style={{ fontFamily: 'monospace', fontSize: 13, letterSpacing: '-1px' }}>
+              &lt;/&gt;
+            </span>
+          }
+          onClick={() => handleFormatClick(MarkTypes.CODE, true)}
+        />
         <ToolButton
           icon="“"
           onClick={() => handleFormatClick(BlockElementType.BLOCKQUOTE, false)}

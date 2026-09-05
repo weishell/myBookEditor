@@ -1,4 +1,5 @@
 import type { Editor } from 'slate';
+import { MarkTypes } from '../marks';
 
 export interface ArtTextStyle {
   type: 'gradient' | 'glow' | 'shadow';
@@ -15,6 +16,11 @@ export interface ArtTextStyle {
 export const ART_TEXT_KEY = 'artText';
 
 export const setArtTextStyle = (editor: Editor, style: ArtTextStyle | null) => {
+  // 渐变字与背景高亮互斥：渐变字通过 background-clip 覆盖 background-color，
+  // 应用渐变字时自动清除背景色，避免叠加后背景色"无效"。(glow/shadow 不影响背景，不处理)
+  if (style && style.type === 'gradient') {
+    (editor as any).removeMark(MarkTypes.HIGHLIGHT);
+  }
   if (style) {
     (editor as any).addMark(ART_TEXT_KEY, JSON.stringify(style));
   } else {

@@ -37,8 +37,8 @@ export const withMarkdownShortcuts = (editor: Editor) => {
   const { insertText } = editor;
 
   editor.insertText = (text) => {
-    // 只处理空格插入
-    if (text !== ' ') {
+    // 只处理 markdown 触发字符：空格、反引号（`/全角｀）
+    if (text !== ' ' && text !== '`' && text !== '\uFF40') {
       insertText(text);
       return;
     }
@@ -72,6 +72,38 @@ export const withMarkdownShortcuts = (editor: Editor) => {
     const isConvertible =
       effectiveType === BlockElementType.PARAGRAPH || effectiveType === BlockElementType.HEADING;
     if (!isConvertible) {
+      insertText(text);
+      return;
+    }
+
+    // 行内代码 markdown 快捷：输入 `code` 再补闭合反引号，把中间内容转为行内代码 mark。
+    const isBacktick = text === '`' || text === '\uFF40';
+    if (isBacktick) {
+      const [textNode] = Editor.node(editor, anchor.path) as [any, number[]];
+      const nodeText = textNode?.text || '';
+      const beforeInNode = nodeText.slice(0, anchor.offset);
+      const openIdx = Math.max(beforeInNode.lastIndexOf('`'), beforeInNode.lastIndexOf('\uFF40'));
+      if (openIdx >= 0) {
+        const content = beforeInNode.slice(openIdx + 1);
+        // 开反引号后必须是至少一个字符的内容（不含反引号/换行），才判定为闭合
+        if (/^[^`\uFF40\n]+$/.test(content) && content.length > 0) {
+          // 1) 删除开头的反引号
+          Transforms.select(editor, {
+            anchor: { path: anchor.path, offset: openIdx },
+            focus: { path: anchor.path, offset: openIdx + 1 },
+          });
+          Transforms.delete(editor);
+          // 2) 对中间内容应用 code mark（此时内容从 offset openIdx 起）
+          Transforms.select(editor, {
+            anchor: { path: anchor.path, offset: openIdx },
+            focus: { path: anchor.path, offset: openIdx + content.length },
+          });
+          editor.addMark('code', true);
+          // 3) 光标回到内容末尾（闭合反引号原本所在处），且不插入本次反引号
+          Transforms.collapse(editor, { edge: 'end' });
+          return;
+        }
+      }
       insertText(text);
       return;
     }

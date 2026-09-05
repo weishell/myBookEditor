@@ -213,10 +213,14 @@ const handleMarkShortcut = (editor: Editor, e: React.KeyboardEvent): boolean => 
   let format = '';
   if (isHotkey('mod+b', e)) format = MarkTypes.BOLD;
   else if (isHotkey('mod+i', e)) format = MarkTypes.ITALIC;
+  else if (isHotkey('mod+shift+c', e)) format = MarkTypes.CODE;
   else return false;
 
   toggleMark(editor, format);
-  console.log(`[keydown] mod+${format === MarkTypes.BOLD ? 'b' : 'i'} → ${format}`);
+  const markKey = { [MarkTypes.BOLD]: 'b', [MarkTypes.ITALIC]: 'i', [MarkTypes.CODE]: 'shift+c' }[
+    format
+  ];
+  console.log(`[keydown] mod+${markKey} → ${format}`);
   e.preventDefault();
   e.stopPropagation();
   return true;

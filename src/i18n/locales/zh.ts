@@ -74,6 +74,7 @@ export default {
   toast: {
     indentOnlyText: '缩进仅针对文本类内容',
     indentMaxReached: '已达到最大缩进限制',
+    artTextGradientConflict: '渐变字与背景色互斥，请先清除艺术字再设背景色',
   },
   fontSwitcher: {
     title: '全文字体',

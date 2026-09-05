@@ -687,7 +687,11 @@ export const initialValue: Descendant[] = [
       { text: '文字颜色', color: '#1890ff' },
       { text: '和' },
       { text: '高亮背景', highlight: '#fff5b1' },
-      { text: '。' },
+      { text: '，以及' },
+      { text: '行内代码', code: true },
+      { text: '（选中文字按 ' },
+      { text: 'Ctrl+Shift+C', code: true },
+      { text: ' 或输入 `code` 反引号快捷插入）。' },
     ],
   },
   {

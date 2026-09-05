@@ -74,6 +74,7 @@ export default {
   toast: {
     indentOnlyText: 'Indent is only available for text content',
     indentMaxReached: 'Maximum indentation limit reached',
+    artTextGradientConflict: 'Gradient text conflicts with background color. Clear art text first.',
   },
   fontSwitcher: {
     title: 'Document Font',

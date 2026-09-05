@@ -13,7 +13,8 @@ import { ReactEditor } from 'slate-react';
 import { Editor } from 'slate';
 import styles from './InlineToast.module.less';
 
-export type ToastKey = 'toast.indentOnlyText' | 'toast.indentMaxReached';
+export type ToastKey =
+  'toast.indentOnlyText' | 'toast.indentMaxReached' | 'toast.artTextGradientConflict';
 
 interface ToastItem {
   id: number;
