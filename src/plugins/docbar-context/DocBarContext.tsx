@@ -30,6 +30,7 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
   const timerRef = useRef<number | null>(null);
   const frameRef = useRef<number | null>(null);
   const hoveredElementRef = useRef<HTMLElement | null>(null);
+  const lastAttrsStrRef = useRef<string | null>(null);
   const suppressRef = useRef(false);
 
   useEffect(() => {
@@ -51,6 +52,7 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
       const rect = element.getBoundingClientRect();
       const isEmpty = element.getAttribute('data-empty') === 'true';
       setActiveElement((current) => {
+        // 比较 attrs（含 lilist）是否变化：列表/层级等只在 attrs 改变时不刷新图标会停在旧状态
         if (
           current?.id === pluginId &&
           current.type === blockType &&
@@ -58,7 +60,8 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
           current.rect.left === rect.left &&
           current.rect.top === rect.top &&
           current.rect.width === rect.width &&
-          current.rect.height === rect.height
+          current.rect.height === rect.height &&
+          JSON.stringify(current.attrs) === JSON.stringify(attrs)
         ) {
           return current;
         }
@@ -94,11 +97,15 @@ export const DocBarProvider = ({ children }: { children: ReactNode }) => {
       const element = target.closest('[data-plugin-id]') as HTMLElement | null;
 
       if (element) {
-        if (hoveredElementRef.current === element) {
+        // 同一元素且 DOM attrs 未变化：跳过刷新，避免无效 getBoundingClientRect；
+        // attrs 变了（如给标题加上有序列表）则必须重读，否则 DocBar 图标停在旧状态
+        const attrsStr = element.getAttribute('data-block-attrs');
+        if (hoveredElementRef.current === element && lastAttrsStrRef.current === attrsStr) {
           return;
         }
 
         hoveredElementRef.current = element;
+        lastAttrsStrRef.current = attrsStr;
         if (frameRef.current) {
           cancelAnimationFrame(frameRef.current);
         }

@@ -1094,6 +1094,134 @@ export const initialValue: Descendant[] = [
       },
     ],
   },
+
+  // —— H 标题 OL 按 level 合并规则测试 ——
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: 'H 标题 OL 合并规则（按 level + 设置状态）' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '规则：向上/向下找最近的 H 标题，比较 level。level ≤ 当前（同/更高）：设了合、没设终止；level > 当前（更低）：设了合、没设继续。',
+      },
+    ],
+  },
+  // 场景 1：H1 没设 OL，H2 设 OL → 应终止（独立新序列）
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '场景 1：H1 没设 OL → H2 设 OL 应独立成组' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 1 },
+    children: [{ text: '场景1 - H1（未设 OL）' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [{ text: 'H1 和 H2 之间夹了段落，没设 OL 的 H3 也夹在中间' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '场景1 - 夹的 H3（未设 OL，应被跳过）' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '场景1 - H2（点此 → 设 OL，应独立成组编号 1.）' }],
+  },
+  // 场景 2：H1 设了 OL，H2 设 OL → 应合并到 H1 序列
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '场景 2：H1 已设 OL → H2 设 OL 应合并到 H1 同组' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: {
+      level: 1,
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: 'demo-h-ol-1',
+        list_number: 1,
+        list_custom: true,
+      },
+    },
+    children: [{ text: '场景2 - H1（已设 OL，编号 1）' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [{ text: '中间段落和没设 OL 的 H3' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '场景2 - 夹的 H3（未设 OL）' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: {
+      level: 2,
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: 'demo-h-ol-1',
+        list_number: 2,
+        list_custom: false,
+      },
+    },
+    children: [{ text: '场景2 - H2（已设 OL 与 H1 同组，应编号 1.1）' }],
+  },
+  // 场景 3：H3 后面 H4 设 OL（H3 设了）→ 应合并
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '场景 3：H3 已设 OL → H4 设 OL 应合并到 H3 同组' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: {
+      level: 3,
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: 'demo-h-ol-2',
+        list_number: 1,
+        list_custom: true,
+      },
+    },
+    children: [{ text: '场景3 - H3（已设 OL，编号 1）' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: {
+      level: 4,
+      lilist: {
+        list_type: LilistType.OL,
+        list_id: 'demo-h-ol-2',
+        list_number: 2,
+        list_custom: false,
+      },
+    },
+    children: [{ text: '场景3 - H4（已设 OL 与 H3 同组，应编号 1.1）' }],
+  },
 ];
 
 /**

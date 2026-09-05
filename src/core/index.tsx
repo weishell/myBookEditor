@@ -34,6 +34,7 @@ import {
   withMarkdownShortcuts,
   withEditorBehaviors,
   withDelete,
+  withLilist,
 } from '@/editor-extensions';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
 import { withColumns } from '@/plugins';
@@ -64,12 +65,14 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
             withCalendar(
               withCountdown(
                 withEditorBehaviors(
-                  withHyperlink(
-                    withColumns(
-                      withMention(
-                        withInlineFormula(
-                          withMarkdownShortcuts(
-                            withCodeBlock(withHistory(withReact(createEditor()))),
+                  withLilist(
+                    withHyperlink(
+                      withColumns(
+                        withMention(
+                          withInlineFormula(
+                            withMarkdownShortcuts(
+                              withCodeBlock(withHistory(withReact(createEditor()))),
+                            ),
                           ),
                         ),
                       ),

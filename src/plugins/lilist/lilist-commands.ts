@@ -72,6 +72,105 @@ const getPrevConnectListId = (
   return undefined;
 };
 
+/**
+ * H 标题设置 OL 时专用的"按 level + 设置状态"查找（仅看 H 标题，跳过段落等非 H 块）
+ *
+ * 规则：
+ *  - 向上找最近的 HEADING 块
+ *  - 该 H 的 level ≤ 当前 level（H1/H2 对 H2 → 同级或更高级）：
+ *      设了同类型 OL → 返回其 list_id（合并）
+ *      没设或不同类型 → 返回 undefined（终止，自己作为新序列锚点）
+ *  - 该 H 的 level > 当前 level（H3 对 H2 → 更低级）：
+ *      设了同类型 OL → 返回其 list_id（合并）
+ *      没设或不同类型 → 继续向上找下一个 H
+ *  - 直到文档头或遇到满足终止条件
+ */
+const getPrevHeadingConnectListId = (
+  editor: Editor,
+  path: Path,
+  type: LilistType,
+  curLevel: number,
+): string | undefined => {
+  const topIndex = path[path.length - 1];
+  if (topIndex === 0) return undefined;
+  try {
+    const children = (editor as any).children as any[];
+    for (let i = topIndex - 1; i >= 0; i--) {
+      const prev = children[i];
+      // 只看 H 标题；遇到非 H 块（段落、图片等）跳过
+      if (prev?.type !== BlockElementType.HEADING) continue;
+      const prevLevel = prev?.attrs?.level ?? 1;
+      const prevLilist = getLilist(prev);
+      const sameType = prevLilist?.list_type === type;
+      if (prevLevel <= curLevel) {
+        // 同级或更高级（H1/H2 对 H2）：看是否设了同类型 OL
+        return sameType && prevLilist ? prevLilist.list_id : undefined;
+      }
+      // 更低级（H3 对 H2）：设了合；没设继续向上找
+      if (sameType && prevLilist) return prevLilist.list_id;
+    }
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+};
+
+/**
+ * H 标题设了 OL 后向下扫描，把符合规则的 H 标题合并进 sharedId
+ * （仅 HEADING 块；遇到非 H 块停止；段落 OL/UL 不受影响）
+ *
+ * 规则与 getPrevHeadingConnectListId 完全对称（以当前 H 为锚点向下看）：
+ *  - next level ≤ cur level（同/更高）：设了合，没设 break
+ *  - next level >  cur level（更低）：设了合，没设 continue
+ *
+ * 已设同类型 OL 的 next H 会替换 list_id 为 sharedId（统一编号流）
+ */
+const extendHeadingListDown = (
+  editor: Editor,
+  startPath: Path,
+  sharedId: string,
+  type: LilistType,
+  curLevel: number,
+  affectedIds: Set<string>,
+): void => {
+  const topIndex = startPath[startPath.length - 1];
+  if (topIndex < 0) return;
+  const children = (editor as any).children as any[];
+  for (let i = topIndex + 1; i < children.length; i++) {
+    const cur = children[i];
+    if (cur?.type !== BlockElementType.HEADING) break; // 非 H 块停止
+    const curLvl = cur?.attrs?.level ?? 1;
+    const curLilist = getLilist(cur);
+    const sameType = curLilist?.list_type === type;
+    if (curLvl <= curLevel) {
+      if (sameType && curLilist) {
+        affectedIds.add(curLilist.list_id);
+        setLilist(editor, [i], {
+          ...curLilist,
+          list_id: sharedId,
+          // 承接进来的项不是锚点（list_custom: false）；但若用户原本设了 list_custom，
+          // 保留其自定义编号语义——下文 sortLilist 会基于此顺延
+        });
+      } else {
+        break;
+      }
+    } else {
+      if (sameType && curLilist) {
+        affectedIds.add(curLilist.list_id);
+        setLilist(editor, [i], {
+          ...curLilist,
+          list_id: sharedId,
+        });
+      }
+      // 没设 → 继续向下
+    }
+  }
+};
+
+/** 是否判断是否应该走"H 标题按 level 合并"的入口判断 */
+const shouldUseHeadingLevelRule = (type: LilistType, node: any): boolean =>
+  type === LilistType.OL && node?.type === BlockElementType.HEADING;
+
 /** 切换列表 / 取消列表（FloatBar、块选择器入口） */
 export const toggleLilist = (editor: Editor, type: LilistType) => {
   const { selection } = editor;
@@ -101,11 +200,21 @@ export const toggleLilist = (editor: Editor, type: LilistType) => {
     return;
   }
 
-  let sharedId = getPrevConnectListId(editor, targets[0][1], type) ?? uuidv4();
+  // 区分入口：H 标题 OL 走"按 level + 设置状态"的新规则；
+  // 段落 OL/UL 与 H 标题 UL 维持旧规则（向后逐块同类型即可承接）
+  const firstNode = targets[0][0];
+  const useHeadingRule = shouldUseHeadingLevelRule(type, firstNode);
+  const firstLevel = useHeadingRule ? (firstNode?.attrs?.level ?? 1) : undefined;
+
+  const resolvePrevId = (p: Path): string | undefined =>
+    useHeadingRule
+      ? getPrevHeadingConnectListId(editor, p, type, firstLevel!)
+      : getPrevConnectListId(editor, p, type);
+
+  let sharedId = resolvePrevId(targets[0][1]) ?? uuidv4();
   // 首块是否承接了前方列表：承接则不是锚点，否则作为新列表首项锚点
   let groupHeadCustom =
-    targets[0][1][targets[0][1].length - 1] > 0 &&
-    getPrevConnectListId(editor, targets[0][1], type) !== undefined;
+    targets[0][1][targets[0][1].length - 1] > 0 && resolvePrevId(targets[0][1]) !== undefined;
   groupHeadCustom = !groupHeadCustom;
   let prevTopIdx = -1;
   // 记录所有涉及的 list_id（含被承接的前方组），末尾统一回写编号
@@ -130,6 +239,14 @@ export const toggleLilist = (editor: Editor, type: LilistType) => {
         list_custom: custom,
       });
     });
+
+    // H 标题 OL 设完后向下扫描，把符合 level 规则的 H 标题合并进 sharedId
+    if (useHeadingRule) {
+      targets.forEach(([node, path]) => {
+        const lvl = node?.attrs?.level ?? 1;
+        extendHeadingListDown(editor, path, sharedId, type, lvl, affectedIds);
+      });
+    }
   });
   sortLilist(editor, [...affectedIds]);
 };
@@ -151,7 +268,14 @@ export const convertBlockToLilist = (
     const node = Node.get(editor, path) as any;
     if (!isLilistHost(type, node?.type)) return;
 
-    const connectId = startNumber === 1 ? getPrevConnectListId(editor, path, type) : undefined;
+    // H 标题 OL 走"按 level + 设置状态"的新规则；其余维持旧规则
+    const useHeadingRule = shouldUseHeadingLevelRule(type, node);
+    const connectId =
+      startNumber === 1
+        ? useHeadingRule
+          ? getPrevHeadingConnectListId(editor, path, type, node?.attrs?.level ?? 1)
+          : getPrevConnectListId(editor, path, type)
+        : undefined;
 
     setLilist(editor, path, {
       list_type: type,
@@ -161,6 +285,14 @@ export const convertBlockToLilist = (
     });
     // 承接前方列表时需从当前位置起重排前方组；新建组只有一项无需排序
     if (connectId) sortLilist(editor, [connectId], path[path.length - 1]);
+
+    // H 标题 OL：设完后向下扫描合并同级或更高级的 H，统一编号流
+    if (useHeadingRule) {
+      const sharedId = (Node.get(editor, path) as any)?.attrs?.lilist?.list_id as string;
+      const affectedIds = new Set<string>([sharedId]);
+      extendHeadingListDown(editor, path, sharedId, type, node?.attrs?.level ?? 1, affectedIds);
+      sortLilist(editor, [...affectedIds], path[path.length - 1]);
+    }
   } catch {
     /* ignore */
   }

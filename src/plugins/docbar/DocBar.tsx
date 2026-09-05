@@ -161,9 +161,10 @@ interface IconConfig {
 
 const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean): IconConfig => {
   // lilist 判断：列表绑定在段落/标题宿主上（与正文共用同一块类型），
-  // 不能只按 type 判断，否则列表项会显示成段落图标；空列表项也保持列表图标
+  // 不能只按 type 判断，否则列表项会显示成段落图标；空列表项也保持列表图标。
+  // H 标题例外：优先展示标题层级图标（H1~H9），不被有序/无序图标覆盖
   const lilist = attrs?.lilist;
-  if (lilist) {
+  if (lilist && type !== BlockElementType.HEADING) {
     return { component: lilist.list_type === LilistType.OL ? OlListIcon : UlListIcon };
   }
 
