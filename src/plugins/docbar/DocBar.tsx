@@ -140,6 +140,13 @@ const TimelineIcon = ({ color, size = 18 }: SvgIconProps) => (
   </svg>
 );
 
+// 图表：三根渐变柱状条（对齐飞书图表图标）
+const ChartIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M6 20V10M12 20V4M18 20v-7" strokeWidth="2" />
+  </svg>
+);
+
 // 拖拽手柄
 const DragIcon = ({ color = '#999', size = 16 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -207,6 +214,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: CalendarIcon };
     case BlockElementType.TIMELINE:
       return { component: TimelineIcon };
+    case BlockElementType.CHART:
+      return { component: ChartIcon };
     default:
       return { component: ParagraphIcon };
   }

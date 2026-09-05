@@ -24,6 +24,7 @@ export const BlockElementType = {
   COLUMN: 'column',
   CALENDAR: 'calendar',
   TIMELINE: 'timeline',
+  CHART: 'chart',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

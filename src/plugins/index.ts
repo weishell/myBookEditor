@@ -32,3 +32,4 @@ export * from './media';
 export * from './columns';
 export * from './calendar';
 export * from './timeline';
+export * from './chart';

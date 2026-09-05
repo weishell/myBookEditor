@@ -26,6 +26,7 @@ import {
   withCountdown,
   withCalendar,
   withTimeline,
+  withChart,
   MentionController,
 } from '@/plugins';
 import {
@@ -56,16 +57,18 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
   const editor = useMemo(
     () =>
       withDelete(
-        withTimeline(
-          withCalendar(
-            withCountdown(
-              withEditorBehaviors(
-                withHyperlink(
-                  withColumns(
-                    withMention(
-                      withInlineFormula(
-                        withMarkdownShortcuts(
-                          withCodeBlock(withHistory(withReact(createEditor()))),
+        withChart(
+          withTimeline(
+            withCalendar(
+              withCountdown(
+                withEditorBehaviors(
+                  withHyperlink(
+                    withColumns(
+                      withMention(
+                        withInlineFormula(
+                          withMarkdownShortcuts(
+                            withCodeBlock(withHistory(withReact(createEditor()))),
+                          ),
                         ),
                       ),
                     ),

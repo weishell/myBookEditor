@@ -122,7 +122,13 @@ export const withColumns = (editor: Editor) => {
                 Transforms.setNodes(
                   editor,
                   { attrs: { widths: newWidths } },
-                  { at: groupPath, match: (n) => Element.isElement(n) },
+                  // 严格限定为分栏组本身，避免把 attrs 下发到列内图表等后代元素导致其配置被覆盖
+                  {
+                    at: groupPath,
+                    match: (n) =>
+                      Element.isElement(n) &&
+                      (n as CustomElement).type === BlockElementType.COLUMN_GROUP,
+                  },
                 );
               });
             }

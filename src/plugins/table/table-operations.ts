@@ -267,7 +267,12 @@ export const updateTableCell = (
   Transforms.setNodes(
     editor,
     { attrs: { ...attrs } },
-    { at: cellPath, match: (n) => Element.isElement(n) },
+    {
+      at: cellPath,
+      // 严格限定为目标单元格，避免 setNodes 把 attrs 下发到单元格内图表等后代元素
+      match: (n) =>
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_CELL,
+    },
   );
 };
 
@@ -279,7 +284,12 @@ export const updateTableRow = (
   Transforms.setNodes(
     editor,
     { attrs: { ...attrs } },
-    { at: rowPath, match: (n) => Element.isElement(n) },
+    {
+      at: rowPath,
+      // 严格限定为目标行，避免把 attrs 下发到行内单元格/图表等后代元素
+      match: (n) =>
+        Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE_ROW,
+    },
   );
 };
 
@@ -291,13 +301,21 @@ export const updateTable = (editor: Editor, tablePath: number[], attrs: Partial<
     Transforms.setNodes(
       editor,
       { attrs: { ...existing, ...attrs } },
-      { at: tablePath, match: (n) => Element.isElement(n) },
+      {
+        at: tablePath,
+        // 关键：match 严格限定为 table 节点本身。宽松的 Element.isElement 会把 attrs
+        // 下发到表格内所有元素（单元格里的图表/图片等），覆盖并清空它们的配置。
+        match: (n) => Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+      },
     );
   } catch {
     Transforms.setNodes(
       editor,
       { attrs: { ...attrs } },
-      { at: tablePath, match: (n) => Element.isElement(n) },
+      {
+        at: tablePath,
+        match: (n) => Element.isElement(n) && (n as CustomElement).type === BlockElementType.TABLE,
+      },
     );
   }
 };

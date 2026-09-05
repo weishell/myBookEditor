@@ -939,6 +939,157 @@ export const initialValue: Descendant[] = [
     },
     children: [{ text: ZERO_WIDTH_SPACE }],
   },
+
+  // —— 图表示例（基于 ECharts，数据可手动录入或粘贴 JSON）——
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 3 },
+    children: [{ text: '图表示例' }],
+  },
+  {
+    type: BlockElementType.PARAGRAPH,
+    id: uuidv4(),
+    children: [
+      {
+        text: '在下方插入处点击「图表」即可选择柱状/饼图/词云及其子类型。下方是已生成的柱状图与环形图示例，点击图表上的铅笔可重新配置；选中图表后拖动四角手柄可缩放。',
+      },
+    ],
+  },
+  {
+    type: BlockElementType.CHART,
+    id: uuidv4(),
+    attrs: {
+      kind: 'bar',
+      variant: 'vertical',
+      title: '月度销售趋势',
+      description: '近五个月销售额（单位：万元）',
+      data: [
+        { name: '一月', value: 320 },
+        { name: '二月', value: 210 },
+        { name: '三月', value: 260 },
+        { name: '四月', value: 180 },
+        { name: '五月', value: 340 },
+      ],
+      width: 720,
+      height: 320,
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
+  {
+    type: BlockElementType.CHART,
+    id: uuidv4(),
+    attrs: {
+      kind: 'pie',
+      variant: 'donut',
+      title: '访问来源构成',
+      description: '各渠道流量占比',
+      data: [
+        { name: '直接访问', value: 335 },
+        { name: '搜索引擎', value: 246 },
+        { name: '邮件营销', value: 148 },
+        { name: '联盟广告', value: 102 },
+      ],
+      width: 560,
+      height: 300,
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
+  {
+    type: BlockElementType.CHART,
+    id: uuidv4(),
+    attrs: {
+      kind: 'gauge',
+      variant: 'plain',
+      title: '服务器负载',
+      description: '当前 CPU 使用率',
+      data: [{ name: '当前值', value: 82 }],
+      gaugeValue: 82,
+      gaugeMin: 0,
+      gaugeMax: 100,
+      gaugeUnit: '%',
+      width: 420,
+      height: 300,
+    },
+    children: [{ text: ZERO_WIDTH_SPACE }],
+  },
+  {
+    // 把图表放进分栏，验证窄容器内自适应
+    type: BlockElementType.COLUMN_GROUP,
+    id: uuidv4(),
+    attrs: {},
+    children: [
+      {
+        type: BlockElementType.COLUMN,
+        id: uuidv4(),
+        attrs: { width: 50 },
+        children: [
+          {
+            type: BlockElementType.HEADING,
+            id: uuidv4(),
+            attrs: { level: 3 },
+            children: [{ text: '柱状图（窄栏自适应）' }],
+          },
+          {
+            type: BlockElementType.CHART,
+            id: uuidv4(),
+            attrs: {
+              kind: 'bar',
+              variant: 'horizontal',
+              title: '预算占比',
+              description: '',
+              data: [
+                { name: '研发', value: 46 },
+                { name: '市场', value: 28 },
+                { name: '运营', value: 18 },
+                { name: '管理', value: 8 },
+              ],
+              width: 720,
+              height: 240,
+            },
+            children: [{ text: ZERO_WIDTH_SPACE }],
+          },
+        ],
+      },
+      {
+        type: BlockElementType.COLUMN,
+        id: uuidv4(),
+        attrs: { width: 50 },
+        children: [
+          {
+            type: BlockElementType.HEADING,
+            id: uuidv4(),
+            attrs: { level: 3 },
+            children: [{ text: '词云（窄栏自适应）' }],
+          },
+          {
+            type: BlockElementType.CHART,
+            id: uuidv4(),
+            attrs: {
+              kind: 'wordcloud',
+              variant: 'plain',
+              title: '关键词热度',
+              description: '',
+              data: [
+                { name: 'ECharts', value: 10000 },
+                { name: '数据可视化', value: 7200 },
+                { name: '柱状图', value: 6800 },
+                { name: '饼图', value: 6100 },
+                { name: '折线图', value: 5400 },
+                { name: '词云', value: 4900 },
+                { name: '主题色', value: 3800 },
+                { name: '编辑器', value: 3400 },
+                { name: '飞书', value: 2900 },
+              ],
+              width: 720,
+              height: 240,
+            },
+            children: [{ text: ZERO_WIDTH_SPACE }],
+          },
+        ],
+      },
+    ],
+  },
 ];
 
 /**

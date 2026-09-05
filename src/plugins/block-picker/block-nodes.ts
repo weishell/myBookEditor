@@ -4,6 +4,7 @@ import { Element } from 'slate';
 import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 import { createColumnGroup } from '@/plugins/columns';
+import { createChartElement } from '@/plugins/chart';
 
 export interface InsertBlockOptions {
   level?: number;
@@ -158,6 +159,8 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
       } as Element;
     case BlockElementType.COLUMN_GROUP:
       return createColumnGroup(options?.columns ?? 2);
+    case BlockElementType.CHART:
+      return createChartElement() as unknown as Element;
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST: {
       // 列表已改为绑定在段落上的 lilist 属性（旧 wrapper 类型废弃）

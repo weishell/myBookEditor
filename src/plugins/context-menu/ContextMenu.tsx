@@ -5,6 +5,7 @@
 // 非空文本块 hover 时显示"在下方插入"，点击后切换为块类型选择面板。
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Popover } from 'antd';
 import { Editor, Element, Node, Transforms } from 'slate';
@@ -13,6 +14,12 @@ import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
 import { BlockElementType, LilistType } from '@/enums';
 import { BlockTypePicker, createBlockNode, isTextBlockType } from '@/plugins/block-picker';
+import {
+  ChartTypePicker,
+  ChartConfigDialog,
+  createChartElement,
+  type ChartKind,
+} from '@/plugins/chart';
 import FontPicker from '@/components/FontPicker';
 import {
   convertDocBarBlock,
@@ -47,6 +54,11 @@ export const ContextMenu = () => {
 
   const [fontOpen, setFontOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
+
+  // 图表插入两步式：类型选择弹框 → 配置页弹框 → 确定插入
+  const [chartFlow, setChartFlow] = useState<'pick' | 'config' | null>(null);
+  const [chartChoice, setChartChoice] = useState<{ kind: ChartKind; variant: string } | null>(null);
+  const [chartInsertPath, setChartInsertPath] = useState<number[] | undefined>();
 
   const adjustPosition = useCallback(() => {
     if (!menuRef.current) return;
@@ -321,6 +333,14 @@ export const ContextMenu = () => {
   ) => {
     const path = getTargetPath();
     if (!path) return;
+    // 图表走两步式：先选类型，再进配置页，最后才插入
+    if (type === BlockElementType.CHART) {
+      setChartInsertPath(getInsertPathAfter(path));
+      setInsertOpen(false);
+      closeAfterAction();
+      setChartFlow('pick');
+      return;
+    }
     const insertPath = getInsertPathAfter(path);
     Transforms.insertNodes(editor, createBlockNode(type, options), { at: insertPath });
     Transforms.select(editor, Editor.start(editor, insertPath));
@@ -329,7 +349,50 @@ export const ContextMenu = () => {
     closeAfterAction();
   };
 
-  if (!visible) return null;
+  const handleChartPick = (kind: ChartKind, variant: string) => {
+    setChartChoice({ kind, variant });
+    setChartFlow('config');
+  };
+
+  const handleChartConfirm = (attrs: Parameters<typeof createChartElement>[0]) => {
+    if (chartInsertPath && chartChoice) {
+      Transforms.insertNodes(editor, createChartElement({ ...attrs, ...chartChoice }) as any, {
+        at: chartInsertPath,
+      });
+      try {
+        ReactEditor.focus(editor);
+      } catch {
+        /* ignore */
+      }
+    }
+    setChartFlow(null);
+    setChartChoice(null);
+  };
+
+  // 图表两步式弹框走 portal，即使主菜单已 forceClose 也要能渲染
+  const renderChartFlow = () => {
+    if (!chartFlow) return null;
+    if (chartFlow === 'pick') {
+      return createPortal(
+        <ChartTypePicker onPick={handleChartPick} onCancel={() => setChartFlow(null)} />,
+        document.body,
+      );
+    }
+    return createPortal(
+      <ChartConfigDialog
+        kind={chartChoice?.kind ?? 'bar'}
+        variant={chartChoice?.variant ?? 'vertical'}
+        initial={undefined}
+        onConfirm={handleChartConfirm}
+        onCancel={() => setChartFlow(null)}
+      />,
+      document.body,
+    );
+  };
+
+  if (!visible) {
+    return renderChartFlow();
+  }
 
   // "在下方插入"仅对非空文本类块可用
   const canInsertBelow =
