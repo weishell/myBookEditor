@@ -15,6 +15,7 @@ import { isHotkey } from 'is-hotkey';
 import { BlockElementType } from '@/enums';
 import { getLilist, removeLilist, toggleLilist, LilistType } from '@/plugins/lilist';
 import { toggleBlock } from '@/plugins/blocks';
+import { toggleMark, MarkTypes } from '@/plugins/marks';
 import { handleEnter } from './handleEnter';
 import { handleTabIndent } from './handleTab';
 
@@ -199,6 +200,28 @@ const handleLilistBackspace = (editor: Editor): boolean => {
   return true;
 };
 
+/**
+ * 文本 mark 快捷键（跨平台，mod = Mac 的 Cmd / Windows 的 Ctrl）：
+ *  - mod+b → 加粗
+ *  - mod+i → 倾斜
+ * 标题名（HEADING_TITLE）禁止任何格式化，与 FloatBar 的禁用策略保持一致
+ * @returns 是否已消费该按键
+ */
+const handleMarkShortcut = (editor: Editor, e: React.KeyboardEvent): boolean => {
+  if (getCurrentBlockType(editor) === BlockElementType.HEADING_TITLE) return false;
+
+  let format = '';
+  if (isHotkey('mod+b', e)) format = MarkTypes.BOLD;
+  else if (isHotkey('mod+i', e)) format = MarkTypes.ITALIC;
+  else return false;
+
+  toggleMark(editor, format);
+  console.log(`[keydown] mod+${format === MarkTypes.BOLD ? 'b' : 'i'} → ${format}`);
+  e.preventDefault();
+  e.stopPropagation();
+  return true;
+};
+
 export const createKeyDownHandler = (editor: Editor) => {
   return (e: React.KeyboardEvent) => {
     const keyLabel = describeKey(e);
@@ -212,6 +235,10 @@ export const createKeyDownHandler = (editor: Editor) => {
       }
       if (handleBlockFormatShortcut(editor, e)) {
         console.log('[keydown] 块格式快捷键已消费', { key: keyLabel });
+        return;
+      }
+      if (handleMarkShortcut(editor, e)) {
+        console.log('[keydown] 文本 mark 快捷键已消费', { key: keyLabel });
         return;
       }
       console.log('[keydown] 组合键（未拦截）', { key: keyLabel, blockType });

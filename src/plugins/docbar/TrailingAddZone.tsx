@@ -9,6 +9,7 @@ import { useTheme } from '@/context/ThemeContext';
 
 const GHOST_GAP = 10; // 最后内容与幽灵线之间的间距
 const ZONE_BOTTOM_MARGIN = 30; // 纸张底部留白，避免在 padding 外仍触发
+const ZONE_MIN_HEIGHT = 40; // 最后一个 block 下方至少保留的可点击区高度，防止区塌缩成零高
 const PAD_LEFT = 65; // 与 data-paper 的 padding-left 对齐（内容左边缘在纸张外侧 65px）
 const PAD_RIGHT = 65;
 
@@ -56,7 +57,9 @@ export const TrailingAddZone = () => {
     const paperRect = paper.getBoundingClientRect();
     const base = bottom > 0 ? bottom : paperRect.top + 40; // 空文档时从内容区顶部开始
     const zoneTop = base + GHOST_GAP;
-    const zoneBottom = paperRect.bottom - ZONE_BOTTOM_MARGIN;
+    // 纸张高度随内容增长：padding-bottom(40) 减去底部留白(30)只剩 10px，
+    // 会导致 zoneBottom ≈ zoneTop 而塌缩成零高。这里取下限保证始终有一段可点击区。
+    const zoneBottom = Math.max(zoneTop + ZONE_MIN_HEIGHT, paperRect.bottom - ZONE_BOTTOM_MARGIN);
     if (clientY < zoneTop || clientY > zoneBottom) return null;
 
     const contentLeft = paperRect.left + PAD_LEFT;

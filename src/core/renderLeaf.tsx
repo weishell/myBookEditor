@@ -92,7 +92,12 @@ export const RenderLeaf = (props: RenderLeafProps) => {
   }
   // 其他格式
   if ((leaf as any).bold) style.fontWeight = 'bold';
-  if ((leaf as any).italic) style.fontStyle = 'italic';
+  if ((leaf as any).italic) {
+    style.fontStyle = 'italic';
+    // 全局 :root 设了 font-synthesis: none，会禁用不少中文字体（无内置斜体）的合成斜体，
+    // 导致汉字选倾斜无效果。这里对斜体叶子重新开启字重/字形合成，恢复 CJK 倾斜。
+    style.fontSynthesis = 'weight style';
+  }
   const textDecorations: string[] = [];
   if ((leaf as any).underline) textDecorations.push('underline');
   if ((leaf as any).strikethrough) textDecorations.push('line-through');
