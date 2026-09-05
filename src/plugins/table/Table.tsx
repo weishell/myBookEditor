@@ -3,9 +3,27 @@ import type { RenderElementProps } from 'slate-react';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Path, Editor, Transforms } from 'slate';
 import type { CustomElement } from '@/core/types';
-import type { TableAttrs } from './table-operations';
+import type { TableAttrs, TableCellAttrs, TableRowAttrs } from './table-operations';
 import { TableContextMenu } from './TableContextMenu';
-import { insertRow, insertColumn, updateTable } from './table-operations';
+import type { TableMenuAction } from './TableContextMenu';
+import {
+  insertRowAt,
+  insertColumnAt,
+  deleteRowAt,
+  deleteColumnAt,
+  updateTable,
+  mergeCells,
+  splitCell,
+  setCellBgColor,
+  setCellRangeBgColor,
+  setCellVertAlign,
+  setCellRangeVertAlign,
+  setRowBgColor,
+  setTableBorder,
+  deleteTable,
+  getLogicalCell,
+} from './table-operations';
+import { computeGrid } from './table-grid';
 import { useTheme } from '@/context/ThemeContext';
 import { LIGHT_BG_PATTERN } from '@/core/renderLeaf';
 import styles from './Table.module.less';
@@ -37,6 +55,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   const slateDivRef = useRef<HTMLDivElement | null>(null);
   const [menuVisible, setMenuVisible] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ x: 0, y: 0 });
+  // 右键弹出的目标逻辑格（行/列），作为合并拆分/颜色等操作的锚点
+  const [menuCell, setMenuCell] = useState<{ row: number; col: number } | null>(null);
   const [rowDots, setRowDots] = useState<DotPosition[]>([]);
   const [colDots, setColDots] = useState<DotPosition[]>([]);
   const [tableSize, setTableSize] = useState<TableSize>({ width: 0, height: 0 });
@@ -523,15 +543,22 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     };
   }, [children, rowCount, colCount, colWidthsKey]);
 
-  const handleContextMenu = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setMenuPosition({ x: e.clientX, y: e.clientY });
-    setMenuVisible(true);
-  };
+  const handleContextMenu = useCallback(
+    (e: React.MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      const cell = getCellFromPoint(e.clientX, e.clientY);
+      setMenuCell(cell);
+      setMenuPosition({ x: e.clientX, y: e.clientY });
+      setMenuVisible(true);
+    },
+    [getCellFromPoint],
+  );
 
-  const handleCloseMenu = () => {
+  const handleCloseMenu = useCallback(() => {
     setMenuVisible(false);
-  };
+    setMenuCell(null);
+  }, []);
 
   const handleInsertRow = useCallback(
     (at: number, e: React.MouseEvent) => {
@@ -547,7 +574,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       try {
         const path = ReactEditor.findPath(editor, element);
-        insertRow(editor, at, path);
+        insertRowAt(editor, path, at);
         // 选中索引跟随原行：在选中行上方插入时，原行下移一格
         setSelectedRow((prev) => (prev !== null && at <= prev ? prev + 1 : prev));
       } catch (err) {
@@ -571,7 +598,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       try {
         const path = ReactEditor.findPath(editor, element);
-        insertColumn(editor, at, path);
+        insertColumnAt(editor, path, at);
         // 选中索引跟随原列：在选中列左侧插入时，原列右移一格
         setSelectedCol((prev) => (prev !== null && at <= prev ? prev + 1 : prev));
       } catch (err) {
@@ -695,7 +722,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       // 单击（无位移）→ 回到单格编辑，清空范围
       if (!drag.moved) setCellRange(null);
       cellDragRef.current = null;
-      setDocbarCellSelect(false);
+      // 不再在此关掉 DocBar 抑制：只要还留有 cellRange/行列选中，
+      // 由下方「选中存在性」effect 持续保持抑制，避免选区高亮时误弹块工具栏
     };
 
     document.addEventListener('mousemove', onMouseMove, true);
@@ -706,6 +734,16 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       setDocbarCellSelect(false);
     };
   }, [editor, setDocbarCellSelect, getCellFromPoint]);
+
+  // 只要还存在跨格选区 / 行列选中，就持续抑制 DocBar 弹出；
+  // 选中清除后恢复。这是问题修复1：选中单元格时不该出现块工具栏
+  useEffect(() => {
+    const active = cellRange !== null || selectedRow !== null || selectedCol !== null;
+    setDocbarCellSelect(active);
+    return () => {
+      setDocbarCellSelect(false);
+    };
+  }, [cellRange, selectedRow, selectedCol, setDocbarCellSelect]);
 
   // ========== 行列选中 ==========
   const handleSelectRow = useCallback(
@@ -758,16 +796,10 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     if (selectedRow === null) return;
     try {
       const tablePath = ReactEditor.findPath(editor, element);
-      const rows = element.children as CustomElement[];
       // 删除前先清空选区，防止 Slate normalize 后把选区锚到相邻 cell
       Transforms.deselect(editor);
       ReactEditor.blur(editor);
-      // 如果只剩一行，删除整个表格
-      if (rows.length <= 1) {
-        Transforms.removeNodes(editor, { at: tablePath });
-      } else {
-        Transforms.removeNodes(editor, { at: [...tablePath, selectedRow] });
-      }
+      deleteRowAt(editor, tablePath, selectedRow);
       setSelectedRow(null);
       // 删除后再次清空（防止 normalize 重新设置选区）
       Transforms.deselect(editor);
@@ -786,21 +818,10 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     if (selectedCol === null) return;
     try {
       const tablePath = ReactEditor.findPath(editor, element);
-      const rows = element.children as CustomElement[];
       // 删除前先清空选区，防止 Slate normalize 后把选区锚到相邻 cell
       Transforms.deselect(editor);
       ReactEditor.blur(editor);
-      // 如果只剩一列，删除整个表格
-      if (rows[0].children.length <= 1) {
-        Transforms.removeNodes(editor, { at: tablePath });
-      } else {
-        // 从最后一行开始删除，避免路径变化
-        Editor.withoutNormalizing(editor, () => {
-          for (let rowIdx = rows.length - 1; rowIdx >= 0; rowIdx--) {
-            Transforms.removeNodes(editor, { at: [...tablePath, rowIdx, selectedCol] });
-          }
-        });
-      }
+      deleteColumnAt(editor, tablePath, selectedCol);
       setSelectedCol(null);
       // 删除后再次清空（防止 normalize 重新设置选区）
       Transforms.deselect(editor);
@@ -814,6 +835,169 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       console.error('Delete column failed:', err);
     }
   }, [selectedCol, editor, element]);
+
+  // 重建后把光标放回合并/拆分后的左上格，避免选区悬空
+  const restoreIntoTable = useCallback(
+    (tablePath: number[]) => {
+      try {
+        Transforms.select(editor, Editor.start(editor, [...tablePath, 0, 0]));
+      } catch {
+        /* ignore */
+      }
+    },
+    [editor],
+  );
+
+  // 右键菜单的目标上下文：是否多格选区 / 目标是否为合并格 / 背景色等
+  const menuInfo = useMemo(() => {
+    if (!menuVisible) {
+      return { hasRange: false, isMerged: false, cellBg: '', rowBg: '' };
+    }
+    const target = menuCell ?? (cellRange ? { row: cellRange.r0, col: cellRange.c0 } : null);
+    let isMerged = false;
+    let cellBg = '';
+    let rowBg = '';
+    try {
+      const tablePath = ReactEditor.findPath(editor, element);
+      if (target) {
+        const info = getLogicalCell(editor, tablePath, target.row, target.col);
+        if (info) {
+          const ca = (info.node.attrs || {}) as TableCellAttrs;
+          isMerged = (ca.colspan ?? 1) > 1 || (ca.rowspan ?? 1) > 1;
+          cellBg = ca.bgColor || '';
+        }
+      }
+      const tRow = selectedRow ?? target?.row;
+      if (tRow != null) {
+        const rowNode = (element.children as CustomElement[] | undefined)?.[tRow];
+        rowBg = ((rowNode?.attrs || {}) as TableRowAttrs).bgColor || '';
+      }
+    } catch {
+      /* ignore */
+    }
+    return {
+      hasRange: cellRange !== null || selectedRow !== null || selectedCol !== null,
+      isMerged,
+      cellBg,
+      rowBg,
+    };
+  }, [menuVisible, menuCell, cellRange, selectedRow, selectedCol, editor, element, getLogicalCell]);
+
+  const handleMenuAction = useCallback(
+    (action: TableMenuAction, payload?: any) => {
+      try {
+        const tablePath = ReactEditor.findPath(editor, element);
+        const target = menuCell ?? (cellRange ? { row: cellRange.r0, col: cellRange.c0 } : null);
+        const tRow = selectedRow ?? target?.row ?? null;
+        const tCol = selectedCol ?? target?.col ?? null;
+
+        switch (action) {
+          case 'merge': {
+            // 跨格选区 / 选中整行 / 选中整列 → 合成对应矩形
+            let rr0: number | undefined;
+            let cc0: number | undefined;
+            let rr1: number | undefined;
+            let cc1: number | undefined;
+            if (cellRange) {
+              rr0 = cellRange.r0;
+              cc0 = cellRange.c0;
+              rr1 = cellRange.r1;
+              cc1 = cellRange.c1;
+            } else if (selectedRow !== null) {
+              const g = computeGrid(element);
+              rr0 = rr1 = selectedRow;
+              cc0 = 0;
+              cc1 = g.cols - 1;
+            } else if (selectedCol !== null) {
+              const g = computeGrid(element);
+              rr0 = 0;
+              rr1 = g.rows - 1;
+              cc0 = cc1 = selectedCol;
+            }
+            if (rr0 !== undefined) {
+              mergeCells(editor, tablePath, rr0, cc0!, rr1!, cc1!);
+              setCellRange(null);
+              setSelectedRow(null);
+              setSelectedCol(null);
+              restoreIntoTable(tablePath);
+            }
+            break;
+          }
+          case 'split':
+            if (target) {
+              splitCell(editor, tablePath, target.row, target.col);
+              restoreIntoTable(tablePath);
+            }
+            break;
+          case 'cellColor':
+            if (cellRange) {
+              setCellRangeBgColor(
+                editor,
+                tablePath,
+                cellRange.r0,
+                cellRange.c0,
+                cellRange.r1,
+                cellRange.c1,
+                payload,
+              );
+            } else if (target) {
+              setCellBgColor(editor, tablePath, target.row, target.col, payload);
+            }
+            break;
+          case 'vertAlign':
+            if (cellRange) {
+              setCellRangeVertAlign(
+                editor,
+                tablePath,
+                cellRange.r0,
+                cellRange.c0,
+                cellRange.r1,
+                cellRange.c1,
+                payload as 'top' | 'middle' | 'bottom',
+              );
+            } else if (target) {
+              setCellVertAlign(
+                editor,
+                tablePath,
+                target.row,
+                target.col,
+                payload as 'top' | 'middle' | 'bottom',
+              );
+            }
+            break;
+          case 'rowColor':
+            if (tRow !== null) setRowBgColor(editor, tablePath, tRow, payload);
+            break;
+          case 'borderColor':
+            setTableBorder(editor, tablePath, { borderColor: payload });
+            break;
+          case 'borderWidth':
+            setTableBorder(editor, tablePath, { borderWidth: payload });
+            break;
+          case 'insertRow':
+            if (tRow !== null) insertRowAt(editor, tablePath, tRow + 1);
+            break;
+          case 'deleteRow':
+            if (tRow !== null) deleteRowAt(editor, tablePath, tRow);
+            break;
+          case 'insertColumn':
+            if (tCol !== null) insertColumnAt(editor, tablePath, tCol + 1);
+            break;
+          case 'deleteColumn':
+            if (tCol !== null) deleteColumnAt(editor, tablePath, tCol);
+            break;
+          case 'deleteTable':
+            deleteTable(editor, tablePath);
+            break;
+          default:
+            break;
+        }
+      } catch (err) {
+        console.error('Table menu action failed:', err);
+      }
+    },
+    [editor, element, menuCell, cellRange, selectedRow, selectedCol, restoreIntoTable, computeGrid],
+  );
 
   // ========== 全局监听：调试 + 兜底清空非法光标 ==========
   useEffect(() => {
@@ -1084,6 +1268,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleWrapperMouseMove}
       onMouseDown={(e) => {
+        const t = e.target as HTMLElement;
+        // 右键菜单（面板/遮罩）内点击：既不当成单元格拖选锚点，
+        // 也不清掉已有选区，避免「上色后选区消失」（问题修复3）
+        if (t.closest && t.closest('[data-table-menu]')) {
+          return;
+        }
         // 记录锚点：在单元格内按下即可能开始拖选（跨格才接管，单击仍正常编辑）
         const anchorCell = getCellFromPoint(e.clientX, e.clientY);
         if (anchorCell) {
@@ -1097,7 +1287,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         }
         // Bug 1：点击 wrapper 内非单元格、非交互控件时，事件会冒泡到外层
         // Slate contentEditable 并产生光标。仅对白名单节点放行：
-        const t = e.target as HTMLElement;
         if (t.closest) {
           const editable =
             t.closest('td, th') ||
@@ -1483,7 +1672,17 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         />
       )}
 
-      <TableContextMenu visible={menuVisible} position={menuPosition} onClose={handleCloseMenu} />
+      <TableContextMenu
+        visible={menuVisible}
+        position={menuPosition}
+        onClose={handleCloseMenu}
+        hasRange={menuInfo.hasRange}
+        isMerged={menuInfo.isMerged}
+        cellBg={menuInfo.cellBg}
+        rowBg={menuInfo.rowBg}
+        borderColor={rawBorderColor}
+        onAction={handleMenuAction}
+      />
     </div>
   );
 };
