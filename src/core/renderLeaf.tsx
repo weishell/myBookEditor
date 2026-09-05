@@ -83,6 +83,13 @@ export const RenderLeaf = (props: RenderLeafProps) => {
   if ((leaf as any).highlight) {
     style.backgroundColor = (leaf as any).highlight;
   }
+  // 查找高亮（decorate 注入的搜索标记）：当前项更醒目
+  if ((leaf as any).searchCurrent) {
+    style.backgroundColor = 'rgba(255, 154, 35, 0.9)';
+    style.color = '#fff';
+  } else if ((leaf as any).searchHighlight) {
+    style.backgroundColor = 'rgba(255, 213, 79, 0.55)';
+  }
   // 其他格式
   if ((leaf as any).bold) style.fontWeight = 'bold';
   if ((leaf as any).italic) style.fontStyle = 'italic';

@@ -92,4 +92,12 @@ export default {
       dongfangdakai: 'Dongfang Dakai',
     },
   },
+  findReplace: {
+    searchPlaceholder: 'Search in document',
+    replacePlaceholder: 'Replace with',
+    totalTip: 'Total matches',
+    replaceOne: 'Replace',
+    replaceAll: 'Replace All',
+    tip: 'Enter next · Shift+Enter previous · Esc close',
+  },
 } as const;

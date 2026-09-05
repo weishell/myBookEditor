@@ -1,10 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Editor from '@/core';
 import NotFound from '@/pages/NotFound';
-import LanguageSwitcher from '@/components/LanguageSwitcher';
-import ModeSwitcher from '@/components/ModeSwitcher';
-import ThemeSwitcher from '@/components/ThemeSwitcher';
-import FontSwitcher from '@/components/FontSwitcher';
+import SettingsSwitcher from '@/components/SettingsSwitcher';
 import AntdThemeBridge from '@/components/AntdThemeBridge';
 import { InlineToastHost } from '@/components/InlineToast';
 import { BackToTop } from '@/components/BackToTop/BackToTop';
@@ -14,12 +11,12 @@ import { EditorProvider, useEditorMode } from '@/context/EditorContext';
 import { ThemeProvider } from '@/context/ThemeContext';
 import { LanguageProvider } from '@/context/LanguageContext';
 import { CursorProvider } from '@/context/CursorContext';
-import CursorSwitcher from '@/components/CursorSwitcher';
+import { FindReplaceProvider, FindReplacePanel } from '@/components/SettingsSwitcher/find-replace';
 import CursorTrail from '@/components/CursorTrail';
 import styles from './App.module.less';
 
 function AppLayout() {
-  const { mode, setMode } = useEditorMode();
+  const { mode } = useEditorMode();
 
   return (
     <BrowserRouter>
@@ -29,11 +26,7 @@ function AppLayout() {
         <header className={styles.header}>
           <div className={styles.logo}>MyBook Editor</div>
           <div className={styles.controls}>
-            <FontSwitcher />
-            <ThemeSwitcher />
-            <CursorSwitcher />
-            <ModeSwitcher mode={mode} onChange={setMode} />
-            <LanguageSwitcher />
+            <SettingsSwitcher />
           </div>
         </header>
         <main className={styles.main}>
@@ -57,8 +50,11 @@ function App() {
         <CursorProvider>
           <AntdThemeBridge>
             <EditorProvider>
-              <AppLayout />
-              <InlineToastHost />
+              <FindReplaceProvider>
+                <AppLayout />
+                <FindReplacePanel />
+                <InlineToastHost />
+              </FindReplaceProvider>
             </EditorProvider>
           </AntdThemeBridge>
         </CursorProvider>

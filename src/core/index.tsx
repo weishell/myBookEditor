@@ -40,6 +40,7 @@ import { withColumns } from '@/plugins';
 import { initialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
+import { searchDecorate, useFindReplace } from '@/components/SettingsSwitcher/find-replace';
 import FloatBar from '@/components/FloatBar';
 import { useEditorMode } from '@/context/EditorContext';
 import { useTheme } from '@/context/ThemeContext';
@@ -54,6 +55,7 @@ interface EditorProps {
 export default function BookEditor({ readOnly = false }: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
   const { isDarkMode } = useTheme();
+  const { matches, currentIndex } = useFindReplace();
   const editor = useMemo(
     () =>
       withDelete(
@@ -113,6 +115,16 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
     /* no-op */
   }, []);
 
+  // 合并代码高亮 + 查找高亮两种装饰
+  const decorate = useCallback(
+    (entry: Parameters<typeof codeDecorate>[0]) => {
+      const code = codeDecorate(entry);
+      const search = searchDecorate(matches, currentIndex, entry);
+      return [...code, ...search];
+    },
+    [matches, currentIndex],
+  );
+
   return (
     <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>
       <SelectionProvider>
@@ -148,7 +160,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                   minHeight: '500px',
                   outline: 'none',
                 }}
-                decorate={codeDecorate}
+                decorate={decorate}
                 onKeyDown={handleKeyDown}
                 readOnly={readOnly}
               />

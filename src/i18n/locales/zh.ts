@@ -92,4 +92,12 @@ export default {
       dongfangdakai: '东方大楷',
     },
   },
+  findReplace: {
+    searchPlaceholder: '输入要查找的内容',
+    replacePlaceholder: '替换为',
+    totalTip: '匹配总数',
+    replaceOne: '替换',
+    replaceAll: '全部替换',
+    tip: 'Enter 下一个 · Shift+Enter 上一个 · Esc 关闭',
+  },
 } as const;
