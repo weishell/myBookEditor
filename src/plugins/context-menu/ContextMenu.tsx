@@ -20,6 +20,7 @@ import {
   createChartElement,
   type ChartKind,
 } from '@/plugins/chart';
+import { EmbedSettings, createEmbedElement, type EmbedAttrs } from '@/plugins/embed';
 import FontPicker from '@/components/FontPicker';
 import {
   convertDocBarBlock,
@@ -59,6 +60,9 @@ export const ContextMenu = () => {
   const [chartFlow, setChartFlow] = useState<'pick' | 'config' | null>(null);
   const [chartChoice, setChartChoice] = useState<{ kind: ChartKind; variant: string } | null>(null);
   const [chartInsertPath, setChartInsertPath] = useState<number[] | undefined>();
+
+  // 内嵌网页：DocBar 菜单按钮 → 弹框填网址 → 确定后插入（portal 渲染，主菜单关闭仍可见）
+  const [embedInsertPath, setEmbedInsertPath] = useState<number[] | undefined>();
 
   const adjustPosition = useCallback(() => {
     if (!menuRef.current) return;
@@ -341,12 +345,45 @@ export const ContextMenu = () => {
       setChartFlow('pick');
       return;
     }
+    // 内嵌网页走弹框式：先填网址，确定后才真正插入
+    if (type === BlockElementType.EMBED) {
+      setEmbedInsertPath(getInsertPathAfter(path));
+      setInsertOpen(false);
+      closeAfterAction();
+      return;
+    }
     const insertPath = getInsertPathAfter(path);
     Transforms.insertNodes(editor, createBlockNode(type, options), { at: insertPath });
     Transforms.select(editor, Editor.start(editor, insertPath));
     ReactEditor.focus(editor);
     setInsertOpen(false);
     closeAfterAction();
+  };
+
+  // 内嵌网页弹框确认：真正插入节点
+  const handleEmbedConfirm = (attrs: EmbedAttrs) => {
+    if (embedInsertPath) {
+      Transforms.insertNodes(editor, createEmbedElement(attrs) as any, { at: embedInsertPath });
+      try {
+        ReactEditor.focus(editor);
+      } catch {
+        /* ignore */
+      }
+    }
+    setEmbedInsertPath(undefined);
+  };
+
+  // 内嵌网页弹框走 portal，即使主菜单已 forceClose 也要能渲染
+  const renderEmbedFlow = () => {
+    if (!embedInsertPath) return null;
+    return createPortal(
+      <EmbedSettings
+        initial={{ url: '', height: 400 }}
+        onConfirm={handleEmbedConfirm}
+        onCancel={() => setEmbedInsertPath(undefined)}
+      />,
+      document.body,
+    );
   };
 
   const handleChartPick = (kind: ChartKind, variant: string) => {
@@ -391,7 +428,12 @@ export const ContextMenu = () => {
   };
 
   if (!visible) {
-    return renderChartFlow();
+    return (
+      <>
+        {renderChartFlow()}
+        {renderEmbedFlow()}
+      </>
+    );
   }
 
   // "在下方插入"仅对非空文本类块可用
@@ -412,6 +454,7 @@ export const ContextMenu = () => {
         onMouseEnter={() => setHoveringMenu(true)}
         onMouseLeave={() => setHoveringMenu(false)}
       >
+        {renderEmbedFlow()}
         <div className={styles.toolbar}>
           <button
             onClick={() => handleMenuClick('text')}
@@ -590,6 +633,21 @@ export const ContextMenu = () => {
         >
           <span className={styles.actionIcon}>🗑</span>
           <span>删除</span>
+        </button>
+        <div className={styles.divider} />
+        <button
+          className={styles.btnAction}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.stopPropagation();
+            const path = getTargetPath();
+            if (!path) return;
+            setEmbedInsertPath(getInsertPathAfter(path));
+            forceCloseMenu();
+          }}
+        >
+          <span className={styles.actionIcon}>🌐</span>
+          <span>内嵌网页</span>
         </button>
         {canInsertBelow && (
           <>

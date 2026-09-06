@@ -25,6 +25,7 @@ export const BlockElementType = {
   CALENDAR: 'calendar',
   TIMELINE: 'timeline',
   CHART: 'chart',
+  EMBED: 'embed-block',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

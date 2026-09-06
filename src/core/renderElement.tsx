@@ -25,6 +25,7 @@ import {
   Calendar,
   Timeline,
   Chart,
+  Embed,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -173,6 +174,15 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
     case BlockElementType.CHART:
       return (
         <Chart
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
+      );
+    case BlockElementType.EMBED:
+      return (
+        <Embed
           attributes={attributes}
           children={children}
           pluginId={el.id || ''}

@@ -1,0 +1,212 @@
+// 内嵌网页块样式
+
+.wrapper {
+  margin: @spacing-sm 0;
+  width: 100%;
+  position: relative;
+  user-select: none;
+}
+
+.toolbar {
+  position: absolute;
+  top: -40px;
+  left: 12px;
+  display: flex;
+  gap: 0;
+  background-color: @bg-base;
+  border-radius: @radius-md;
+  padding: 2px;
+  z-index: 10000;
+  box-shadow: @shadow-md;
+  border: 1px solid @border-color-light;
+  white-space: nowrap;
+}
+
+.toolbarButton {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background-color: transparent;
+  border-radius: @radius-sm;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: @text-secondary;
+
+  &:hover {
+    background-color: @bg-hover;
+    color: @text-primary;
+  }
+}
+
+// 外框：宽度自适应（撑满编辑区），高度由 attrs.height 控制
+.frame {
+  width: 100%;
+  overflow: hidden;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  background-color: @bg-subtle;
+  box-sizing: border-box;
+}
+
+.frameSelected {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px @color-primary;
+}
+
+.iframe {
+  display: block;
+  width: 100%;
+  border: none;
+  background: #fff;
+}
+
+// 空状态占位
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: @text-tertiary;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    color: @color-primary;
+    background: @bg-hover;
+  }
+}
+
+.placeholderTitle {
+  font-size: @font-size-md;
+  font-weight: 500;
+}
+
+.placeholderHint {
+  font-size: @font-size-sm;
+  color: @text-placeholder;
+}
+
+// 底部高度拖拽手柄
+.resizeHandle {
+  height: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: ns-resize;
+  border-radius: 0 0 @radius-md @radius-md;
+  margin-top: -2px;
+}
+
+.resizeGrip {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background-color: @border-color;
+  transition: background-color 0.15s;
+}
+
+.resizeHandle:hover .resizeGrip {
+  background-color: @color-primary;
+}
+
+// ========== 设置弹框 ==========
+.settingsMask {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: 10020;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settingsPanel {
+  width: 440px;
+  max-width: calc(100vw - 48px);
+  background: @bg-base;
+  border-radius: @radius-lg;
+  box-shadow: @shadow-lg;
+  padding: 20px 22px;
+}
+
+.settingsTitle {
+  font-size: @font-size-lg;
+  font-weight: 600;
+  color: @text-primary;
+  margin-bottom: 14px;
+}
+
+.fieldLabel {
+  display: block;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+  margin: 10px 0 6px;
+}
+
+.urlInput,
+.heightInput {
+  width: 100%;
+  box-sizing: border-box;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid @border-color;
+  border-radius: @radius-sm;
+  font-size: @font-size-sm;
+  color: @text-primary;
+  background: @bg-base;
+  outline: none;
+
+  &:focus {
+    border-color: @color-primary;
+  }
+}
+
+.heightInput {
+  width: 140px;
+}
+
+.settingsError {
+  margin-top: 10px;
+  font-size: @font-size-sm;
+  color: @color-danger;
+}
+
+.settingsActions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.btnGhost {
+  height: 32px;
+  padding: 0 16px;
+  border: 1px solid @border-color;
+  border-radius: @radius-sm;
+  background: @bg-base;
+  color: @text-secondary;
+  font-size: @font-size-sm;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    background: @bg-hover;
+    color: @text-primary;
+  }
+}
+
+.btnPrimary {
+  height: 32px;
+  padding: 0 18px;
+  border: none;
+  border-radius: @radius-sm;
+  background: var(--theme-primary);
+  color: #fff;
+  font-size: @font-size-sm;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    opacity: 0.9;
+  }
+}

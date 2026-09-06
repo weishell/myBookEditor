@@ -33,3 +33,4 @@ export * from './columns';
 export * from './calendar';
 export * from './timeline';
 export * from './chart';
+export * from './embed';

@@ -67,6 +67,7 @@ const COMMON_ITEMS: BlockTypeOption[] = [
   { type: BlockElementType.CHART, label: '图表', icon: '📊' },
   { type: BlockElementType.CALENDAR, label: '日历', icon: '📅' },
   { type: BlockElementType.TIMELINE, label: '时间轴', icon: '📎' },
+  { type: BlockElementType.EMBED, label: '内嵌网页', icon: '🌐' },
   { type: BlockElementType.DRAWIO, label: '流程图', icon: '⇄', disabled: true },
   { type: BlockElementType.DIVIDER, label: '分隔线', icon: '—', disabled: true },
 ];
