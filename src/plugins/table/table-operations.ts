@@ -30,6 +30,10 @@ export interface TableAttrs extends CustomElementAttrs {
   borderWidth?: string;
   /** 与 cell 解耦的列宽数组：每列一个像素宽度，索引即列号 */
   colWidths?: number[];
+  /** 设置为「标题行」的逻辑行索引 */
+  headerRows?: number[];
+  /** 设置为「标题列」的逻辑列索引 */
+  headerCols?: number[];
 }
 
 type NodeEntry = [CustomElement, number[]];
@@ -331,6 +335,49 @@ export const updateTable = (editor: Editor, tablePath: number[], attrs: Partial<
 };
 
 /* ================================================================== */
+/* 设置「标题行 / 标题列」                                              */
+/* 不做任何启停规则限制：任意行/列都可设或取消，仅作用于灰底 + 加粗视觉。 */
+/* ================================================================== */
+
+/** on=true 设置第 rowIndex 行为标题行，on=false 取消 */
+export const setHeaderRow = (
+  editor: Editor,
+  tablePath: number[],
+  rowIndex: number,
+  on: boolean,
+): boolean => {
+  const [tableEl] = getTableEntry(editor, tablePath);
+  const ta = ((tableEl.attrs || {}) as TableAttrs) || {};
+  const headers = new Set(ta.headerRows || []);
+  if (on) {
+    headers.add(rowIndex);
+  } else {
+    headers.delete(rowIndex);
+  }
+  updateTable(editor, tablePath, { headerRows: Array.from(headers).sort((a, b) => a - b) });
+  return true;
+};
+
+/** on=true 设置第 colIndex 列为标题列，on=false 取消 */
+export const setHeaderColumn = (
+  editor: Editor,
+  tablePath: number[],
+  colIndex: number,
+  on: boolean,
+): boolean => {
+  const [tableEl] = getTableEntry(editor, tablePath);
+  const ta = ((tableEl.attrs || {}) as TableAttrs) || {};
+  const headers = new Set(ta.headerCols || []);
+  if (on) {
+    headers.add(colIndex);
+  } else {
+    headers.delete(colIndex);
+  }
+  updateTable(editor, tablePath, { headerCols: Array.from(headers).sort((a, b) => a - b) });
+  return true;
+};
+
+/* ================================================================== */
 /* 合并 / 拆分 / 单元格颜色 / 行颜色 / 表格边框 / 删除表格                */
 /* 基于 table-grid 的逻辑网格，把「逻辑行列」解析成物理 cell 再改 attrs；    */
 /* 合并/拆分则整体重建 table.children（保留复杂子块引用，避免内容丢失）。 */
@@ -367,7 +414,11 @@ export const mergeCells = (
   try {
     const [tableEl] = Editor.node(editor, tablePath) as [CustomElement, number[]];
     const newRows = mergeTableGrid(tableEl, r0, c0, r1, c1);
-    applyTableRebuild(editor, tablePath, newRows);
+    // 固化列宽：合并不改变逻辑列数，但首行物理格数会变少。Table.tsx 在 attrs.colWidths
+    // 缺失时会按「首行物理格数」回退推导列数/列宽，合并后必然算错（后位列被压没，
+    // 视觉上内容"缺失"）。这里把当前逻辑列宽显式写入 attrs，让渲染不再走错误回退。
+    const widths = readColWidths(tableEl);
+    applyTableRebuild(editor, tablePath, newRows, widths);
   } catch {
     /* ignore */
   }
@@ -378,7 +429,8 @@ export const splitCell = (editor: Editor, tablePath: number[], r0: number, c0: n
   try {
     const [tableEl] = Editor.node(editor, tablePath) as [CustomElement, number[]];
     const newRows = splitTableGrid(tableEl, r0, c0);
-    applyTableRebuild(editor, tablePath, newRows);
+    const widths = readColWidths(tableEl);
+    applyTableRebuild(editor, tablePath, newRows, widths);
   } catch {
     /* ignore */
   }

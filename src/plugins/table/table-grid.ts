@@ -89,10 +89,20 @@ export const computeGrid = (table: CustomElement): TableGrid => {
   return { rows, cols, originAt };
 };
 
-/** 把物理 cell 内的段落浅拷贝出来，供合并时拼接进锚点单元格 */
-const collectParagraphs = (cell: CustomElement | undefined): any[] => {
-  const ps = (cell?.children as any[] | undefined) || [];
-  return ps.map((p) => ({ ...p, children: (p.children || []).map((t: any) => ({ ...t })) }));
+/** 把物理 cell 内的所有块级子节点浅拷贝，供合并时拼接进锚点单元格。
+ *  id 重新生成：多个 cell 的内容并入同一锚点时，重复 id 会破坏 Slate 节点寻址。 */
+const collectCellChildren = (cell: CustomElement | undefined): any[] => {
+  const blocks = (cell?.children as any[] | undefined) || [];
+  return blocks.map((block) => {
+    if (block.text !== undefined) {
+      return { ...block };
+    }
+    return {
+      ...block,
+      id: `${block.type || 'block'}-${Math.random().toString(36).slice(2, 10)}`,
+      children: (block.children || []).map((t: any) => ({ ...t })),
+    };
+  });
 };
 
 const makeEmptyCell = (): CustomElement =>
@@ -140,7 +150,21 @@ export const mergeTableGrid = (
 
   const removed = new Set<string>();
   const spanOverride = new Map<string, { colspan: number; rowspan: number }>();
+
+  // 按行优先顺序收集矩形内（除锚点外）各 origin 的全部块级内容
   const collected: any[] = [];
+  const collectedKeys = new Set<string>();
+  for (let r = top; r <= bottom; r++) {
+    for (let c = left; c <= right; c++) {
+      const o = grid.originAt[r]?.[c];
+      if (!o || o.row !== r || o.col !== c) continue;
+      const k = keyOf(o.row, o.cell);
+      if (k === anchorKey || collectedKeys.has(k)) continue;
+      collectedKeys.add(k);
+      removed.add(k);
+      collected.push(...collectCellChildren(nodes.get(k)));
+    }
+  }
 
   const seen = new Set<string>();
   for (let r = 0; r < grid.rows; r++) {
@@ -155,11 +179,8 @@ export const mergeTableGrid = (
         spanOverride.set(k, { colspan: W, rowspan: H });
         continue;
       }
-      const orgInside = o.row >= top && o.row <= bottom && o.col >= left && o.col <= right;
-      if (orgInside) {
-        removed.add(k);
-        collected.push(...collectParagraphs(nodes.get(k)));
-      } else if (
+      if (removed.has(k)) continue;
+      if (
         (o.row < top &&
           o.row + o.rowspan - 1 >= top &&
           o.col + o.colspan - 1 >= left &&
@@ -174,12 +195,54 @@ export const mergeTableGrid = (
   }
 
   const anchorChildren = (() => {
-    const base = collectParagraphs(nodes.get(anchorKey));
+    const base = collectCellChildren(nodes.get(anchorKey));
     if (collected.length) base.push(...collected);
-    return base;
+    return base.length > 0 ? base : undefined;
   })();
 
-  return rebuildRows(table, grid, removed, spanOverride, anchorKey, anchorChildren, undefined);
+  const rows = rebuildRows(
+    table,
+    grid,
+    removed,
+    spanOverride,
+    anchorKey,
+    anchorChildren,
+    undefined,
+  );
+
+  // 整行（整块行）被合并吞掉时会产出 children 为空的行 —— Slate normalize 会给空元素
+  // 塞裸 text 节点，被 computeGrid 当成单元格后污染列数（幽灵格扩散的根源）。
+  // 处理：删除空行，并把跨越被删行的 cell 的 rowspan 同步收缩（对齐 Word「合并后减行」语义）。
+  const emptyRowIdx: number[] = [];
+  rows.forEach((row, i) => {
+    if (!row.children || (row.children as CustomElement[]).length === 0) emptyRowIdx.push(i);
+  });
+  if (emptyRowIdx.length) {
+    // 记录每个 cell 的物理起始行（rows 下标即合并前的物理行号）
+    const startRow = new Map<CustomElement, number>();
+    rows.forEach((row, r) => {
+      ((row.children as CustomElement[]) || []).forEach((cell) => {
+        if (!startRow.has(cell)) startRow.set(cell, r);
+      });
+    });
+    const deleted = new Set(emptyRowIdx);
+    [...emptyRowIdx].sort((a, b) => b - a).forEach((i) => rows.splice(i, 1));
+    rows.forEach((row) => {
+      ((row.children as CustomElement[]) || []).forEach((cell) => {
+        const attrs = (cell.attrs || {}) as object as Record<string, unknown>;
+        const rs = Math.max(1, Number(attrs.rowspan) || 1);
+        const s = startRow.get(cell);
+        if (s === undefined) return;
+        let coveredDeleted = 0;
+        for (let i = s; i < s + rs; i++) if (deleted.has(i)) coveredDeleted++;
+        if (coveredDeleted > 0) {
+          cell.attrs = { ...attrs, rowspan: rs - coveredDeleted } as any;
+        }
+      });
+    });
+  }
+
+  return rows;
 };
 
 /** 拆分布折叠为独立 grid 位置的 cell：将合并格复原成 colspan×rowspan 个 1x1 格 */

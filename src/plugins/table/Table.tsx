@@ -22,6 +22,8 @@ import {
   setTableBorder,
   deleteTable,
   getLogicalCell,
+  setHeaderRow,
+  setHeaderColumn,
 } from './table-operations';
 import { computeGrid } from './table-grid';
 import { useTheme } from '@/context/ThemeContext';
@@ -235,8 +237,17 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 经 Children.count 实测只得到 1（而非真实列数），导致拖拽手柄只渲染了第一列一个，
   // 其余列边界无手柄可拖（浏览器实测确诊）
   const colCount = (() => {
+    // 逻辑列数权威来源：table.attrs.colWidths（insertCol/deleteCol/merge 都会同步）
+    const fromAttrs = (element.attrs as TableAttrs | undefined)?.colWidths;
+    if (Array.isArray(fromAttrs) && fromAttrs.length > 0) return fromAttrs.length;
     const firstRowCells = (element.children?.[0] as CustomElement | undefined)?.children;
-    if (firstRowCells && firstRowCells.length > 0) return firstRowCells.length;
+    // 回退：首行物理格数 ≠ 逻辑列数（存在合并格时），按 colspan 摊开
+    if (firstRowCells && firstRowCells.length > 0) {
+      return (firstRowCells as CustomElement[]).reduce(
+        (sum, c) => sum + Math.max(1, Number(c.attrs?.colspan) || 1),
+        0,
+      );
+    }
     return firstRow && React.isValidElement(firstRow)
       ? React.Children.count(
           (firstRow as React.ReactElement<{ children?: React.ReactNode }>).props.children,
@@ -255,9 +266,15 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     const firstRowCells = ((element.children?.[0] as CustomElement | undefined)?.children ||
       []) as CustomElement[];
     if (firstRowCells.length > 0) {
-      return firstRowCells.map(
-        (c) => parseInt(((c as any).attrs?.width as string) || '160px', 10) || 160,
-      );
+      // 回退：感知 colspan —— 合并格的宽度应摊到其覆盖的每一逻辑列，
+      // 否则合并后列宽数组长度塌缩、后位列被压没（内容视觉"缺失"）
+      const widths: number[] = [];
+      firstRowCells.forEach((c) => {
+        const span = Math.max(1, Number(c.attrs?.colspan) || 1);
+        const w = parseInt(((c as any).attrs?.width as string) || '160px', 10) || 160;
+        for (let i = 0; i < span; i++) widths.push(w);
+      });
+      return widths;
     }
     return [];
   })();
@@ -477,7 +494,6 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         }
         return;
       }
-      const cells = firstRow.cells;
 
       setTableSize({
         width: tableRect.width,
@@ -501,18 +517,30 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       setRowDots(newRowDots);
 
-      // 计算 colDots（列头定位、拖拽手柄等，内容坐标）
+      // 计算 colDots —— 基于逻辑列宽（colWidths），合并后仍与逻辑列对齐。
+      // 旧方案用首行物理 cell 边界，合并后物理格数 < 逻辑列数，导致选区/上色/高亮列偏移。
       const newColDots: DotPosition[] = [];
-      for (let i = 0; i <= cells.length; i++) {
-        if (i === 0) {
-          const rect = (cells[0] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
-        } else if (i === cells.length) {
-          const rect = (cells[cells.length - 1] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.right - wrapperRect.left + scrollOffX });
-        } else {
-          const rect = (cells[i] as HTMLElement).getBoundingClientRect();
-          newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
+      if (colWidths.length > 0) {
+        const tableLeft = tableRect.left - wrapperRect.left + scrollOffX;
+        let cumLeft = tableLeft;
+        newColDots.push({ top: 0, left: cumLeft });
+        for (const w of colWidths) {
+          cumLeft += w;
+          newColDots.push({ top: 0, left: cumLeft });
+        }
+      } else {
+        const cells = firstRow.cells;
+        for (let i = 0; i <= cells.length; i++) {
+          if (i === 0) {
+            const rect = (cells[0] as HTMLElement).getBoundingClientRect();
+            newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
+          } else if (i === cells.length) {
+            const rect = (cells[cells.length - 1] as HTMLElement).getBoundingClientRect();
+            newColDots.push({ top: 0, left: rect.right - wrapperRect.left + scrollOffX });
+          } else {
+            const rect = (cells[i] as HTMLElement).getBoundingClientRect();
+            newColDots.push({ top: 0, left: rect.left - wrapperRect.left + scrollOffX });
+          }
         }
       }
       setColDots(newColDots);
@@ -541,6 +569,9 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       }
       window.removeEventListener('resize', measure);
     };
+    // colWidths 用值签名 colWidthsKey 代替引用（数组每渲染都是新引用），
+    // 值变化时 colWidthsKey 必变，effect 不会漏跑 —— 故意不加 colWidths 本身
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [children, rowCount, colCount, colWidthsKey]);
 
   const handleContextMenu = useCallback(
@@ -615,9 +646,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       e.stopPropagation();
 
       if (!tableRef.current) return;
-      const cells = tableRef.current.querySelectorAll(`td[data-col-index="${colIndex}"]`);
-      const firstCell = cells[0] as HTMLElement | undefined;
-      const startWidth = firstCell ? firstCell.getBoundingClientRect().width : 160;
+      const startWidth = colWidths[colIndex] || 160;
 
       resizingRef.current = {
         colIndex,
@@ -671,7 +700,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       document.addEventListener('mousemove', handleMove);
       document.addEventListener('mouseup', handleUp);
     },
-    [editor, element],
+    [editor, element, colWidths],
   );
 
   // ========== 跨单元格拖拽选中 ==========
@@ -814,6 +843,25 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     }
   }, [selectedRow, editor, element]);
 
+  const tableAttrs = ((element.attrs || {}) as TableAttrs) || {};
+  const headerRows = tableAttrs.headerRows || [];
+  const headerCols = tableAttrs.headerCols || [];
+
+  const rowIsHeader = selectedRow !== null && headerRows.includes(selectedRow);
+  const colIsHeader = selectedCol !== null && headerCols.includes(selectedCol);
+
+  const handleToggleHeaderRow = () => {
+    if (selectedRow === null) return;
+    const tablePath = ReactEditor.findPath(editor, element);
+    setHeaderRow(editor, tablePath, selectedRow, !rowIsHeader);
+  };
+
+  const handleToggleHeaderCol = () => {
+    if (selectedCol === null) return;
+    const tablePath = ReactEditor.findPath(editor, element);
+    setHeaderColumn(editor, tablePath, selectedCol, !colIsHeader);
+  };
+
   const handleDeleteSelectedCol = useCallback(() => {
     if (selectedCol === null) return;
     try {
@@ -881,7 +929,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       cellBg,
       rowBg,
     };
-  }, [menuVisible, menuCell, cellRange, selectedRow, selectedCol, editor, element, getLogicalCell]);
+  }, [menuVisible, menuCell, cellRange, selectedRow, selectedCol, editor, element]);
 
   const handleMenuAction = useCallback(
     (action: TableMenuAction, payload?: any) => {
@@ -996,7 +1044,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         console.error('Table menu action failed:', err);
       }
     },
-    [editor, element, menuCell, cellRange, selectedRow, selectedCol, restoreIntoTable, computeGrid],
+    [editor, element, menuCell, cellRange, selectedRow, selectedCol, restoreIntoTable],
   );
 
   // ========== 全局监听：调试 + 兜底清空非法光标 ==========
@@ -1412,6 +1460,28 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
               <span>删除行</span>
             </button>
           )}
+          {selectedRow !== null && (
+            <button
+              className={styles.toolbarBtn}
+              onClick={handleToggleHeaderRow}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M4 5h16M4 12h16M4 19h10" />
+              </svg>
+              <span>{rowIsHeader ? '取消标题行' : '设为标题行'}</span>
+            </button>
+          )}
           {selectedCol !== null && (
             <>
               <button
@@ -1479,6 +1549,28 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
                 <path d="M3 6h18M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a2 2 0 012-2h4a2 2 0 012 2v2" />
               </svg>
               <span>删除列</span>
+            </button>
+          )}
+          {selectedCol !== null && (
+            <button
+              className={styles.toolbarBtn}
+              onClick={handleToggleHeaderCol}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <path d="M5 4v16M12 4v16M19 4v16M3 6h18M3 12h18" />
+              </svg>
+              <span>{colIsHeader ? '取消标题列' : '设为标题列'}</span>
             </button>
           )}
         </div>
@@ -1607,6 +1699,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         >
           <table
             ref={tableRef}
+            key={`${headerRows.join(',')}|${headerCols.join(',')}`}
             className={styles.table}
             style={{
               border: `${borderWidth} solid ${borderColor}`,
