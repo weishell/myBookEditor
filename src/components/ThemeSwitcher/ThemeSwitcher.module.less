@@ -95,22 +95,29 @@
   font-weight: 500;
 }
 
-/* 黑色主题项右侧加 badge + 箭头 */
-.optionIsBlack .optionBadge {
+/* 分隔线：主题列表与「壁纸与护眼」入口之间 */
+.divider {
+  height: 1px;
+  margin: 4px 0;
+  background-color: @border-color-light;
+}
+
+/* 选项右侧 badge + 箭头（原仅黑色主题项有，改为通用） */
+.optionBadge {
   margin-left: 8px;
   font-size: 11px;
   color: @text-secondary;
   opacity: 0.85;
   white-space: nowrap;
 }
-.optionIsBlack .caret {
+.caret {
   margin-left: 4px;
   color: @text-tertiary;
   font-size: 16px;
   line-height: 1;
   transform: translateY(-1px);
 }
-.optionIsBlack:hover .caret {
+.option:hover .caret {
   color: @text-primary;
 }
 

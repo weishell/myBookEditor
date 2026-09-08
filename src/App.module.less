@@ -78,6 +78,20 @@
   background-color: transparent;
 }
 
+/* ================ 浅色壁纸（柔和护眼）透出 =================== */
+/* 壁纸选中时 html 上有 .light-wallpaper，--lw-tint/--lw-paper 由 WallpaperHost 写入 */
+
+/* 浅色壁纸：容器背景透明，让底层 WallpaperHost（z-index:0）的装饰渐变透出，
+   与暗黑模式同一机制；编辑纸面用 --lw-paper、顶栏用 --lw-tint 染色 */
+:global(.light-wallpaper) .container {
+  background-color: transparent;
+}
+
+:global(.light-wallpaper) .header {
+  background-color: color-mix(in srgb, var(--lw-tint, #ffffff) 55%, #ffffff);
+  border-bottom-color: color-mix(in srgb, var(--lw-tint, #e8e8e8) 45%, #e8e8e8);
+}
+
 /* ================ antd 弹出层暗黑适配 =================== */
 
 /* Dropdown 下拉菜单 */

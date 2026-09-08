@@ -10,7 +10,7 @@ import { useCursor, CURSOR_THEMES } from '@/context/CursorContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEditorMode } from '@/context/EditorContext';
 import { FONT_LIST, DEFAULT_FONT_ID, loadFont, getFontById } from '@/plugins/font';
-import { WALLPAPER_PRESETS, WALLPAPER_NONE_ID, getWallpaperById } from '@/components/wallpapers';
+import { WALLPAPER_NONE_ID, getWallpaperById, getWallpapersByMode } from '@/components/wallpapers';
 import { useFindReplace } from './find-replace/FindReplaceContext';
 import styles from './SettingsSwitcher.module.less';
 
@@ -33,7 +33,16 @@ function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
 export default function SettingsSwitcher() {
   const { t } = useTranslation();
   const { globalFont, setGlobalFont, mode, setMode } = useEditorMode();
-  const { theme, themeColor, setTheme, wallpaper, setWallpaper } = useTheme();
+  const {
+    theme,
+    themeColor,
+    isDarkMode,
+    setTheme,
+    wallpaper,
+    setWallpaper,
+    lightWallpaper,
+    setLightWallpaper,
+  } = useTheme();
   const { cursorTheme, setCursorTheme } = useCursor();
   const { language, toggleLanguage } = useLanguage();
   const { setOpen: setFindOpen } = useFindReplace();
@@ -59,6 +68,28 @@ export default function SettingsSwitcher() {
   const currentTheme = THEME_PRESETS.find((p) => p.id === theme);
   const currentCursor = CURSOR_THEMES.find((c) => c.id === cursorTheme) ?? CURSOR_THEMES[0];
   const currentWallpaper = wallpaper ? getWallpaperById(wallpaper) : undefined;
+  const currentLightWallpaper = lightWallpaper ? getWallpaperById(lightWallpaper) : undefined;
+
+  // 壁纸分两组展示：浅色（柔和护眼/风景）与暗黑，点哪组自动切到对应模式
+  const lightPresets = getWallpapersByMode('light');
+  const darkPresets = getWallpapersByMode('dark');
+
+  const wallpaperName = (w?: { id: string; name: string }) =>
+    !w || w.id === WALLPAPER_NONE_ID ? '默认' : w.name;
+
+  // 入口行显示当前模式正在使用的壁纸
+  const activeWallpaperLabel = isDarkMode
+    ? wallpaperName(currentWallpaper)
+    : wallpaperName(currentLightWallpaper);
+
+  const pickLightWallpaper = (id: string) => {
+    setLightWallpaper(id);
+    if (theme === BLACK_THEME_ID) setTheme('blue');
+  };
+  const pickDarkWallpaper = (id: string) => {
+    setWallpaper(id);
+    if (theme !== BLACK_THEME_ID) setTheme(BLACK_THEME_ID);
+  };
 
   const openView = (v: View) => setView(v);
   const backHome = () => setView('home');
@@ -215,32 +246,47 @@ export default function SettingsSwitcher() {
                   </div>
                 ))}
               </div>
-              {theme === BLACK_THEME_ID && (
-                <button className={styles.subEntry} onClick={() => openView('wallpaper')}>
-                  <span>暗黑壁纸</span>
-                  <span className={styles.rowValue}>
-                    {currentWallpaper?.id === WALLPAPER_NONE_ID ? '默认' : currentWallpaper?.name}
-                  </span>
-                  <span className={styles.caret}>›</span>
-                </button>
-              )}
+              {/* 任何主题下都可见：浅色选护眼/风景壁纸，黑色选暗黑壁纸 */}
+              <button className={styles.subEntry} onClick={() => openView('wallpaper')}>
+                <span>壁纸 / 护眼</span>
+                <span className={styles.rowValue}>{activeWallpaperLabel}</span>
+                <span className={styles.caret}>›</span>
+              </button>
             </>
           )}
 
           {view === 'wallpaper' && (
             <>
-              <SubHeader title="暗黑壁纸" onBack={() => openView('theme')} />
+              <SubHeader title="壁纸 / 护眼" onBack={() => openView('theme')} />
               <div className={styles.options}>
-                {WALLPAPER_PRESETS.map((w) => {
+                <div className={styles.sectionLabel}>
+                  柔和护眼 · 风景（浅色模式）{isDarkMode ? '，选择后自动切到浅色' : ''}
+                </div>
+                {lightPresets.map((w) => {
+                  const selected = lightWallpaper === w.id;
+                  return (
+                    <div
+                      key={w.id}
+                      className={`${styles.option} ${selected ? styles.optionActive : ''}`}
+                      onClick={() => pickLightWallpaper(w.id)}
+                    >
+                      <span className={styles.optionName}>{w.name}</span>
+                      {w.description && <span className={styles.optionDesc}>{w.description}</span>}
+                      {selected && <span className={styles.check}>✓</span>}
+                    </div>
+                  );
+                })}
+
+                <div className={styles.sectionLabel}>
+                  暗黑壁纸{!isDarkMode ? '，选择后自动切到黑色（暗黑）' : ''}
+                </div>
+                {darkPresets.map((w) => {
                   const selected = wallpaper === w.id;
                   return (
                     <div
                       key={w.id}
                       className={`${styles.option} ${selected ? styles.optionActive : ''}`}
-                      onClick={() => {
-                        setWallpaper(w.id);
-                        if (theme !== BLACK_THEME_ID) setTheme(BLACK_THEME_ID);
-                      }}
+                      onClick={() => pickDarkWallpaper(w.id)}
                     >
                       <span className={styles.optionName}>{w.name}</span>
                       {w.description && <span className={styles.optionDesc}>{w.description}</span>}

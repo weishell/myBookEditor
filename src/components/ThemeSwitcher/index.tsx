@@ -1,9 +1,9 @@
 import { useState, useRef, useEffect, useLayoutEffect } from 'react';
 import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
 import {
-  WALLPAPER_PRESETS,
-  WALLPAPER_NONE_ID,
   getWallpaperById,
+  getWallpapersByMode,
+  WALLPAPER_NONE_ID,
   type WallpaperPreset,
 } from '@/components/wallpapers';
 import styles from './ThemeSwitcher.module.less';
@@ -11,14 +11,23 @@ import styles from './ThemeSwitcher.module.less';
 const BLACK_THEME_ID: ThemeId = 'black';
 
 /** 预览卡片 */
-function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
+function WallpaperThumb({
+  preset,
+  mode = 'dark',
+}: {
+  preset: WallpaperPreset;
+  mode?: 'dark' | 'light';
+}) {
   if (preset.id === WALLPAPER_NONE_ID) {
     return (
       <div
         className={styles.thumbInner}
         style={{
-          background: 'linear-gradient(180deg, #080b13 0%, #121721 100%)',
-          color: '#9ca3af',
+          background:
+            mode === 'light'
+              ? 'linear-gradient(180deg, #f5f7fb 0%, #e9eef5 100%)'
+              : 'linear-gradient(180deg, #080b13 0%, #121721 100%)',
+          color: mode === 'light' ? '#8a94a6' : '#9ca3af',
           fontSize: 11,
           display: 'flex',
           alignItems: 'center',
@@ -28,6 +37,10 @@ function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
         无壁纸
       </div>
     );
+  }
+  // 浅色壁纸：注册表直接给 thumbCss，通用渲染
+  if (preset.thumbCss) {
+    return <div className={styles.thumbInner} style={{ background: preset.thumbCss }} />;
   }
   if (preset.kind === 'image' && preset.imageUrl) {
     return (
@@ -232,11 +245,21 @@ function WallpaperThumb({ preset }: { preset: WallpaperPreset }) {
 }
 
 export default function ThemeSwitcher() {
-  const { theme, themeColor, setTheme, wallpaper, setWallpaper } = useTheme();
+  const {
+    theme,
+    themeColor,
+    isDarkMode,
+    setTheme,
+    wallpaper,
+    setWallpaper,
+    lightWallpaper,
+    setLightWallpaper,
+  } = useTheme();
   const [open, setOpen] = useState(false);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const wallpaperPopRef = useRef<HTMLDivElement>(null);
 
+  // 壁纸弹框：由底部"壁纸与护眼"入口点击开合（hover 在多行上易互相干扰，改为点击）
   const [wallpaperOpen, setWallpaperOpen] = useState(false);
   const [popPlacement, setPopPlacement] = useState<'bottom' | 'top'>('bottom');
 
@@ -253,13 +276,27 @@ export default function ThemeSwitcher() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [open]);
 
-  const currentWallpaper = wallpaper ? getWallpaperById(wallpaper) : undefined;
-  const currentWallpaperName =
-    currentWallpaper?.id === WALLPAPER_NONE_ID ? '默认' : currentWallpaper?.name;
+  const darkWallpaperName = (() => {
+    const w = wallpaper ? getWallpaperById(wallpaper) : undefined;
+    return w && w.id !== WALLPAPER_NONE_ID ? w.name : '默认';
+  })();
+  const lightWallpaperName = (() => {
+    const w = lightWallpaper ? getWallpaperById(lightWallpaper) : undefined;
+    return w && w.id !== WALLPAPER_NONE_ID ? w.name : '默认';
+  })();
 
-  // 统一的"黑色主题悬浮区"：包含选项 + 壁纸弹框，鼠标离开整块才关
-  const hoverGroupEnter = () => setWallpaperOpen(true);
-  const hoverGroupLeave = () => setWallpaperOpen(false);
+  // 两组壁纸都在弹框里列出，点哪组就自动切到对应模式，任何主题下都能直接选
+  const lightPresets = getWallpapersByMode('light');
+  const darkPresets = getWallpapersByMode('dark');
+
+  const pickLightWallpaper = (id: string) => {
+    setLightWallpaper(id);
+    if (theme === BLACK_THEME_ID) setTheme('blue');
+  };
+  const pickDarkWallpaper = (id: string) => {
+    setWallpaper(id);
+    if (theme !== BLACK_THEME_ID) setTheme(BLACK_THEME_ID);
+  };
 
   // 弹框智能定位：下方空间不够时自动翻转到上方
   useLayoutEffect(() => {
@@ -286,6 +323,33 @@ export default function ThemeSwitcher() {
     return () => cancelAnimationFrame(raf);
   }, [wallpaperOpen]);
 
+  const renderWallpaperCards = (
+    presets: WallpaperPreset[],
+    activeId: string,
+    onPick: (id: string) => void,
+    mode: 'dark' | 'light',
+  ) =>
+    presets.map((w) => {
+      const selected = activeId === w.id;
+      return (
+        <button
+          key={w.id}
+          type="button"
+          className={`${styles.wallpaperCard} ${selected ? styles.wallpaperCardActive : ''}`}
+          onClick={() => onPick(w.id)}
+        >
+          <div className={styles.thumbBox}>
+            <WallpaperThumb preset={w} mode={mode} />
+            {selected && <span className={styles.check}>✓</span>}
+          </div>
+          <div className={styles.wallpaperMeta}>
+            <div className={styles.wallpaperName}>{w.name}</div>
+            {w.description && <div className={styles.wallpaperDesc}>{w.description}</div>}
+          </div>
+        </button>
+      );
+    });
+
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
       <button className={styles.button} onClick={() => setOpen(!open)} title="切换主题">
@@ -295,90 +359,55 @@ export default function ThemeSwitcher() {
 
       {open && (
         <div className={styles.dropdown}>
-          {THEME_PRESETS.map((preset) => {
-            const isBlack = preset.id === BLACK_THEME_ID;
-            const isActive = theme === preset.id;
+          {THEME_PRESETS.map((preset) => (
+            <div
+              key={preset.id}
+              className={`${styles.option} ${theme === preset.id ? styles.optionActive : ''}`}
+              onClick={() => {
+                setTheme(preset.id);
+                setOpen(false);
+              }}
+            >
+              <span className={styles.optionSwatch} style={{ backgroundColor: preset.color }} />
+              <span className={styles.optionName}>{preset.name}</span>
+            </div>
+          ))}
 
-            if (isBlack) {
-              // 黑色主题：用 hoverGroup 包住选项和弹框，避免"鼠标移到弹框时选项已离开"
-              return (
-                <div
-                  key={preset.id}
-                  className={styles.hoverGroup}
-                  onMouseEnter={hoverGroupEnter}
-                  onMouseLeave={hoverGroupLeave}
-                >
-                  <div
-                    className={`${styles.option} ${isActive ? styles.optionActive : ''} ${styles.optionIsBlack}`}
-                    onClick={() => setTheme(preset.id)}
-                  >
-                    <span
-                      className={styles.optionSwatch}
-                      style={{ backgroundColor: preset.color }}
-                    />
-                    <span className={styles.optionName}>{preset.name}</span>
-                    <span className={styles.optionBadge}>
-                      壁纸：{currentWallpaperName ?? '默认'}
-                    </span>
-                    <span className={styles.caret}>›</span>
-                  </div>
+          {/* 壁纸 / 护眼统一入口：任何主题下都能点开，两组都列出，点哪组自动切到对应模式 */}
+          <div className={styles.divider} />
+          <div className={styles.hoverGroup}>
+            <div
+              className={`${styles.option} ${styles.wallpaperEntry}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                setWallpaperOpen((v) => !v);
+              }}
+            >
+              <span className={styles.optionName}>壁纸与护眼</span>
+              <span className={styles.optionBadge}>
+                {isDarkMode ? darkWallpaperName : lightWallpaperName}
+              </span>
+              <span className={styles.caret}>›</span>
+            </div>
 
-                  {wallpaperOpen && (
-                    <div
-                      ref={wallpaperPopRef}
-                      className={styles.wallpaperPop}
-                      data-placement={popPlacement}
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className={styles.wallpaperPopTitle}>选择暗黑壁纸</div>
-                      <div className={styles.wallpaperGrid}>
-                        {WALLPAPER_PRESETS.map((w) => {
-                          const selected = wallpaper === w.id;
-                          return (
-                            <button
-                              key={w.id}
-                              type="button"
-                              className={`${styles.wallpaperCard} ${selected ? styles.wallpaperCardActive : ''}`}
-                              onClick={() => {
-                                setWallpaper(w.id);
-                                if (theme !== BLACK_THEME_ID) setTheme(BLACK_THEME_ID);
-                              }}
-                            >
-                              <div className={styles.thumbBox}>
-                                <WallpaperThumb preset={w} />
-                                {selected && <span className={styles.check}>✓</span>}
-                              </div>
-                              <div className={styles.wallpaperMeta}>
-                                <div className={styles.wallpaperName}>{w.name}</div>
-                                {w.description && (
-                                  <div className={styles.wallpaperDesc}>{w.description}</div>
-                                )}
-                              </div>
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-                </div>
-              );
-            }
-
-            // 其他主题：普通选项
-            return (
+            {wallpaperOpen && (
               <div
-                key={preset.id}
-                className={`${styles.option} ${isActive ? styles.optionActive : ''}`}
-                onClick={() => {
-                  setTheme(preset.id);
-                  setOpen(false);
-                }}
+                ref={wallpaperPopRef}
+                className={styles.wallpaperPop}
+                data-placement={popPlacement}
+                onClick={(e) => e.stopPropagation()}
               >
-                <span className={styles.optionSwatch} style={{ backgroundColor: preset.color }} />
-                <span className={styles.optionName}>{preset.name}</span>
+                <div className={styles.wallpaperPopTitle}>柔和护眼（浅色模式）</div>
+                <div className={styles.wallpaperGrid}>
+                  {renderWallpaperCards(lightPresets, lightWallpaper, pickLightWallpaper, 'light')}
+                </div>
+                <div className={styles.wallpaperPopTitle}>暗黑壁纸</div>
+                <div className={styles.wallpaperGrid}>
+                  {renderWallpaperCards(darkPresets, wallpaper, pickDarkWallpaper, 'dark')}
+                </div>
               </div>
-            );
-          })}
+            )}
+          </div>
         </div>
       )}
     </div>

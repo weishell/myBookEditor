@@ -64,9 +64,13 @@ interface ThemeContextType {
   theme: ThemeId;
   themeColor: string;
   isDarkMode: boolean;
+  /** 暗黑模式壁纸（mode='dark' 组） */
   wallpaper: string;
+  /** 浅色模式壁纸（mode='light' 组，柔和护眼底色） */
+  lightWallpaper: string;
   setTheme: (theme: ThemeId) => void;
   setWallpaper: (wallpaperId: string) => void;
+  setLightWallpaper: (wallpaperId: string) => void;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -77,6 +81,8 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setTheme] = useState<ThemeId>(DEFAULT_THEME);
   // 壁纸 ID：仅在暗黑模式下生效；默认选中一张（用户可切到"默认"即 none 关掉）
   const [wallpaper, setWallpaper] = useState<string>(DEFAULT_WALLPAPER);
+  // 浅色模式壁纸（柔和护眼底色），与暗黑壁纸互不干扰、分别记忆
+  const [lightWallpaper, setLightWallpaper] = useState<string>(DEFAULT_WALLPAPER);
 
   const themeColor = useMemo(() => {
     return THEME_PRESETS.find((t) => t.id === theme)?.color ?? '#1890ff';
@@ -126,8 +132,17 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
   }, [isDarkMode]);
 
   const value = useMemo(
-    () => ({ theme, themeColor, isDarkMode, wallpaper, setTheme, setWallpaper }),
-    [theme, themeColor, isDarkMode, wallpaper],
+    () => ({
+      theme,
+      themeColor,
+      isDarkMode,
+      wallpaper,
+      lightWallpaper,
+      setTheme,
+      setWallpaper,
+      setLightWallpaper,
+    }),
+    [theme, themeColor, isDarkMode, wallpaper, lightWallpaper],
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

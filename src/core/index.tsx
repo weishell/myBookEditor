@@ -147,9 +147,12 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 margin: '0 auto',
                 padding: '40px 65px',
                 // 暗黑模式：编辑纸去掉背景和边框，让底层壁纸透出来
-                border: isDarkMode ? 'none' : '1px solid #e8e8e8',
+                // 浅色壁纸（html.light-wallpaper）：纸面用 --lw-paper 柔和底色代替纯白
+                border: isDarkMode
+                  ? 'none'
+                  : '1px solid var(--lw-paper-border, rgba(232,232,232,0.9))',
                 borderRadius: '8px',
-                backgroundColor: isDarkMode ? 'transparent' : '#fff',
+                backgroundColor: isDarkMode ? 'transparent' : 'var(--lw-paper, #fff)',
                 boxShadow: isDarkMode ? 'none' : undefined,
                 minHeight: '500px',
                 pointerEvents: readOnly ? 'none' : 'auto',
