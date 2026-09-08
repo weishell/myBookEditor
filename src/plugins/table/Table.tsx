@@ -237,7 +237,15 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 经 Children.count 实测只得到 1（而非真实列数），导致拖拽手柄只渲染了第一列一个，
   // 其余列边界无手柄可拖（浏览器实测确诊）
   const colCount = (() => {
-    // 逻辑列数权威来源：table.attrs.colWidths（insertCol/deleteCol/merge 都会同步）
+    // 真实逻辑列数必须由 colspan/rowspan 摊开得出（computeGrid），这是唯一权威来源。
+    // 不能取 colWidths.length —— 旧文档或合并之后它常短于真实列数，
+    // 会让 colgroup 列数不足，table-layout:fixed 下多出的列被压成 0 宽、内容整列"消失"。
+    try {
+      const g = computeGrid(element).cols;
+      if (g > 0) return g;
+    } catch {
+      /* 网格解析失败则回退 */
+    }
     const fromAttrs = (element.attrs as TableAttrs | undefined)?.colWidths;
     if (Array.isArray(fromAttrs) && fromAttrs.length > 0) return fromAttrs.length;
     const firstRowCells = (element.children?.[0] as CustomElement | undefined)?.children;
@@ -260,23 +268,28 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   // 旧文档无 colWidths 时，从首行 cell 的 width 回退推导。
   const colWidths: number[] = (() => {
     const fromAttrs = (element.attrs as TableAttrs | undefined)?.colWidths;
+    let widths: number[];
     if (Array.isArray(fromAttrs) && fromAttrs.length > 0) {
-      return fromAttrs.map((w) => Number(w) || 160);
+      widths = fromAttrs.map((w) => Number(w) || 160);
+    } else {
+      widths = [];
+      const firstRowCells = ((element.children?.[0] as CustomElement | undefined)?.children ||
+        []) as CustomElement[];
+      if (firstRowCells.length > 0) {
+        // 回退：感知 colspan —— 合并格的宽度应摊到其覆盖的每一逻辑列，
+        // 否则合并后列宽数组长度塌缩、后位列被压没（内容视觉"缺失"）
+        firstRowCells.forEach((c) => {
+          const span = Math.max(1, Number(c.attrs?.colspan) || 1);
+          const w = parseInt(((c as any).attrs?.width as string) || '160px', 10) || 160;
+          for (let i = 0; i < span; i++) widths.push(w);
+        });
+      }
     }
-    const firstRowCells = ((element.children?.[0] as CustomElement | undefined)?.children ||
-      []) as CustomElement[];
-    if (firstRowCells.length > 0) {
-      // 回退：感知 colspan —— 合并格的宽度应摊到其覆盖的每一逻辑列，
-      // 否则合并后列宽数组长度塌缩、后位列被压没（内容视觉"缺失"）
-      const widths: number[] = [];
-      firstRowCells.forEach((c) => {
-        const span = Math.max(1, Number(c.attrs?.colspan) || 1);
-        const w = parseInt(((c as any).attrs?.width as string) || '160px', 10) || 160;
-        for (let i = 0; i < span; i++) widths.push(w);
-      });
-      return widths;
-    }
-    return [];
+    // 补齐到真实逻辑列数：table-layout:fixed 下，colgroup 没覆盖到的列只能分到
+    // totalWidth 的剩余空间（= 0），会被压成 0 宽、内容整列不可见。
+    // 旧文档 / 合并后 colWidths 常短于真实列数，这里统一兜底。
+    while (widths.length < colCount) widths.push(160);
+    return widths;
   })();
 
   // 表格总宽 = 各列宽之和，显式写回 <table> 的 width。
@@ -712,9 +725,14 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         try {
           const tablePath = ReactEditor.findPath(editor, element);
           const curAttrs = ((element.attrs || {}) as TableAttrs) || {};
-          const curWidths = Array.isArray(curAttrs.colWidths)
-            ? [...(curAttrs.colWidths as number[])]
-            : [];
+          // 以「已补齐到真实列数」的 colWidths 为基准写入，而不是原始 attrs.colWidths：
+          // 后者可能短于真实列数，写回后会把「缺列」固化进文档，多余列永远 0 宽。
+          const curWidths =
+            colWidths.length > 0
+              ? [...colWidths]
+              : Array.isArray(curAttrs.colWidths)
+                ? [...(curAttrs.colWidths as number[])]
+                : [];
           while (curWidths.length <= ci) curWidths.push(160);
           curWidths[ci] = currentWidth;
           // 列宽写入 table 节点 colWidths，与 cell 解耦
