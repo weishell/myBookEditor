@@ -334,8 +334,30 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       col = cd.length - 2;
     }
 
-    if (row < 0 || col < 0) return null;
-    return { row, col };
+    if (row >= 0 && col >= 0) return { row, col };
+
+    // 兜底：rowDots/colDots 由 useLayoutEffect + rAF 异步测得，该 effect 依赖 children、
+    // 每次渲染都会重跑并取消上一次 rAF，帧率跟不上时测量可能长期不可用（rd.length===0），
+    // 此时纯几何换算恒返回 null → 拖选永不接管、moved 恒 false → 合并单元格入口恒灰。
+    // 这里改用 DOM 直接反推行列，不依赖任何测量结果。
+    try {
+      const el = document.elementFromPoint(clientX, clientY) as HTMLElement | null;
+      const cellEl = el?.closest?.('td, th') as HTMLElement | null;
+      if (cellEl && wrapper.contains(cellEl)) {
+        const tr = cellEl.closest('tr');
+        const tableEl = cellEl.closest('table');
+        if (tr && tableEl) {
+          const r = Array.prototype.indexOf.call(tableEl.rows, tr);
+          const logical = cellEl.getAttribute('data-logical-col');
+          const c =
+            logical !== null ? Number(logical) : Array.prototype.indexOf.call(tr.cells, cellEl);
+          if (r >= 0 && c >= 0 && Number.isFinite(c)) return { row: r, col: c };
+        }
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
   }, []);
 
   // 合并 Slate ref 和本地 ref
@@ -562,17 +584,28 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     }
     window.addEventListener('resize', measure);
 
+    // 尺寸变化由 ResizeObserver 兜底重测。
+    let ro: ResizeObserver | null = null;
+    if (typeof ResizeObserver !== 'undefined' && tableRef.current) {
+      ro = new ResizeObserver(() => measure());
+      ro.observe(tableRef.current);
+      if (wrapperRef.current) ro.observe(wrapperRef.current);
+    }
+
     return () => {
       cancelAnimationFrame(rafId);
+      if (ro) ro.disconnect();
       if (scrollEl) {
         scrollEl.removeEventListener('scroll', handleScroll);
       }
       window.removeEventListener('resize', measure);
     };
-    // colWidths 用值签名 colWidthsKey 代替引用（数组每渲染都是新引用），
-    // 值变化时 colWidthsKey 必变，effect 不会漏跑 —— 故意不加 colWidths 本身
+    // 关键：不再依赖 children。children 每次渲染都是新引用，会让 effect 每次渲染都重跑，
+    // 从而 cancelAnimationFrame 掉上一次的 rAF 重试 —— 帧率跟不上时测量永远排不上队，
+    // rowDots/colDots 长期为空 → getCellFromPoint 恒 null → 拖选永不接管、合并入口恒灰。
+    // 尺寸/行列/列宽变化已分别由 ResizeObserver、rowCount/colCount、colWidthsKey 覆盖。
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [children, rowCount, colCount, colWidthsKey]);
+  }, [rowCount, colCount, colWidthsKey]);
 
   const handleContextMenu = useCallback(
     (e: React.MouseEvent) => {
@@ -1277,15 +1310,22 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
     ) : null;
 
   // 跨单元格拖拽选中的矩形高亮（整格选中，便于合并/拆分）
+  // 高亮的显示不能依赖 rowDots/colDots 的「长度守卫」：
+  // 几何测量是异步的（useLayoutEffect + rAF 重试），一旦测量落后于 cellRange 一个渲染周期，
+  // 长度守卫就让高亮整块消失，表现为「框选后松手选区没了」（数据其实还在）。
+  // 改为索引夹紧：只要 cellRange 在就一定渲染，越界时退化为可用边界。
   const cellRangeHighlight =
-    cellRange !== null &&
-    colDots.length > Math.max(cellRange.c0, cellRange.c1) + 1 &&
-    rowDots.length > Math.max(cellRange.r0, cellRange.r1) + 1
+    cellRange !== null && rowDots.length >= 2 && colDots.length >= 2
       ? (() => {
-          const top = rowDots[Math.min(cellRange.r0, cellRange.r1)]?.top || 0;
-          const bottom = rowDots[Math.max(cellRange.r0, cellRange.r1) + 1]?.top || top;
-          const left = colDots[Math.min(cellRange.c0, cellRange.c1)]?.left || 0;
-          const right = colDots[Math.max(cellRange.c0, cellRange.c1) + 1]?.left || left;
+          const clampIdx = (v: number, len: number) => Math.max(0, Math.min(v, len - 1));
+          const rMin = clampIdx(Math.min(cellRange.r0, cellRange.r1), rowDots.length);
+          const rMax = clampIdx(Math.max(cellRange.r0, cellRange.r1) + 1, rowDots.length);
+          const cMin = clampIdx(Math.min(cellRange.c0, cellRange.c1), colDots.length);
+          const cMax = clampIdx(Math.max(cellRange.c0, cellRange.c1) + 1, colDots.length);
+          const top = rowDots[rMin]?.top ?? 0;
+          const bottom = rowDots[rMax]?.top ?? top;
+          const left = colDots[cMin]?.left ?? 0;
+          const right = colDots[cMax]?.left ?? left;
           return (
             <div
               className={styles.cellRangeHighlight}
