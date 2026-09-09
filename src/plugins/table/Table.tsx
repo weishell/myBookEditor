@@ -796,7 +796,10 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       });
     };
 
-    const onMouseUp = () => {
+    const onMouseUp = (e: MouseEvent) => {
+      // 出口双保险：只有左键 mouseup 才有权清空选区。
+      // 即使 dragRef 意外被非左键设置（如右键），也绝不在 mouseup 清 cellRange。
+      if (e.button !== 0) return;
       const drag = cellDragRef.current;
       if (!drag) return;
       // 单击（无位移）→ 回到单格编辑，清空范围
@@ -1374,6 +1377,13 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
       onMouseLeave={handleMouseLeave}
       onMouseMove={handleWrapperMouseMove}
       onMouseDown={(e) => {
+        // 只处理左键：右键/中键绝不设置拖选锚点。
+        // 否则右键 mousedown 也会设置 cellDragRef（moved:false），随后右键 mouseup
+        // 走到 onMouseUp 的 `if (!drag.moved) setCellRange(null)`，把已有跨格选区清掉
+        // ——表现为「表格区域内右键，选区消失」；表外右键不经过此 handler 所以不受影响。
+        // 是否中招取决于右键期间是否夹带一个 mousemove（move 会提前清掉 dragRef），
+        // 这由输入设备决定，因此不同电脑表现不同。
+        if (e.button !== 0) return;
         const t = e.target as HTMLElement;
         // 右键菜单（面板/遮罩）内点击：既不当成单元格拖选锚点，
         // 也不清掉已有选区，避免「上色后选区消失」（问题修复3）
