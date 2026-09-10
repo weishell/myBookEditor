@@ -1133,25 +1133,8 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         return;
       }
 
-      // 非法区域（空白、dot、indicator、Highlight 等）
-      console.log('[Table] mousedown on non-cell target:', {
-        tag: t.tagName,
-        className: typeof t.className === 'string' ? t.className : '',
-        id: t.id,
-        parentTag: t.parentElement?.tagName,
-        parentClass:
-          typeof t.parentElement?.className === 'string' ? t.parentElement.className : '',
-        rect: t.getBoundingClientRect
-          ? {
-              x: t.getBoundingClientRect().x,
-              y: t.getBoundingClientRect().y,
-              w: t.getBoundingClientRect().width,
-              h: t.getBoundingClientRect().height,
-            }
-          : null,
-        clientX: e.clientX,
-        clientY: e.clientY,
-      });
+      // 非法区域（空白、dot、indicator、Highlight 等）：
+      // 阻止默认行为，光标不会落到这些装饰/空白区域（原调试 console.log 已移除）
       e.preventDefault();
       e.stopPropagation();
     };

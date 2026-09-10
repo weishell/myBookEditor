@@ -2,6 +2,7 @@ import { Transforms, Node, Element, type Editor, type Descendant, Range } from '
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { ensureHeadingTitle } from './withDelete';
+import { isNonTextType } from './nonText';
 
 /**
  * 把 Fragment 中所有 HEADING_TITLE 降级为 PARAGRAPH（保留 children 内容）
@@ -159,6 +160,10 @@ export const withEditorBehaviors = (editor: Editor) => {
   const { isVoid, setFragmentData, insertFragment } = editor;
 
   editor.isVoid = (element) => {
+    // 非文本（原子）元素统一走总表，新增插件只需在 nonText.ts 里登记一行。
+    // 结构层保证：这些元素内没有可编辑文本，Slate 不允许光标进入。
+    if (isNonTextType((element as { type?: string }).type)) return true;
+
     switch (element.type) {
       case BlockElementType.DIVIDER:
       case BlockElementType.IMAGE_BLOCK:

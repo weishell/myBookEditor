@@ -77,6 +77,28 @@ textarea,
   caret-color: color-mix(in srgb, #ffffff 60%, var(--theme-primary));
 }
 
+/* ================== 非文本插件内禁止出现文本光标 ==================
+   slate-react 对「块级 void 元素」（图表/流程图/日历/倒计时/时间轴/文件/视频/图片/分割线/
+   嵌入/公式/提及…）不会设置 contenteditable=false，而是塞一个 height:0、color:transparent
+   的占位文本（data-slate-spacer）来表示"该 void 被选中"。这个占位文本仍然会被浏览器渲染出
+   一条竖线光标，表现为「点击插件块的空白处 / 键盘移动选区后，出现莫名其妙的闪烁光标」。
+   这里在结构层统一禁止：void 子树内不显示文本光标。
+   与 useNonEditableCaretGuard（阻止 mousedown 落位）互为补充、覆盖所有现有与将来的插件。 */
+[data-slate-void],
+[data-slate-void] [data-slate-spacer] {
+  caret-color: transparent;
+}
+
+/* 例外：void 内部真正的输入控件 / 嵌套可编辑区（如时间轴的编辑字段）必须保留可见光标，
+   否则会被上面的 transparent 继承掉、导致这些字段无法输入。 */
+[data-slate-void] input,
+[data-slate-void] textarea,
+[data-slate-void] select,
+[data-slate-void] [contenteditable='true'],
+[data-slate-void] [contenteditable=''] {
+  caret-color: var(--theme-primary);
+}
+
 /* ================== 代码块内 antd Select 全局样式 ================== */
 
 /* 默认模式：边框和文字跟随主题色 */

@@ -49,6 +49,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { renderElement } from './renderElement';
 import { RenderLeaf } from './renderLeaf';
 import { PAGE_WIDTH_NORMAL } from '@/enums';
+import { useNonEditableCaretGuard } from '@/editor-extensions/useNonEditableCaretGuard';
 
 interface EditorProps {
   readOnly?: boolean;
@@ -102,6 +103,10 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
       delete (globalThis as any).editor;
     };
   }, [editor, setEditor]);
+
+  // 全局守卫：非文本插件（图片/图表/日历/倒计时/drawio/公式/时间轴/嵌入…）及其装饰层内
+  // 点击时阻止浏览器移动光标，避免"随便点点出现异常光标"。对所有插件统一生效。
+  useNonEditableCaretGuard(!readOnly);
 
   useEffect(() => {
     Editor.normalize(editor, { force: true });
