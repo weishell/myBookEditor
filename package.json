@@ -18,6 +18,7 @@
     "@types/node": "^26.1.1",
     "@types/prismjs": "^1.26.6",
     "antd": "^6.5.0",
+    "axios": "1.20.0",
     "echarts": "^6.1.0",
     "echarts-wordcloud": "^2.1.0",
     "i18next": "^26.3.6",
@@ -34,7 +35,8 @@
     "slate": "^0.126.0",
     "slate-history": "^0.113.1",
     "slate-react": "^0.126.0",
-    "uuid": "^14.0.1"
+    "uuid": "^14.0.1",
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.2.1",
