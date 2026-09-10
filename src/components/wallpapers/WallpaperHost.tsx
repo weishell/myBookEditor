@@ -45,19 +45,27 @@ export default function WallpaperHost() {
     );
   }
 
-  // 图片型
+  // 图片型（浅色照片壁纸）：照片 + 轻微模糊 + 柔化遮罩。
+  // 模糊与遮罩用于把照片压柔，避免背景干扰正文阅读。
   if (preset.kind === 'image' && preset.imageUrl) {
+    const blur = preset.blur ?? 0;
     return (
-      <div
-        className={styles.host}
-        aria-hidden="true"
-        style={{
-          backgroundImage: `url(${preset.imageUrl})`,
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      />
+      <div className={styles.host} aria-hidden="true">
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            backgroundImage: `url(${preset.imageUrl})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+            filter: blur > 0 ? `blur(${blur}px)` : undefined,
+            // 模糊会让边缘内收，略放大避免四周露白边
+            transform: blur > 0 ? 'scale(1.05)' : undefined,
+          }}
+        />
+        {preset.veil && <div style={{ position: 'absolute', inset: 0, background: preset.veil }} />}
+      </div>
     );
   }
 

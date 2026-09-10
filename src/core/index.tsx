@@ -158,6 +158,10 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                   : '1px solid var(--lw-paper-border, rgba(232,232,232,0.9))',
                 borderRadius: '8px',
                 backgroundColor: isDarkMode ? 'transparent' : 'var(--lw-paper, #fff)',
+                // 注意：这里【不能】用 backdrop-filter / filter / transform 之类的属性！
+                // 它们会让纸面成为 position:fixed 子元素的包含块，导致图片选中框、
+                // 缩放手柄（ResizeHandle 是 fixed 定位）脱离图片本体。
+                // 「照片壁纸透出来但仍可读」改为在壁纸层做柔化（见 wallpapers/index.ts 的 blur/veil）。
                 boxShadow: isDarkMode ? 'none' : undefined,
                 minHeight: '500px',
                 pointerEvents: readOnly ? 'none' : 'auto',

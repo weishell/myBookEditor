@@ -37,10 +37,22 @@ export interface WallpaperPreset {
   description?: string;
   /** 浅色壁纸：整体色调，染顶栏/容器（CSS 变量 --lw-tint） */
   tint?: string;
-  /** 浅色壁纸：编辑纸面底色（CSS 变量 --lw-paper），需高不透明度保证正文可读 */
+  /** 浅色壁纸：编辑纸面底色（CSS 变量 --lw-paper）。
+   *  照片类壁纸可给较低不透明度让底图透出来；柔化由 blur/veil 在壁纸层完成。
+   *  ⚠️ 不要在纸面上用 backdrop-filter：它会让纸面成为 position:fixed 子元素的
+   *     包含块，导致图片选中框 / 缩放手柄脱离图片本体。 */
   paper?: string;
   /** 选择弹框里的缩略图背景（任意 CSS background 值） */
   thumbCss?: string;
+  /** kind='image'：覆盖在照片上的柔化遮罩（任意 CSS background 值）。
+   *  作用是把照片压柔、降低对正文的干扰，保证可读性 */
+  veil?: string;
+  /** kind='image'：照片轻微模糊（px），边缘更柔，进一步降低干扰 */
+  blur?: number;
+  /** 浅色壁纸在设置面板里的分组标题（柔和护眼 / 风景照片 / 萌宠） */
+  group?: string;
+  /** 素材来源（免费商用图库）标注，仅作注释 */
+  source?: string;
 }
 
 /** 代表"无壁纸"：只保留当前模式纯色底 */
@@ -140,7 +152,7 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     component: SakuraPinkWallpaper,
     description: '春日樱色，花瓣飘落',
     tint: '#f6d9e3',
-    paper: 'rgba(252,240,245,0.92)',
+    paper: 'rgba(252,240,245,0.72)',
     thumbCss:
       'radial-gradient(circle at 70% 24%, rgba(255,255,255,0.7), transparent 40%),' +
       'linear-gradient(180deg, #fdeef3 0%, #f5d6e3 100%)',
@@ -153,7 +165,7 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     component: LavenderFieldWallpaper,
     description: '柔紫田垄，随风起伏',
     tint: '#ddd3ee',
-    paper: 'rgba(246,243,252,0.92)',
+    paper: 'rgba(246,243,252,0.72)',
     thumbCss: 'linear-gradient(180deg, #f1edfa 0%, #e4dcf4 55%, #c9bce4 100%)',
   },
   {
@@ -164,7 +176,7 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     component: LakeMorningWallpaper,
     description: '远山湖面，晨光微澜',
     tint: '#cfe0ea',
-    paper: 'rgba(240,248,252,0.9)',
+    paper: 'rgba(240,248,252,0.72)',
     thumbCss: 'linear-gradient(180deg, #e8f3f8 0%, #dcebf2 62%, rgba(196,222,236,0.8) 100%)',
   },
   {
@@ -175,8 +187,152 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     component: SnowPeakWallpaper,
     description: '淡冷天光下雪峰层叠',
     tint: '#d8e4ee',
-    paper: 'rgba(244,250,254,0.9)',
+    paper: 'rgba(244,250,254,0.72)',
     thumbCss: 'linear-gradient(180deg, #eaf2f9 0%, #e0ebf4 55%, rgba(178,200,220,0.55) 100%)',
+  },
+
+  /* ---------------- 浅色模式 · 萌宠照片（真实照片，来自免费商用图库 Pixabay） ---------------- */
+  {
+    id: 'photo-cat-01',
+    name: '白毯猫咪',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/wallpapers/cat-01.jpg',
+    group: '萌宠',
+    description: '白毯上打滚的虎斑猫，明亮柔和',
+    tint: '#ece4dc',
+    paper: 'rgba(252,249,246,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Pixabay (免费商用，免署名)',
+  },
+  {
+    id: 'photo-cat-03',
+    name: '灰白猫咪',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/wallpapers/cat-03.jpg',
+    group: '萌宠',
+    description: '亮底上的灰白猫，干净通透',
+    tint: '#e6e8e6',
+    paper: 'rgba(250,251,250,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.44) 0%, rgba(255,255,255,0.26) 45%, rgba(255,255,255,0.42) 100%)',
+    blur: 12,
+    source: 'Pixabay (免费商用，免署名)',
+  },
+  {
+    id: 'photo-dog-01',
+    name: '草地小狗',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/wallpapers/dog-01.jpg',
+    group: '萌宠',
+    description: '阳光草地上爬台阶的小白狗',
+    tint: '#dfe8d2',
+    paper: 'rgba(250,252,244,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.44) 100%)',
+    blur: 12,
+    source: 'Pixabay (免费商用，免署名)',
+  },
+  {
+    id: 'photo-dog-02',
+    name: '木台小狗',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/wallpapers/dog-02.jpg',
+    group: '萌宠',
+    description: '木板台上趴着的小白狗',
+    tint: '#eae2d6',
+    paper: 'rgba(252,249,243,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.44) 100%)',
+    blur: 12,
+    source: 'Pixabay (免费商用，免署名)',
+  },
+
+  /* ---------------- 浅色模式 · 风景照片（复用项目内 public/covers 免费素材） ---------------- */
+  {
+    id: 'scene-rapeseed',
+    name: '油菜花海',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-03.jpg',
+    group: '风景照片',
+    description: '金黄色花田，明快',
+    tint: '#e6edc9',
+    paper: 'rgba(252,253,246,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Pexels',
+  },
+  {
+    id: 'scene-cloud-mountain',
+    name: '远山云海',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-05.jpg',
+    group: '风景照片',
+    description: '层叠远山与云海',
+    tint: '#d8e2ea',
+    paper: 'rgba(247,250,253,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Pexels',
+  },
+  {
+    id: 'scene-grassland',
+    name: '草原海天',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-06.jpg',
+    group: '风景照片',
+    description: '辽阔草原与天际线',
+    tint: '#dbe8d8',
+    paper: 'rgba(248,251,246,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Pexels',
+  },
+  {
+    id: 'scene-waterfall',
+    name: '森林瀑布',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-13.jpg',
+    group: '风景照片',
+    description: '林间瀑布，清透绿意',
+    tint: '#cfe0d4',
+    paper: 'rgba(244,250,246,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Picsum (Unsplash 来源)',
+  },
+  {
+    id: 'scene-avenue',
+    name: '林荫大道',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-21.jpg',
+    group: '风景照片',
+    description: '绿树成荫的静路',
+    tint: '#d5e2c8',
+    paper: 'rgba(248,251,244,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.48) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Picsum (Unsplash 来源)',
+  },
+  {
+    id: 'scene-coast',
+    name: '海岸长曝',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-landscape-30.jpg',
+    group: '风景照片',
+    description: '长曝海岸，柔和静谧',
+    tint: '#dbe6ec',
+    paper: 'rgba(247,251,253,0.7)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
+    blur: 12,
+    source: 'Picsum (Unsplash 来源)',
   },
 ];
 

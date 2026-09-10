@@ -70,9 +70,24 @@ export default function SettingsSwitcher() {
   const currentWallpaper = wallpaper ? getWallpaperById(wallpaper) : undefined;
   const currentLightWallpaper = lightWallpaper ? getWallpaperById(lightWallpaper) : undefined;
 
-  // 壁纸分两组展示：浅色（柔和护眼/风景）与暗黑，点哪组自动切到对应模式
+  // 壁纸分两组展示：浅色（柔和护眼/风景/萌宠）与暗黑，点哪组自动切到对应模式
   const lightPresets = getWallpapersByMode('light');
   const darkPresets = getWallpapersByMode('dark');
+
+  // 浅色壁纸再按 group 分子组，避免一长条：柔和护眼（渐变）/ 风景照片 / 萌宠
+  const lightGroups = (() => {
+    const order: string[] = [];
+    const map = new Map<string, typeof lightPresets>();
+    lightPresets.forEach((w) => {
+      const g = w.group || '柔和护眼';
+      if (!map.has(g)) {
+        map.set(g, []);
+        order.push(g);
+      }
+      map.get(g)!.push(w);
+    });
+    return order.map((g) => ({ title: g, items: map.get(g)! }));
+  })();
 
   const wallpaperName = (w?: { id: string; name: string }) =>
     !w || w.id === WALLPAPER_NONE_ID ? '默认' : w.name;
@@ -259,23 +274,30 @@ export default function SettingsSwitcher() {
             <>
               <SubHeader title="壁纸 / 护眼" onBack={() => openView('theme')} />
               <div className={styles.options}>
-                <div className={styles.sectionLabel}>
-                  柔和护眼 · 风景（浅色模式）{isDarkMode ? '，选择后自动切到浅色' : ''}
-                </div>
-                {lightPresets.map((w) => {
-                  const selected = lightWallpaper === w.id;
-                  return (
-                    <div
-                      key={w.id}
-                      className={`${styles.option} ${selected ? styles.optionActive : ''}`}
-                      onClick={() => pickLightWallpaper(w.id)}
-                    >
-                      <span className={styles.optionName}>{w.name}</span>
-                      {w.description && <span className={styles.optionDesc}>{w.description}</span>}
-                      {selected && <span className={styles.check}>✓</span>}
+                {lightGroups.map((grp) => (
+                  <div key={grp.title}>
+                    <div className={styles.sectionLabel}>
+                      {grp.title}
+                      {grp.title === '柔和护眼' && isDarkMode ? '（选择后自动切到浅色）' : ''}
                     </div>
-                  );
-                })}
+                    {grp.items.map((w) => {
+                      const selected = lightWallpaper === w.id;
+                      return (
+                        <div
+                          key={w.id}
+                          className={`${styles.option} ${selected ? styles.optionActive : ''}`}
+                          onClick={() => pickLightWallpaper(w.id)}
+                        >
+                          <span className={styles.optionName}>{w.name}</span>
+                          {w.description && (
+                            <span className={styles.optionDesc}>{w.description}</span>
+                          )}
+                          {selected && <span className={styles.check}>✓</span>}
+                        </div>
+                      );
+                    })}
+                  </div>
+                ))}
 
                 <div className={styles.sectionLabel}>
                   暗黑壁纸{!isDarkMode ? '，选择后自动切到黑色（暗黑）' : ''}

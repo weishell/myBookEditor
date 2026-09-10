@@ -51,7 +51,10 @@ function WallpaperThumb({
           backgroundSize: 'cover',
           backgroundPosition: 'center',
         }}
-      />
+      >
+        {/* 与 WallpaperHost 保持一致：缩略图也叠柔化遮罩，预览即实际效果 */}
+        {preset.veil && <div style={{ position: 'absolute', inset: 0, background: preset.veil }} />}
+      </div>
     );
   }
   if (preset.kind === 'svg' && preset.id === 'firefly-night-sky') {

@@ -154,14 +154,12 @@ export const ContextMenu = () => {
   };
 
   /**
-   * 删除当前目标块。
+   * 删除指定路径的块。
    * 特例：被删的是有序列表（lilist.list_type === 'ol'）项时，删除后同 list_id
    * 后续项会因编号空缺而错位，必须用 sortLilist 触发一次组内重排。
    * 无序列表 / 普通段落删除后不涉及编号，无需重排。
    */
-  const handleDelete = () => {
-    const path = getTargetPath();
-    if (!path) return;
+  const removeBlockAtPath = (path: number[]) => {
     const node = Node.get(editor, path) as any;
     const lilist = getLilist(node);
     const listId = lilist?.list_id;
@@ -175,6 +173,43 @@ export const ContextMenu = () => {
         sortLilist(editor, [listId], deletedIndex);
       }
     });
+  };
+
+  /** 把光标安置到被删块原本所处的位置（同下标的块，越界则取最后一个），避免删完丢失焦点 */
+  const moveCaretToIndex = (index: number) => {
+    try {
+      const count = (editor.children || []).length;
+      if (count === 0) return;
+      const target = Math.min(Math.max(index, 0), count - 1);
+      Transforms.select(editor, Editor.start(editor, [target]));
+      ReactEditor.focus(editor);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  const handleDelete = () => {
+    const path = getTargetPath();
+    if (!path) return;
+    removeBlockAtPath(path);
+  };
+
+  /**
+   * 剪切 = 复制到剪贴板 + 删除该块。
+   * 先 await 复制结果：只有写剪贴板成功才删除，避免"复制失败还把内容删没了"的数据丢失。
+   * 复制成功后删除原块，并把光标放回原位（否则块被删后编辑区会丢失焦点）。
+   */
+  const handleCut = async () => {
+    const path = getTargetPath();
+    if (!path) return;
+    const index = path[0];
+    const ok = await copyBlockToClipboard(editor, path);
+    if (!ok) {
+      console.warn('[ContextMenu] 剪切：写入剪贴板失败，已保留原内容');
+      return;
+    }
+    removeBlockAtPath(path);
+    moveCaretToIndex(index);
   };
 
   /**
@@ -195,6 +230,12 @@ export const ContextMenu = () => {
     // 结果就是点了不关、要再点别处才消失（用户反馈的 bug）。
     if (action === 'copy') {
       handleCopy();
+      closeAfterAction();
+      return;
+    }
+    if (action === 'cut') {
+      // handleCut 内部先 await 写剪贴板成功、再删除原块（复制失败则保留内容）
+      void handleCut();
       closeAfterAction();
       return;
     }
@@ -262,8 +303,8 @@ export const ContextMenu = () => {
     'indent',
     'color',
     'comment',
-    'cut',
-    ...(!isConvertibleBlock ? ['delete', ...CONVERT_ACTIONS] : []),
+    // 不可删的块（结构性子块等）也不能剪切 —— 剪切 = 复制 + 删除
+    ...(!isConvertibleBlock ? ['cut', 'delete', ...CONVERT_ACTIONS] : []),
   ];
 
   // 当前目标块的"激活态"判定：基于 hover 块的 type + attrs 独立判断，
