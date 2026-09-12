@@ -28,6 +28,28 @@ export const TEXT_BLOCK_TYPES: BlockElementType[] = [
 export const isTextBlockType = (type?: string): type is BlockElementType =>
   !!type && TEXT_BLOCK_TYPES.includes(type as BlockElementType);
 
+export interface CreateImageOptions {
+  width?: number;
+  height?: number;
+  align?: 'left' | 'center' | 'right';
+  name?: string;
+}
+
+/** 构造图片块节点（始终为成功态；上传进度条由 uploadImage 的瞬态 store 驱动） */
+export const createImageElement = (url: string, options?: CreateImageOptions): Element =>
+  ({
+    type: BlockElementType.IMAGE_BLOCK,
+    id: uuidv4(),
+    attrs: {
+      url,
+      width: options?.width,
+      height: options?.height,
+      align: options?.align ?? 'center',
+      name: options?.name,
+    },
+    children: [{ text: '' }],
+  }) as Element;
+
 /** 构造可插入的块节点 */
 export const createBlockNode = (type: BlockElementType, options?: InsertBlockOptions): Element => {
   const id = uuidv4();

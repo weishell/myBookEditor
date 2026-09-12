@@ -1,10 +1,11 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useSyncExternalStore } from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import ImageCropper from './ImageCropper';
+import { uploadProgressStore } from './uploadImage';
 import { v4 as uuidv4 } from 'uuid';
 import styles from './Image.module.less';
 
@@ -17,6 +18,7 @@ interface ImageAttrs {
   offsetTop?: number;
   offsetWidth?: number;
   offsetHeight?: number;
+  name?: string;
 }
 
 interface ImageProps {
@@ -35,6 +37,12 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
   const [showToolbar, setShowToolbar] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+  // 上传进度来自模块级瞬态 store（不进 Slate 文档/历史）。
+  // store 里有该节点 id 的进度 → 显示进度条 overlay；否则正常显示图片。
+  useSyncExternalStore(uploadProgressStore.subscribe, uploadProgressStore.getVersion);
+  const transientProgress = uploadProgressStore.get(element.id);
+  const isUploading = transientProgress !== undefined;
+  const uploadProgress = Math.min(Math.max(transientProgress ?? 0, 0), 100);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
@@ -396,9 +404,19 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
             draggable={false}
             onLoad={updateBounds}
           />
+
+          {isUploading && (
+            <div className={styles.uploadOverlay}>
+              <div className={styles.uploadInfo}>{attrs.name || '图片上传中'}</div>
+              <div className={styles.progressTrack}>
+                <div className={styles.progressBar} style={{ width: `${uploadProgress}%` }} />
+              </div>
+              <div className={styles.uploadPercent}>{uploadProgress}%</div>
+            </div>
+          )}
         </div>
 
-        {(isSelected || showToolbar) && bounds && !hasCrop && (
+        {!isUploading && (isSelected || showToolbar) && bounds && !hasCrop && (
           <ResizeHandle
             bounds={bounds}
             onResize={handleResize}

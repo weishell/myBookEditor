@@ -14,6 +14,7 @@ import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
 import { BlockElementType, LilistType } from '@/enums';
 import { BlockTypePicker, createBlockNode, isTextBlockType } from '@/plugins/block-picker';
+import { openAndInsertImages } from '@/plugins/image/uploadImage';
 import {
   ChartTypePicker,
   ChartConfigDialog,
@@ -378,9 +379,17 @@ export const ContextMenu = () => {
   ) => {
     const path = getTargetPath();
     if (!path) return;
+    const insertPath = getInsertPathAfter(path);
+    // 图片走文件选择 + 本地预览 + 模拟进度（无后端，见 uploadImage.ts）
+    if (type === BlockElementType.IMAGE_BLOCK) {
+      setInsertOpen(false);
+      closeAfterAction();
+      void openAndInsertImages(editor, insertPath);
+      return;
+    }
     // 图表走两步式：先选类型，再进配置页，最后才插入
     if (type === BlockElementType.CHART) {
-      setChartInsertPath(getInsertPathAfter(path));
+      setChartInsertPath(insertPath);
       setInsertOpen(false);
       closeAfterAction();
       setChartFlow('pick');
@@ -388,12 +397,11 @@ export const ContextMenu = () => {
     }
     // 内嵌网页走弹框式：先填网址，确定后才真正插入
     if (type === BlockElementType.EMBED) {
-      setEmbedInsertPath(getInsertPathAfter(path));
+      setEmbedInsertPath(insertPath);
       setInsertOpen(false);
       closeAfterAction();
       return;
     }
-    const insertPath = getInsertPathAfter(path);
     Transforms.insertNodes(editor, createBlockNode(type, options), { at: insertPath });
     Transforms.select(editor, Editor.start(editor, insertPath));
     ReactEditor.focus(editor);

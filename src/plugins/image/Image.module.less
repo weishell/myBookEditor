@@ -86,3 +86,47 @@
   height: 100%;
   object-fit: contain;
 }
+
+// 上传中 - 半透明遮罩 + 进度条
+.uploadOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: @spacing-sm;
+  background-color: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  pointer-events: none;
+}
+
+.uploadInfo {
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: @font-size-sm;
+  opacity: 0.9;
+}
+
+.progressTrack {
+  width: 60%;
+  height: 6px;
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 3px;
+  background-color: @color-primary;
+  transition: width 0.15s linear;
+}
+
+.uploadPercent {
+  font-size: @font-size-sm;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
+}

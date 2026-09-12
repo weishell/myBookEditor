@@ -58,7 +58,7 @@ function toChineseLevel(n: number): string {
 
 // 常用组（非文本类，占位禁用）- 列表项风格
 const COMMON_ITEMS: BlockTypeOption[] = [
-  { type: BlockElementType.IMAGE_BLOCK, label: '图片', icon: '🖼', disabled: true },
+  { type: BlockElementType.IMAGE_BLOCK, label: '图片', icon: '🖼' },
   { type: BlockElementType.FILE_BLOCK, label: '文件', icon: '📄' },
   { type: BlockElementType.VIDEO_BLOCK, label: '视频', icon: '🎬' },
   { type: BlockElementType.TABLE, label: '表格', icon: '⊞', disabled: true },
