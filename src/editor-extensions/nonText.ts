@@ -43,6 +43,7 @@ export const NON_TEXT_TYPES: BlockElementType[] = [
   BlockElementType.FORMULA, // 行内公式（inline void）
   BlockElementType.MENTION, // 提及（inline void）
   BlockElementType.TIMELINE, // 时间轴
+  BlockElementType.DRAWBOARD, // 画板（drawui）
 ];
 
 const NON_TEXT_TYPE_SET: Set<string> = new Set(NON_TEXT_TYPES as string[]);

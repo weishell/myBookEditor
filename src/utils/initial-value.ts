@@ -1,6 +1,7 @@
 import type { Descendant } from 'slate';
 import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
+import { createDrawboardElement } from '@/plugins/drawboard/drawboard-utils';
 
 const codeBlockId = uuidv4();
 // 列表示例分组 id（lilist 绑定模型）
@@ -1222,6 +1223,7 @@ export const initialValue: Descendant[] = [
     },
     children: [{ text: '场景3 - H4（已设 OL 与 H3 同组，应编号 1.1）' }],
   },
+  createDrawboardElement(),
 ];
 
 /**

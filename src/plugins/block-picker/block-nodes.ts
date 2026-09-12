@@ -164,6 +164,13 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
       return createChartElement() as unknown as Element;
     case BlockElementType.EMBED:
       return createEmbedElement() as unknown as Element;
+    case BlockElementType.DRAWBOARD:
+      return {
+        type,
+        id,
+        attrs: { width: 720, height: 400 },
+        children: [{ text: ZERO_WIDTH_SPACE }],
+      } as Element;
     case BlockElementType.BULLETED_LIST:
     case BlockElementType.NUMBERED_LIST: {
       // 列表已改为绑定在段落上的 lilist 属性（旧 wrapper 类型废弃）

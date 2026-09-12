@@ -32,6 +32,12 @@ importers:
       axios:
         specifier: 1.20.0
         version: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
+      drawui-core:
+        specifier: 0.1.0
+        version: 0.1.0
+      drawui-react:
+        specifier: 0.1.1
+        version: 0.1.1(react@19.2.7)
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
@@ -1345,6 +1351,14 @@ packages:
   direction@1.0.4:
     resolution: {integrity: sha512-GYqKi1aH7PJXxdhTeZBFrg8vUBeKXi+cNprXsC1kpJcbcVnV9wBsrOu1cQEdG0WeQwlfHiy3XvnKfIrJ2R0NzQ==}
     hasBin: true
+
+  drawui-core@0.1.0:
+    resolution: {integrity: sha512-iV1qkihw60tDUCY/HR2co1+Zj84gjRxli40wv3vfRtWadTr/tHo+pZxY8p3O+i8YUQoTWXw/042OkPTfPcl9Fw==}
+
+  drawui-react@0.1.1:
+    resolution: {integrity: sha512-I2QXz8k+Baqwu3zoa9e3jJ9gt9+UksF6zNW4GNeQUxa+XLuHHjszfl8qsN/ZvJn+wVMqABMAgC9E4L0nmrHIiw==}
+    peerDependencies:
+      react: ^18.3.1
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -3521,6 +3535,13 @@ snapshots:
   delayed-stream@1.0.0: {}
 
   direction@1.0.4: {}
+
+  drawui-core@0.1.0: {}
+
+  drawui-react@0.1.1(react@19.2.7):
+    dependencies:
+      drawui-core: 0.1.0
+      react: 19.2.7
 
   dunder-proto@1.0.1:
     dependencies:

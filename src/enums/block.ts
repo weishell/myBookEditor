@@ -26,6 +26,7 @@ export const BlockElementType = {
   TIMELINE: 'timeline',
   CHART: 'chart',
   EMBED: 'embed-block',
+  DRAWBOARD: 'drawboard',
 } as const;
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];

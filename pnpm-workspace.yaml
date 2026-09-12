@@ -16,3 +16,6 @@ allowBuilds:
 #   minimumReleaseAgeExclude:
 #     - <pkg>
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  - drawui-core
+  - drawui-react

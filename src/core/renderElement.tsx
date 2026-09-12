@@ -26,6 +26,7 @@ import {
   Timeline,
   Chart,
   Embed,
+  Drawboard,
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 
@@ -183,6 +184,15 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
     case BlockElementType.EMBED:
       return (
         <Embed
+          attributes={attributes}
+          children={children}
+          pluginId={el.id || ''}
+          element={el as any}
+        />
+      );
+    case BlockElementType.DRAWBOARD:
+      return (
+        <Drawboard
           attributes={attributes}
           children={children}
           pluginId={el.id || ''}

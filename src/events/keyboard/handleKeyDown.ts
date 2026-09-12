@@ -255,6 +255,8 @@ export const createKeyDownHandler = (editor: Editor) => {
           console.log('[keydown] Shift+Enter（未拦截，走默认软换行）', { blockType });
           return;
         }
+        // 画板块的 Enter→全屏编辑由 Drawboard 组件自身在 window 捕获阶段拦截，
+        // 不会走到这里
         console.log('[keydown] Enter → handleEnter', { blockType });
         e.preventDefault();
         handleEnter(editor);

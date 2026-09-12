@@ -1,0 +1,200 @@
+// 画板（drawui）插件样式 - 飞书风格
+
+.wrapper {
+  margin: @spacing-sm 0;
+  position: relative;
+  user-select: none;
+  width: 100%;
+}
+
+.card {
+  position: relative;
+  align-self: center;
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-sm;
+  background: @bg-base;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    border-color: @color-primary;
+  }
+}
+
+.cardSelected {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.titleBar {
+  display: flex;
+  align-items: center;
+  gap: @spacing-xs;
+  padding: @spacing-xs @spacing-md;
+  background: @bg-subtle;
+  border-bottom: 1px solid @border-color-lighter;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+}
+
+.titleIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: @radius-sm;
+  background: @color-primary;
+  color: #fff;
+}
+
+.previewArea {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: @spacing-sm;
+  padding: @spacing-lg @spacing-md;
+  color: @text-tertiary;
+}
+
+.emptyIcon {
+  opacity: 0.42;
+}
+
+.emptyText {
+  font-size: @font-size-sm;
+}
+
+.hint {
+  font-size: @font-size-xs;
+  color: @text-placeholder;
+}
+
+// 悬浮工具栏
+.toolbar {
+  position: absolute;
+  top: -40px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 0;
+  justify-content: center;
+  align-items: center;
+  background-color: @bg-base;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-md;
+  padding: 2px;
+  z-index: 10000;
+  box-shadow: @shadow-md;
+  white-space: nowrap;
+}
+
+.toolbarButton {
+  height: 28px;
+  padding: 0 @spacing-sm;
+  border: none;
+  background-color: transparent;
+  border-radius: @radius-sm;
+  cursor: var(--cursor-pointer);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+}
+
+.toolbarDivider {
+  width: 1px;
+  height: 20px;
+  background-color: @border-color-light;
+  margin: @spacing-xs 2px;
+}
+
+// 全屏编辑器
+.fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  background: #f2f3f1;
+}
+
+// 退出栏：drawui 的 .drawui-canvas-board 会把整个视口铺满（position:fixed; inset:0），
+// 因此在 flex 流里会被盖住。这里改用 fixed + 高 z-index 浮在画布之上。
+.header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 101;
+  box-sizing: border-box;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  gap: @spacing-sm;
+  padding: 0 @spacing-md;
+  background: @bg-base;
+  border-bottom: 1px solid @border-color-light;
+  color: @text-secondary;
+}
+
+.headerTitle {
+  display: flex;
+  align-items: center;
+  gap: @spacing-xs;
+  font-size: @font-size-sm;
+  color: @text-secondary;
+}
+
+.headerHint {
+  flex: 1;
+  text-align: right;
+  font-size: @font-size-xs;
+  color: @text-placeholder;
+}
+
+.headerClose {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border: none;
+  border-radius: @radius-sm;
+  background: transparent;
+  color: @text-secondary;
+  cursor: var(--cursor-pointer);
+
+  &:hover {
+    background: @bg-hover;
+  }
+}
+
+.body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+
+  // drawui 顶部工具条（顶中）与右侧缩放面板默认 top:20px，会被我们的退出栏遮住，
+  // 整体下移到退出栏（44px）之下。只在本全屏实例内生效，不影响库的其他用法。
+  :global(.drawui-toolbar),
+  :global(.drawui-toolbar-container),
+  :global(.drawui-zoom-control),
+  :global(.drawui-zoom-level) {
+    top: 64px;
+  }
+}
