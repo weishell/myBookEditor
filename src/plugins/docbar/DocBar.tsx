@@ -147,6 +147,15 @@ const ChartIcon = ({ color, size = 18 }: SvgIconProps) => (
   </svg>
 );
 
+// 画板（drawui）：三个方框组合，与画板自身标题栏/预览图标保持一致
+const DrawboardIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="3" y="3" width="7" height="7" rx="1" />
+    <rect x="14" y="3" width="7" height="7" rx="1" />
+    <rect x="8" y="14" width="9" height="7" rx="1" />
+  </svg>
+);
+
 // 拖拽手柄
 const DragIcon = ({ color = '#999', size = 16 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -217,6 +226,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       return { component: TimelineIcon };
     case BlockElementType.CHART:
       return { component: ChartIcon };
+    case BlockElementType.DRAWBOARD:
+      return { component: DrawboardIcon };
     default:
       return { component: ParagraphIcon };
   }

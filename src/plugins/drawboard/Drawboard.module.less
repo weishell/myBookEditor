@@ -129,6 +129,7 @@
   left: 0;
   width: 100%;
   height: 100%;
+  overflow: hidden;
   z-index: 10000;
   background: #f2f3f1;
 }
@@ -184,17 +185,37 @@
   }
 }
 
+// 画布承载区：铺满全屏宿主，作为 drawui 各层的定位参考
 .body {
-  position: relative;
-  flex: 1 1 auto;
-  min-height: 0;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+}
 
-  // drawui 顶部工具条（顶中）与右侧缩放面板默认 top:20px，会被我们的退出栏遮住，
-  // 整体下移到退出栏（44px）之下。只在本全屏实例内生效，不影响库的其他用法。
-  :global(.drawui-toolbar),
-  :global(.drawui-toolbar-container),
-  :global(.drawui-zoom-control),
-  :global(.drawui-zoom-level) {
-    top: 64px;
-  }
+// 关键修复（对齐 img.txt：飞书用流内 relative/absolute，不用 fixed，滚动不分离）：
+// drawui 默认把这些层 position:fixed 钉在视口上。一旦祖先存在 transform，fixed 会退化
+// 成相对该祖先定位，页面滚动时外框与内部图形坐标脱节而分离/偏移。
+// 这里统一改为 relative 到本 .body（.fullscreen 是 fixed，作其定位包含块），
+// 于是外框、工具栏、缩放、小地图、状态栏与画布内容永远作为一体移动。
+.body :global(.drawui-canvas-board),
+.body :global(.drawui-toolbar),
+.body :global(.drawui-toolbar-container),
+.body :global(.drawui-zoom-control),
+.body :global(.drawui-zoom-level),
+.body :global(.drawui-status-bar),
+.body :global(.drawui-style-panel),
+.body :global(.drawui-minimap) {
+  position: absolute;
+}
+
+// drawui 各层已按 absolute 相对 .body 布局；这里把顶部工具条/右侧缩放面板下移，
+// 避让 44px 的退出栏
+.body :global(.drawui-toolbar),
+.body :global(.drawui-toolbar-container),
+.body :global(.drawui-zoom-control),
+.body :global(.drawui-zoom-level) {
+  top: 64px;
 }

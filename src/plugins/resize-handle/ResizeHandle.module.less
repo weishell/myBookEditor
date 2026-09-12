@@ -1,12 +1,50 @@
-// ResizeHandle 组件样式
-.borderLine {
-  position: fixed;
+// 选中框容器：position:absolute，坐标由组件换算成"目标块相对其 offsetParent 的局部盒子"，
+// 随承载块一起滚动，不再像旧实现那样 position:fixed 钉在视口上导致滚动分离。
+.frame {
+  position: absolute;
+  z-index: 10000;
+  pointer-events: none;
+}
+
+.borderLineTop,
+.borderLineRight,
+.borderLineBottom,
+.borderLineLeft {
+  position: absolute;
   background-color: @color-primary;
   z-index: 10000;
 }
 
+.borderLineTop {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
+
+.borderLineRight {
+  top: 0;
+  right: 0;
+  width: 2px;
+  height: 100%;
+}
+
+.borderLineBottom {
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+}
+
+.borderLineLeft {
+  top: 0;
+  left: 0;
+  width: 2px;
+  height: 100%;
+}
+
 .handle {
-  position: fixed;
+  position: absolute;
   width: 10px;
   height: 10px;
   background-color: @bg-base;
@@ -14,4 +52,11 @@
   border-radius: 50%;
   z-index: 10001;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: auto;
+  cursor: nwse-resize;
+}
+
+.handleNE,
+.handleSW {
+  cursor: nesw-resize;
 }

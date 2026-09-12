@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { Transforms } from 'slate';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
+import ResizeHandle from '../resize-handle/ResizeHandle';
 import { BlockElementType } from '@/enums';
 import DrawboardEditor from './DrawboardEditor';
 import { type DrawboardAttrs } from './drawboard-utils';
@@ -24,8 +25,19 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const [showToolbar, setShowToolbar] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
 
+  const cardRef = useRef<HTMLDivElement>(null);
+  // 缩放：拖动期间用本地尺寸预览，松开(mouseup)才写回 attrs
+  const [dragSize, setDragSize] = useState<{ w: number; h: number } | null>(null);
+  const draggingRef = useRef(false);
+  const elementRef = useRef(element);
+  elementRef.current = element;
+  const editorRef = useRef(editor);
+  editorRef.current = editor;
+
   const width = attrs?.width || 720;
   const height = attrs?.height || 400;
+  const effW = dragSize?.w ?? width;
+  const effH = dragSize?.h ?? height;
 
   // 画板块被选中时，在窗口捕获阶段拦截 Enter → 进入全屏编辑。
   // 选捕获阶段在根节点 React/Slate 处理之前触发，preventDefault 会让 Slate 跳过插入换行等默认行为。
@@ -66,6 +78,32 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
     }
   }, [editor, element]);
 
+  // 松开鼠标：把拖动得到的尺寸写回 attrs
+  useEffect(() => {
+    const onUp = () => {
+      if (!draggingRef.current || !dragSize) return;
+      draggingRef.current = false;
+      const cur = elementRef.current;
+      try {
+        const path = ReactEditor.findPath(editorRef.current, cur as any);
+        if (path) {
+          const w = Math.min(Math.max(Math.round(dragSize.w), 320), 1200);
+          const h = Math.min(Math.max(Math.round(dragSize.h), 240), 900);
+          Transforms.setNodes(
+            editorRef.current,
+            { attrs: { ...cur.attrs, width: w, height: h } } as any,
+            { at: path },
+          );
+        }
+      } catch {
+        /* ignore */
+      }
+      setDragSize(null);
+    };
+    window.addEventListener('mouseup', onUp);
+    return () => window.removeEventListener('mouseup', onUp);
+  }, [dragSize]);
+
   const showToolbarHandler = useCallback(() => {
     if (hideTimerRef.current) {
       clearTimeout(hideTimerRef.current);
@@ -80,6 +118,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
       setShowToolbar(false);
     }, 300);
   }, [isSelected]);
+
+  const bounds = cardRef.current?.getBoundingClientRect();
 
   return (
     <ElementWrapper
@@ -136,13 +176,14 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
         )}
 
         <div
+          ref={cardRef}
           className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
           contentEditable={false}
           suppressContentEditableWarning={true}
           onClick={handleSelect}
           onDoubleClick={openEditor}
           title="双击进入全屏编辑"
-          style={{ maxWidth: `min(${width}px, 100%)`, aspectRatio: `${width} / ${height}` }}
+          style={{ maxWidth: `min(${effW}px, 100%)`, aspectRatio: `${effW} / ${effH}` }}
         >
           <div className={styles.titleBar}>
             <span className={styles.titleIcon}>
@@ -188,6 +229,20 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
             <span className={styles.hint}>双击画板 或 选中后按 Enter</span>
           </div>
         </div>
+
+        {/* 选中时显示缩放手柄（放在 .wrapper 内，避免被 .card 的 overflow:hidden 裁掉） */}
+        {isSelected && bounds && (
+          <ResizeHandle
+            bounds={bounds}
+            aspectRatio={effW / effH}
+            initialWidth={effW}
+            initialHeight={effH}
+            onResize={(w, h) => {
+              draggingRef.current = true;
+              setDragSize({ w, h });
+            }}
+          />
+        )}
       </div>
 
       {/* Slate children - 必须渲染 */}

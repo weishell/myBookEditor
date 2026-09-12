@@ -2,6 +2,7 @@
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 
 export interface DrawboardAttrs {
+  [key: string]: unknown;
   width?: number;
   height?: number;
   /** 预留：后续接入外部画布数据时，用该引用定位画布内容 */
