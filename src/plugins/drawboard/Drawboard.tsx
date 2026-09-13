@@ -1,4 +1,4 @@
-// 画板（drawui）块主组件 - 文档内渲染预览卡，点击/按键进入全屏编辑态
+// 画板（drawui）块主组件 - 文档内渲染预览卡（含图形缩略图回显），点击/按键进入全屏编辑态
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { Transforms } from 'slate';
@@ -6,7 +6,9 @@ import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { BlockElementType } from '@/enums';
 import DrawboardEditor from './DrawboardEditor';
+import DrawboardPreview from './DrawboardPreview';
 import { type DrawboardAttrs } from './drawboard-utils';
+import type { Shape } from 'drawui-core';
 import styles from './Drawboard.module.less';
 
 interface DrawboardProps {
@@ -39,6 +41,42 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const effW = dragSize?.w ?? width;
   const effH = dragSize?.h ?? height;
 
+  // 图形数据：编辑中实时保存在 liveData（不写 Slate 历史，避免每次笔触都产生撤销记录）；
+  // 关闭编辑器时一次性提交到文档节点 attrs.data（按画板 id 隔离，不使用 localStorage）。
+  const [liveData, setLiveData] = useState<Shape[] | undefined>(attrs?.data);
+  const liveDataRef = useRef<Shape[] | undefined>(attrs?.data);
+  liveDataRef.current = liveData;
+
+  // 编辑器内图形变化：实时更新缩略图
+  const handleEditorDataChange = useCallback((shapes: Shape[]) => {
+    liveDataRef.current = shapes;
+    setLiveData(shapes);
+  }, []);
+
+  // 把图形提交到当前画板节点（替换式写入 attrs.data）
+  const commitShapes = useCallback((shapes?: Shape[]) => {
+    const finalShapes = shapes ?? liveDataRef.current ?? [];
+    try {
+      const path = ReactEditor.findPath(editorRef.current, elementRef.current as any);
+      if (path) {
+        Transforms.setNodes(
+          editorRef.current,
+          { attrs: { ...elementRef.current.attrs, data: finalShapes } } as any,
+          { at: path },
+        );
+      }
+    } catch {
+      /* ignore */
+    }
+  }, []);
+
+  const handleClose = useCallback(() => {
+    commitShapes();
+    setEditing(false);
+  }, [commitShapes]);
+
+  const previewShapes = liveData ?? attrs?.data;
+
   // 画板块被选中时，在窗口捕获阶段拦截 Enter → 进入全屏编辑。
   // 选捕获阶段在根节点 React/Slate 处理之前触发，preventDefault 会让 Slate 跳过插入换行等默认行为。
   useEffect(() => {
@@ -55,7 +93,6 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   }, [isSelected]);
 
   const openEditor = useCallback(() => setEditing(true), []);
-  const closeEditor = useCallback(() => setEditing(false), []);
 
   // 点击卡片 → 把 Slate 选区落到当前画板块上（非文本块默认不随点击选中，
   // 需要手动 select 才能让「选中后按 Enter/方向键」的键盘链路生效）
@@ -205,28 +242,34 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
             <span>画板</span>
           </div>
           <div className={styles.previewArea}>
-            <div className={styles.emptyIcon}>
-              <svg
-                width="48"
-                height="48"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.4"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="3" y="3" width="7" height="7" rx="1" />
-                <rect x="14" y="3" width="7" height="7" rx="1" />
-                <rect x="8" y="14" width="9" height="7" rx="1" />
-                <line x1="6.5" y1="10" x2="6.5" y2="14" />
-                <line x1="17.5" y1="10" x2="17.5" y2="14" />
-                <line x1="6.5" y1="14" x2="11.5" y2="14" />
-                <line x1="17.5" y1="14" x2="11.5" y2="14" />
-              </svg>
-            </div>
-            <span className={styles.emptyText}>点击进入全屏编辑</span>
-            <span className={styles.hint}>双击画板 或 选中后按 Enter</span>
+            {previewShapes && previewShapes.length > 0 ? (
+              <DrawboardPreview shapes={previewShapes} />
+            ) : (
+              <>
+                <div className={styles.emptyIcon}>
+                  <svg
+                    width="48"
+                    height="48"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.4"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <rect x="3" y="3" width="7" height="7" rx="1" />
+                    <rect x="14" y="3" width="7" height="7" rx="1" />
+                    <rect x="8" y="14" width="9" height="7" rx="1" />
+                    <line x1="6.5" y1="10" x2="6.5" y2="14" />
+                    <line x1="17.5" y1="10" x2="17.5" y2="14" />
+                    <line x1="6.5" y1="14" x2="11.5" y2="14" />
+                    <line x1="17.5" y1="14" x2="11.5" y2="14" />
+                  </svg>
+                </div>
+                <span className={styles.emptyText}>点击进入全屏编辑</span>
+                <span className={styles.hint}>双击画板 或 选中后按 Enter</span>
+              </>
+            )}
           </div>
         </div>
 
@@ -248,7 +291,13 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
       {/* Slate children - 必须渲染 */}
       {children}
 
-      {editing && <DrawboardEditor onClose={closeEditor} />}
+      {editing && (
+        <DrawboardEditor
+          initialData={attrs?.data}
+          onDataChange={handleEditorDataChange}
+          onClose={handleClose}
+        />
+      )}
     </ElementWrapper>
   );
 };

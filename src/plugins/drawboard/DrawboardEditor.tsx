@@ -2,18 +2,39 @@
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CanvasBoard } from 'drawui-react';
+import type { Editor, Shape, EditorData } from 'drawui-core';
 import 'drawui-react/styles.css';
 import styles from './Drawboard.module.less';
 
 interface DrawboardEditorProps {
+  /** 当前画板的初始图形数据（来自文档节点 attrs.data），用于回显已有图形 */
+  initialData?: Shape[];
+  /** 图形变化实时回调：用于文档内缩略图回显，以及关闭时落盘 */
+  onDataChange: (shapes: Shape[]) => void;
   onClose: () => void;
 }
 
-const DrawboardEditor: React.FC<DrawboardEditorProps> = ({ onClose }) => {
+const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
+  initialData,
+  onDataChange,
+  onClose,
+}) => {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
+  const onDataChangeRef = useRef(onDataChange);
+  onDataChangeRef.current = onDataChange;
+  const editorRef = useRef<Editor | null>(null);
 
   const doClose = useCallback(() => {
+    // 关闭时取编辑器内最终数据，确保最后一笔也写回宿主（onChange 可能漏掉最后一次）
+    const ed = editorRef.current;
+    if (ed) {
+      try {
+        onDataChangeRef.current(ed.getData().shapes);
+      } catch {
+        /* ignore */
+      }
+    }
     onCloseRef.current();
   }, []);
 
@@ -68,7 +89,16 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({ onClose }) => {
         </button>
       </div>
       <div className={styles.body}>
-        <CanvasBoard />
+        {/* data 始终传入（空数组也传），触发 drawui 以外部数据初始化并关闭 localStorage 持久化 */}
+        <CanvasBoard
+          data={initialData ?? []}
+          themeColor="#3b82f6"
+          language="zh-CN"
+          onChange={(d: EditorData) => onDataChangeRef.current(d.shapes)}
+          onReady={(editor: Editor) => {
+            editorRef.current = editor;
+          }}
+        />
       </div>
     </div>,
     document.body,
