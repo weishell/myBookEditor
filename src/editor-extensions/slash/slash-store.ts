@@ -86,7 +86,7 @@ export const getCurrentBlockPath = (editor: Editor): number[] | null => {
   if (!selection) return null;
   let forbid = false;
   let blockPath: number[] | null = null;
-  for (const entry of Node.ancestors(editor, selection, { reverse: true })) {
+  for (const entry of Node.ancestors(editor, selection.anchor.path, { reverse: true })) {
     const [node, path] = entry;
     if (!Editor.isEditor(node) && Element.isElement(node)) {
       const type = (node as any).type;
@@ -105,7 +105,7 @@ export const getCurrentBlockPath = (editor: Editor): number[] | null => {
       if ((parent as any).type === 'code_block' || (parent as any).type === 'heading_title') {
         return null;
       }
-      const [pp] = Editor.parent(editor, selection);
+      const [, pp] = Editor.parent(editor, selection);
       blockPath = pp;
     }
   }

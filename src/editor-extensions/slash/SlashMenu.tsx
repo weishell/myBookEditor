@@ -5,7 +5,7 @@
 //   - 键盘：捕获阶段拦截 ↑/↓/Enter/Esc，↑↓ 移动高亮、Enter 确认、Esc 关闭。
 //   - 执行：转换类走 convertDocBarBlock（复用 DocBar 语义）；插入类走
 //     createBlockNode/insertTable/openAndInsertImages（复用右键菜单语义）。
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
+import { createElement, useEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react';
 import { createPortal } from 'react-dom';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
@@ -54,13 +54,18 @@ const ICON_KEY: Record<DocBarConvertTarget, string> = {
   'code-block': 'code-block',
 };
 
-const convertItem = (target: DocBarConvertTarget, label: string): SlashCmd => ({
-  kind: 'convert',
-  target,
-  label,
-  group: 'basic',
-  icon: blockTypeIconComponent(ICON_KEY[target] as any) ?? <span>{label}</span>,
-});
+const convertItem = (target: DocBarConvertTarget, label: string): SlashCmd => {
+  // blockTypeIconComponent 返回组件类型（function/class），需先渲染成 ReactNode，
+  // 否则 ComponentType 不能直接赋给 ReactNode（TS2322）。
+  const IconCmp = blockTypeIconComponent(ICON_KEY[target] as any);
+  return {
+    kind: 'convert',
+    target,
+    label,
+    group: 'basic',
+    icon: IconCmp ? createElement(IconCmp) : <span>{label}</span>,
+  };
+};
 
 const BASIC_CMDS: SlashCmd[] = [
   convertItem('text', '文本'),
