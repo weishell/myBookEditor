@@ -37,6 +37,7 @@ import {
   withDelete,
   withLilist,
 } from '@/editor-extensions';
+import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
 import { withColumns } from '@/plugins';
 import { initialValue } from '@/utils/initial-value';
@@ -68,13 +69,15 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
               withCalendar(
                 withCountdown(
                   withEditorBehaviors(
-                    withLilist(
-                      withHyperlink(
-                        withColumns(
-                          withMention(
-                            withInlineFormula(
-                              withMarkdownShortcuts(
-                                withCodeBlock(withHistory(withReact(createEditor()))),
+                    withSlashCommand(
+                      withLilist(
+                        withHyperlink(
+                          withColumns(
+                            withMention(
+                              withInlineFormula(
+                                withMarkdownShortcuts(
+                                  withCodeBlock(withHistory(withReact(createEditor()))),
+                                ),
                               ),
                             ),
                           ),
@@ -143,6 +146,7 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
           {!readOnly && <FloatBar />}
           {!readOnly && <ContextMenu />}
           {!readOnly && <MentionController isDark={isDarkMode} />}
+          {!readOnly && <SlashMenu />}
           <DocBarProvider>
             <DocBar />
             <div

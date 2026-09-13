@@ -1,0 +1,80 @@
+// 斜杠命令浮层样式（飞书风：白底、浅阴影、分组小标签、hover 主题色高亮）
+.menu {
+  position: fixed;
+  z-index: 1200;
+  min-width: 200px;
+  max-width: 240px;
+  max-height: 340px;
+  overflow-y: auto;
+  padding: 6px;
+  background: var(--lw-menu-bg, #ffffff);
+  border: 1px solid var(--lw-menu-border, rgba(228, 231, 235, 0.9));
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(31, 35, 42, 0.12);
+  user-select: none;
+}
+
+.groupLabel {
+  padding: 4px 8px;
+  font-size: 12px;
+  color: #646a73;
+}
+
+.group {
+  display: flex;
+  flex-direction: column;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--lw-fg, #1f2329);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover {
+    background: var(--lw-item-hover, rgba(31, 35, 42, 0.05));
+  }
+}
+
+.itemActive {
+  background: color-mix(in srgb, var(--t-theme, #3370ff) 12%, transparent);
+}
+
+.itemIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  color: var(--t-theme, #3370ff);
+  font-size: 15px;
+}
+
+.itemLabel {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.divider {
+  height: 1px;
+  margin: 6px 0;
+  background: var(--lw-divider, rgba(228, 231, 235, 0.9));
+}
+
+.empty {
+  padding: 12px 8px;
+  color: #8f959e;
+  font-size: 13px;
+  text-align: center;
+}
