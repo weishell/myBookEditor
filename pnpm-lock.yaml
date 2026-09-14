@@ -4,6 +4,8 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+pnpmfileChecksum: sha256-5ukRAOspgPU2ovTa2d0m5zyK5wDDSBVDw+r74ijx5KM=
+
 importers:
 
   .:
@@ -33,11 +35,11 @@ importers:
         specifier: 1.20.0
         version: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
       drawui-core:
-        specifier: 0.2.0
-        version: 0.2.0
+        specifier: 0.2.1
+        version: 0.2.1
       drawui-react:
-        specifier: 0.2.0
-        version: 0.2.0(react@19.2.7)
+        specifier: 0.2.1
+        version: 0.2.1(react@19.2.7)
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
@@ -1352,11 +1354,11 @@ packages:
     resolution: {integrity: sha512-GYqKi1aH7PJXxdhTeZBFrg8vUBeKXi+cNprXsC1kpJcbcVnV9wBsrOu1cQEdG0WeQwlfHiy3XvnKfIrJ2R0NzQ==}
     hasBin: true
 
-  drawui-core@0.2.0:
-    resolution: {integrity: sha512-7CYpuD3PkbUOQP8EMTfhGPA7WKx2tzWSN5otpVtmANZmSeQhQbXdJOToI8FLjC8qkdQjzc33BPqGf/T6LLreJQ==}
+  drawui-core@0.2.1:
+    resolution: {integrity: sha512-HPq9hNlkhOjBvW9y6oGnj9/sttWGu0JFAY7Q824AFVIDs/blSeVINiHSUUMkuDZVVyXlfzWWeBv+ejVzfFPq9A==}
 
-  drawui-react@0.2.0:
-    resolution: {integrity: sha512-wsAMUMswJ3POeFAKjIb0/JcR41WZWC3iiApIlJxKGVgRa3kPX9i32jUmAoF3E3YR/MP6DO9NGS82KteRGng08A==}
+  drawui-react@0.2.1:
+    resolution: {integrity: sha512-e3dYfZ0IFdtd4EjbJfAml0G6N5os44dc2jxBfksMMuCJcFNZqcxukqbklqeBBJQAD9QzvX3H7n1T0P+SZjcuWA==}
     peerDependencies:
       react: ^18.3.1
 
@@ -3536,11 +3538,11 @@ snapshots:
 
   direction@1.0.4: {}
 
-  drawui-core@0.2.0: {}
+  drawui-core@0.2.1: {}
 
-  drawui-react@0.2.0(react@19.2.7):
+  drawui-react@0.2.1(react@19.2.7):
     dependencies:
-      drawui-core: 0.2.0
+      drawui-core: 0.2.1
       react: 19.2.7
 
   dunder-proto@1.0.1:
