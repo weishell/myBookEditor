@@ -9,6 +9,7 @@ import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 import DrawioEditor from './DrawioEditor';
 import DrawioResizeHandle from './DrawioResizeHandle';
+import { decodeSvgDataUrl, encodeSvgDataUrl, fitSvgToContent } from './svg-fit';
 import styles from './Drawio.module.less';
 
 interface DrawioAttrs {
@@ -259,14 +260,19 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
 
   const previewSrc = useMemo(() => {
     if (!hasContent || !attrs.content) return null;
-    // 已经是 data URL
-    if (attrs.content.startsWith('data:image/')) return attrs.content;
-    // 原始 SVG 字符串
+    // SVG 内容（原始字符串或 data URL）：先按内容包围盒重算 viewBox，
+    // 保证所有图形都可见且居中（draw.io 导出的 viewBox 可能裁掉越界图形）
+    let svgText: string | null = null;
     if (attrs.content.startsWith('<svg')) {
-      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(attrs.content)}`;
+      svgText = attrs.content;
+    } else if (attrs.content.startsWith('data:image/svg+xml')) {
+      svgText = decodeSvgDataUrl(attrs.content);
+    } else if (attrs.content.startsWith('data:image/')) {
+      // PNG 等位图预览原样展示
+      return attrs.content;
     }
-    // XML 内容无法直接预览
-    return null;
+    if (!svgText) return null;
+    return encodeSvgDataUrl(fitSvgToContent(svgText));
   }, [attrs?.content, hasContent]);
 
   return (

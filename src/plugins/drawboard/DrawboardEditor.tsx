@@ -11,19 +11,25 @@ interface DrawboardEditorProps {
   initialData?: Shape[];
   /** 图形变化实时回调：用于文档内缩略图回显，以及关闭时落盘 */
   onDataChange: (shapes: Shape[]) => void;
+  /** 关闭前对主画布整幅截图（PNG dataURL）：缩略图直接回显编辑器当前视图 */
+  onSnapshot?: (dataUrl: string) => void;
   onClose: () => void;
 }
 
 const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
   initialData,
   onDataChange,
+  onSnapshot,
   onClose,
 }) => {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
   const onDataChangeRef = useRef(onDataChange);
   onDataChangeRef.current = onDataChange;
+  const onSnapshotRef = useRef(onSnapshot);
+  onSnapshotRef.current = onSnapshot;
   const editorRef = useRef<Editor | null>(null);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const doClose = useCallback(() => {
     // 关闭时取编辑器内最终数据，确保最后一笔也写回宿主（onChange 可能漏掉最后一次）
@@ -33,6 +39,27 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
         onDataChangeRef.current(ed.getData().shapes);
       } catch {
         /* ignore */
+      }
+    }
+    // 主画布整幅截图：取门户内面积最大的 canvas（小地图等辅助 canvas 面积小），
+    // 缩略图直接回显该截图，与编辑器所见完全一致
+    const body = bodyRef.current;
+    if (body) {
+      let main: HTMLCanvasElement | null = null;
+      let maxArea = 0;
+      for (const c of Array.from(body.querySelectorAll('canvas'))) {
+        const area = c.width * c.height;
+        if (area > maxArea) {
+          maxArea = area;
+          main = c;
+        }
+      }
+      if (main && main.width > 0) {
+        try {
+          onSnapshotRef.current?.(main.toDataURL('image/png'));
+        } catch {
+          /* 截图失败不影响关闭与数据落盘 */
+        }
       }
     }
     onCloseRef.current();
@@ -88,7 +115,7 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
           </svg>
         </button>
       </div>
-      <div className={styles.body}>
+      <div className={styles.body} ref={bodyRef}>
         {/* data 始终传入（空数组也传），触发 drawui 以外部数据初始化并关闭 localStorage 持久化 */}
         <CanvasBoard
           data={initialData ?? []}
