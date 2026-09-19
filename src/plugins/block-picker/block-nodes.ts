@@ -70,11 +70,19 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         children: [{ text: '' }],
       } as Element;
     case BlockElementType.HINT_BLOCK:
+      // 容器块：children 是内部行（段落），不能直接放文本
       return {
         type,
         id,
         attrs: { type: 'info', label: '说明' },
-        children: [{ text: '' }],
+        children: [
+          {
+            type: BlockElementType.PARAGRAPH,
+            id: `${id}-inner-0`,
+            attrs: {},
+            children: [{ text: '' }],
+          },
+        ],
       } as Element;
     case BlockElementType.CODE_BLOCK:
       return {

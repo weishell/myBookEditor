@@ -56,11 +56,19 @@
     -webkit-appearance: none;
   }
 
-  // 内容区
+  // 内容区（容器：内部是段落/标题/待办等块元素）
   .content {
     flex: 1;
     min-width: 0;
     padding-left: 26px; // 与图标对齐
+    // 行内 \n 软换行（Shift+Enter）需要保留换行符
+    white-space: pre-wrap;
+    word-break: break-word;
+
+    // 内部行间距归一，避免全局段落样式把容器撑开
+    > * {
+      margin: 2px 0;
+    }
 
     > :first-child {
       margin-top: 0;

@@ -1,10 +1,34 @@
 import { Editor, Transforms, Element, Node as SlateNode, Path } from 'slate';
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 import { toggleLilist, LilistType, getLilist } from '@/plugins/lilist';
+import { isInsideHintBlock, toggleInnerBlock } from '@/plugins/hint-block/hint-block-container';
 
 interface ToggleBlockOptions {
   level?: number;
 }
+
+/**
+ * 选区范围内是否包含提示块（含光标在内部的情形）。
+ * 提示块整体禁止被转换成其他类型（也不允许重复切换），转换只发生在其内部行上。
+ */
+const selectionHasHintBlock = (editor: Editor): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+  try {
+    const nodes = Array.from(
+      (editor as any).nodes({
+        at: (editor as any).unhangRange(selection),
+        match: (n: unknown) =>
+          !(n as any).isEditor &&
+          Element.isElement(n) &&
+          (n as any).type === BlockElementType.HINT_BLOCK,
+      }),
+    );
+    return nodes.length > 0;
+  } catch {
+    return false;
+  }
+};
 
 /**
  * 判断当前选区是否包含 HEADING_TITLE 独立标题块
@@ -34,6 +58,16 @@ export const toggleBlock = (
   if (format === BlockElementType.HEADING_TITLE) return;
   // 规则2：当前选区在 HEADING_TITLE 上时，禁止切换为其他块
   if (hasHeadingTitle(editor)) return;
+
+  // 提示块容器规则：
+  //  - 光标在提示块内部 → 只转换内部行（段落/标题/列表/待办），提示块本身不动
+  //  - 提示块整体（选区覆盖到它）禁止被转换：已存在提示块时任何 toggle 都不生效
+  if (isInsideHintBlock(editor)) {
+    if (format === BlockElementType.HINT_BLOCK) return;
+    toggleInnerBlock(editor, format, options);
+    return;
+  }
+  if (selectionHasHintBlock(editor)) return;
 
   // 有序/无序列表走 lilist 绑定模型（旧的 wrapper 类型已废弃）
   if (format === BlockElementType.NUMBERED_LIST) {

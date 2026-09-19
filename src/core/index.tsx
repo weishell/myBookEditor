@@ -28,6 +28,7 @@ import {
   withTimeline,
   withChart,
   withEmbed,
+  withHintBlock,
   MentionController,
 } from '@/plugins';
 import {
@@ -73,10 +74,12 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                       withLilist(
                         withHyperlink(
                           withColumns(
-                            withMention(
-                              withInlineFormula(
-                                withMarkdownShortcuts(
-                                  withCodeBlock(withHistory(withReact(createEditor()))),
+                            withHintBlock(
+                              withMention(
+                                withInlineFormula(
+                                  withMarkdownShortcuts(
+                                    withCodeBlock(withHistory(withReact(createEditor()))),
+                                  ),
                                 ),
                               ),
                             ),

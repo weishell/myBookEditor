@@ -1,12 +1,13 @@
 // Enter 键处理：代码块软换行、lilist 列表三分支（对齐 template.md handleOlUlListEnter）、其余走块级默认
 // lilist 分支仅处理折叠光标；选区回车暂不接管，走默认 insertBreak
 // 全程同步执行（withoutNormalizing + Transforms），结构变更后调 sortLilist 回写编号，无 sleep
-import { Editor, Transforms, Point, Node, Path, Range } from 'slate';
+import { Editor, Transforms, Point, Node, Path, Range, Element } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { handleEnterAtBlockEnd } from '@/utils/block-behaviors';
 import { decreaseIndent } from '@/utils/indent';
 import { getLilist, removeLilist, sortLilist, type LilistAttr } from '@/plugins/lilist';
+import { handleInnerEnter } from '@/plugins/hint-block/hint-block-container';
 
 const isSelectionCollapsed = (selection: any): boolean => {
   if (!selection) return false;
@@ -217,6 +218,25 @@ export const handleEnter = (editor: Editor) => {
     if (blockType === BlockElementType.CODE_BLOCK) {
       Transforms.insertText(editor, '\n');
       return;
+    }
+
+    // 提示块内部行：Enter 走容器内规则（列表续行 / 拆行 / 空行退出），
+    // 必须在 lilist 分支之前拦截，避免内部列表误用顶层编号逻辑
+    if (blockPath.length > 1) {
+      try {
+        const [parentNode, parentPath] = Editor.parent(editor, blockPath);
+        if (
+          Element.isElement(parentNode) &&
+          (parentNode as any).type === BlockElementType.HINT_BLOCK
+        ) {
+          console.log('[hint-block] 内部行 Enter 已劫持', { path: blockPath });
+          handleInnerEnter(editor);
+          return;
+        }
+        void parentPath;
+      } catch {
+        /* ignore */
+      }
     }
 
     const lilist = getLilist(blockNode);

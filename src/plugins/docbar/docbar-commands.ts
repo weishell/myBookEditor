@@ -242,6 +242,8 @@ export const convertDocBarBlock = (
     const node = Node.get(editor, path) as any;
     if (!node) return;
     if (node.type === BlockElementType.HEADING_TITLE) return;
+    // 提示块整体禁止转换（既不能转出也不能转入）：仅支持内部行转换（FloatBar/快捷键入口）
+    if (node.type === BlockElementType.HINT_BLOCK) return;
 
     const curLilist = getLilist(node);
     const currentAttrs = () => (Node.get(editor, path) as any)?.attrs;

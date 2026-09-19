@@ -12,6 +12,7 @@ import {
   sortLilist,
   type LilistAttr,
 } from './lilist-model';
+import { isInsideHintPath, sortInnerLilist } from '@/plugins/hint-block/hint-block-container';
 
 const setLilist = (editor: Editor, path: Path, lilist: LilistAttr) => {
   const node = Node.get(editor, path) as any;
@@ -176,17 +177,19 @@ export const toggleLilist = (editor: Editor, type: LilistType) => {
   const { selection } = editor;
   if (!selection) return;
 
-  const targets = Array.from(
-    (editor as any).nodes({
-      at: (editor as any).unhangRange(selection),
-      match: (n: any) =>
-        !(n as any).isEditor &&
-        Element.isElement(n) &&
-        (editor as any).isBlock(n) &&
-        isLilistHost(type, n.type),
-      mode: 'highest',
-    }),
-  ) as [any, Path][];
+  const targets = (
+    Array.from(
+      (editor as any).nodes({
+        at: (editor as any).unhangRange(selection),
+        match: (n: any) =>
+          !(n as any).isEditor &&
+          Element.isElement(n) &&
+          (editor as any).isBlock(n) &&
+          isLilistHost(type, n.type),
+        mode: 'highest',
+      }),
+    ) as [any, Path][]
+  ).filter(([, p]) => !isInsideHintPath(editor, p)); // 提示块内部行走 toggleInnerBlock，不进顶层编号体系
 
   if (!targets.length) return;
 
@@ -267,6 +270,46 @@ export const convertBlockToLilist = (
   try {
     const node = Node.get(editor, path) as any;
     if (!isLilistHost(type, node?.type)) return;
+
+    // 提示块内部行（markdown 快捷键入口）：编号作用域限定在容器内，不与外部列表连通
+    if (isInsideHintPath(editor, path)) {
+      for (let i = 0; i < path.length; i++) {
+        const anc = Node.get(editor, path.slice(0, i + 1)) as any;
+        if (Element.isElement(anc) && anc.type === BlockElementType.HINT_BLOCK) {
+          const idx = path[path.length - 1];
+          const prev = idx > 0 ? (Node.get(editor, [...path.slice(0, -1), idx - 1]) as any) : null;
+          const prevL = getLilist(prev);
+          const connect =
+            prev &&
+            prev.type === BlockElementType.PARAGRAPH &&
+            prevL?.list_type === type &&
+            startNumber === 1
+              ? prevL
+              : null;
+          const base = { ...(node?.attrs || {}) };
+          delete base.checked;
+          Transforms.setNodes(
+            editor,
+            {
+              type: BlockElementType.PARAGRAPH,
+              attrs: {
+                ...base,
+                lilist: {
+                  list_type: type,
+                  list_id: connect ? connect.list_id : uuidv4(),
+                  list_number: startNumber,
+                  list_custom: !connect,
+                },
+              },
+            } as any,
+            { at: path },
+          );
+          sortInnerLilist(editor, path.slice(0, -1));
+          return;
+        }
+      }
+      return;
+    }
 
     // H 标题 OL 走"按 level + 设置状态"的新规则；其余维持旧规则
     const useHeadingRule = shouldUseHeadingLevelRule(type, node);
