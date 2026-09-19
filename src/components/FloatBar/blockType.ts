@@ -28,6 +28,7 @@ export type BlockType =
   | 'bulleted'
   | 'todo'
   | 'quote'
+  | 'hint'
   | 'code-block';
 
 /**
@@ -60,6 +61,7 @@ export function resolveBlockTypeKey(
   }
   if (type === BlockElementType.TODO_LIST) return 'todo';
   if (type === BlockElementType.BLOCKQUOTE) return 'quote';
+  if (type === BlockElementType.HINT_BLOCK) return 'hint';
   if (type === BlockElementType.CODE_BLOCK) return 'code-block';
 
   // 其它类型（HEADING_TITLE / IMAGE_BLOCK / TABLE / MENTION / ...）一律不参与激活态

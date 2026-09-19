@@ -11,6 +11,7 @@ const INDENTABLE_TYPES: BlockElementType[] = [
   BlockElementType.PARAGRAPH,
   BlockElementType.HEADING,
   BlockElementType.BLOCKQUOTE,
+  BlockElementType.HINT_BLOCK,
   BlockElementType.BULLETED_LIST,
   BlockElementType.NUMBERED_LIST,
   BlockElementType.TODO_LIST,

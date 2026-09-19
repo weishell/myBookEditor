@@ -14,6 +14,7 @@ export const TEXT_SEARCH_BLOCK_TYPES = new Set<string>([
   BlockElementType.HEADING,
   BlockElementType.HEADING_TITLE,
   BlockElementType.BLOCKQUOTE,
+  BlockElementType.HINT_BLOCK,
   BlockElementType.LIST_ITEM,
   BlockElementType.TODO_LIST,
 ]);

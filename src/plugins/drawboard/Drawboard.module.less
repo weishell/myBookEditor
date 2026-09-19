@@ -217,7 +217,6 @@
 .body :global(.drawui-toolbar),
 .body :global(.drawui-toolbar-container),
 .body :global(.drawui-zoom-control),
-.body :global(.drawui-zoom-level),
 .body :global(.drawui-status-bar),
 .body :global(.drawui-style-panel),
 .body :global(.drawui-minimap) {
@@ -225,10 +224,17 @@
 }
 
 // drawui 各层已按 absolute 相对 .body 布局；这里把顶部工具条/右侧缩放面板下移，
-// 避让 44px 的退出栏
-.body :global(.drawui-toolbar),
+// 避让 44px 的退出栏。
+// 注意：0.2.x 的 DOM 是嵌套的 —— .drawui-toolbar-container > .drawui-toolbar、
+// .drawui-zoom-control > .drawui-zoom-level。top 只能设在「外层」一处：
+// 内层再设会与外层叠加（64+64=128px，顶部凭空多出一条大空白）；
+// .drawui-zoom-level 还是 zoom-control 的流内子元素，绝不能绝对定位。
 .body :global(.drawui-toolbar-container),
-.body :global(.drawui-zoom-control),
-.body :global(.drawui-zoom-level) {
+.body :global(.drawui-zoom-control) {
   top: 64px;
+}
+
+// 内层归零：严格跟随外层，不再额外偏移
+.body :global(.drawui-toolbar) {
+  top: 0;
 }

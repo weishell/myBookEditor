@@ -67,6 +67,17 @@ const QuoteIcon = ({ color, size = 18 }: SvgIconProps) => (
   </svg>
 );
 
+// 提示块：底部高亮横杠 + 右上角星标（与引用/飞书高亮块图标相区分）
+const HintIcon = ({ color, size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="4" y="3.5" width="16" height="17" rx="3" />
+    <path
+      d="M12 8.5l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 10.6l2-.3z"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 // 代码块：{} 花括号（对齐飞书）
 const CodeIcon = ({ color, size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -192,6 +203,8 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
       };
     case BlockElementType.BLOCKQUOTE:
       return { component: QuoteIcon };
+    case BlockElementType.HINT_BLOCK:
+      return { component: HintIcon };
     case BlockElementType.CODE_BLOCK:
       return { component: CodeIcon };
     case BlockElementType.BULLETED_LIST:

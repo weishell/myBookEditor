@@ -4,6 +4,7 @@ import {
   Heading,
   Paragraph,
   Blockquote,
+  HintBlock,
   CodeBlock,
   CodeLine,
   ListItem,
@@ -43,6 +44,10 @@ export const renderElement = ({ element, attributes, children }: RenderElementPr
     case BlockElementType.BLOCKQUOTE:
       return (
         <Blockquote attributes={attributes} children={children} pluginId={el.id} element={el} />
+      );
+    case BlockElementType.HINT_BLOCK:
+      return (
+        <HintBlock attributes={attributes} children={children} pluginId={el.id} element={el} />
       );
     case BlockElementType.CODE_BLOCK:
       return (

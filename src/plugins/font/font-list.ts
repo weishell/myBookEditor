@@ -67,6 +67,7 @@ export const FONT_SUPPORTED_BLOCK_TYPES: BlockElementType[] = [
   BlockElementType.PARAGRAPH,
   BlockElementType.HEADING,
   BlockElementType.BLOCKQUOTE,
+  BlockElementType.HINT_BLOCK,
   BlockElementType.CODE_BLOCK,
   BlockElementType.CODE_LINE,
   BlockElementType.LIST_ITEM,

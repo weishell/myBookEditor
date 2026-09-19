@@ -1,27 +1,27 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element } from 'slate';
-import { BlockElementType, BlockquoteType } from '@/enums';
-import { BLOCKQUOTE_ICONS, BLOCKQUOTE_LABELS, BLOCKQUOTE_COLORS } from './icons';
+import { BlockElementType, HintBlockType } from '@/enums';
+import { HINT_BLOCK_ICONS, HINT_BLOCK_LABELS, HINT_BLOCK_COLORS } from './icons';
 
-interface BlockquoteStatusSelectorProps {
+interface HintBlockStatusSelectorProps {
   pluginId: string;
-  currentType: BlockquoteType;
+  currentType: HintBlockType;
   onClose?: () => void;
 }
 
-const TYPE_OPTIONS: { value: BlockquoteType; label: string }[] = [
-  { value: BlockquoteType.INFO, label: BLOCKQUOTE_LABELS[BlockquoteType.INFO] },
-  { value: BlockquoteType.NOTE, label: BLOCKQUOTE_LABELS[BlockquoteType.NOTE] },
-  { value: BlockquoteType.WARNING, label: BLOCKQUOTE_LABELS[BlockquoteType.WARNING] },
-  { value: BlockquoteType.TIP, label: BLOCKQUOTE_LABELS[BlockquoteType.TIP] },
+const TYPE_OPTIONS: { value: HintBlockType; label: string }[] = [
+  { value: HintBlockType.INFO, label: HINT_BLOCK_LABELS[HintBlockType.INFO] },
+  { value: HintBlockType.NOTE, label: HINT_BLOCK_LABELS[HintBlockType.NOTE] },
+  { value: HintBlockType.WARNING, label: HINT_BLOCK_LABELS[HintBlockType.WARNING] },
+  { value: HintBlockType.TIP, label: HINT_BLOCK_LABELS[HintBlockType.TIP] },
 ];
 
-export function BlockquoteStatusSelector({
+export function HintBlockStatusSelector({
   pluginId,
   currentType,
   onClose,
-}: BlockquoteStatusSelectorProps) {
+}: HintBlockStatusSelectorProps) {
   const editor = useSlateStatic();
   const [rect, setRect] = useState<DOMRect | null>(null);
 
@@ -43,11 +43,11 @@ export function BlockquoteStatusSelector({
     };
   }, [measure]);
 
-  const handleChangeType = (type: BlockquoteType) => {
+  const handleChangeType = (type: HintBlockType) => {
     try {
       const raw = (editor as any).nodes({
         at: [],
-        match: (n: any) => Element.isElement(n) && (n as any).type === BlockElementType.BLOCKQUOTE,
+        match: (n: any) => Element.isElement(n) && (n as any).type === BlockElementType.HINT_BLOCK,
       });
       const entries = Array.isArray(raw)
         ? (raw as Array<[any, number[]]>)
@@ -58,8 +58,13 @@ export function BlockquoteStatusSelector({
         const nodeId = (node as any).id;
         if (nodeId === pluginId) {
           const currentAttrs = (node as any).attrs || {};
-          // 类型决定颜色；标签/描述字段已废弃，切换时只更新 type
-          Transforms.setNodes(editor, { attrs: { ...currentAttrs, type } } as any, { at: path });
+          // 保留 label 如果用户自定义过，否则用新类型的默认标签
+          const newLabel = currentAttrs.label || HINT_BLOCK_LABELS[type];
+          Transforms.setNodes(
+            editor,
+            { attrs: { ...currentAttrs, type, label: newLabel } } as any,
+            { at: path },
+          );
           break;
         }
       }
@@ -77,7 +82,7 @@ export function BlockquoteStatusSelector({
       style={{
         position: 'fixed',
         top: rect.top + 2,
-        left: rect.left + 14,
+        left: rect.left + 44,
         zIndex: 10001,
         display: 'flex',
         gap: 4,
@@ -91,9 +96,9 @@ export function BlockquoteStatusSelector({
       onMouseLeave={() => onClose?.()}
     >
       {TYPE_OPTIONS.map((opt) => {
-        const Icon = BLOCKQUOTE_ICONS[opt.value];
+        const Icon = HINT_BLOCK_ICONS[opt.value];
         const isActive = currentType === opt.value;
-        const color = BLOCKQUOTE_COLORS[opt.value];
+        const color = HINT_BLOCK_COLORS[opt.value];
         return (
           <button
             key={opt.value}

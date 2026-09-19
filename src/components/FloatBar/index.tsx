@@ -66,6 +66,7 @@ const CONVERT_TARGETS: Record<BlockType, { format: BlockElementType; level?: num
   bulleted: { format: BlockElementType.BULLETED_LIST },
   todo: { format: BlockElementType.TODO_LIST },
   quote: { format: BlockElementType.BLOCKQUOTE },
+  hint: { format: BlockElementType.HINT_BLOCK },
   'code-block': { format: BlockElementType.CODE_BLOCK },
 };
 
@@ -163,6 +164,7 @@ const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps
       <div className={styles.dividerHorizontal} />
       <Item Icon={blockTypeIconComponent('code-block')!} label="代码块" target="code-block" />
       <Item Icon={blockTypeIconComponent('quote')!} label="引用" target="quote" />
+      <Item Icon={blockTypeIconComponent('hint')!} label="提示块" target="hint" />
     </div>
   );
 };

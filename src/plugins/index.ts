@@ -4,6 +4,7 @@ export * from './paragraph';
 export * from './heading';
 export * from './heading-title';
 export * from './blockquote';
+export * from './hint-block';
 export * from './code-block';
 export * from './bulleted-list';
 export * from './numbered-list';

@@ -43,6 +43,7 @@ const BASIC_ITEMS: BlockTypeOption[] = [
   },
   { type: BlockElementType.TODO_LIST, label: '待办事项', icon: blockTypeIcon('todo') },
   { type: BlockElementType.BLOCKQUOTE, label: '引用块', icon: blockTypeIcon('quote') },
+  { type: BlockElementType.HINT_BLOCK, label: '提示块', icon: blockTypeIcon('hint') },
   {
     type: BlockElementType.CODE_BLOCK,
     label: '代码块',

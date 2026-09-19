@@ -51,6 +51,7 @@ const ICON_KEY: Record<DocBarConvertTarget, string> = {
   'bulleted-list': 'bulleted',
   checkbox: 'todo',
   quote: 'quote',
+  hint: 'hint',
   'code-block': 'code-block',
 };
 
@@ -79,6 +80,7 @@ const BASIC_CMDS: SlashCmd[] = [
   convertItem('checkbox', '待办任务'),
   convertItem('code-block', '代码块'),
   convertItem('quote', '引用'),
+  convertItem('hint', '提示块'),
 ];
 
 const COMMON_CMDS: SlashCmd[] = [

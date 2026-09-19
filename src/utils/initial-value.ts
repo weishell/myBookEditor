@@ -357,7 +357,7 @@ export const initialValue: Descendant[] = [
   {
     type: BlockElementType.BLOCKQUOTE,
     id: uuidv4(),
-    attrs: { type: 'info', label: '说明' },
+    attrs: { type: 'info' },
     children: [
       { text: '本文档编辑器支持 Markdown 语法，可以使用快捷键快速插入标题、列表、代码块等元素。' },
     ],
@@ -365,7 +365,7 @@ export const initialValue: Descendant[] = [
   {
     type: BlockElementType.BLOCKQUOTE,
     id: uuidv4(),
-    attrs: { type: 'note', label: '注意' },
+    attrs: { type: 'note' },
     children: [
       {
         text: '在编辑过程中，系统会自动保存你的内容。你也可以手动点击保存按钮或使用 Ctrl+S 快捷键进行保存。',
@@ -375,14 +375,36 @@ export const initialValue: Descendant[] = [
   {
     type: BlockElementType.BLOCKQUOTE,
     id: uuidv4(),
-    attrs: { type: 'warning', label: '警告' },
+    attrs: { type: 'warning' },
     children: [{ text: '切换主题或退出编辑模式前，请确保内容已保存，未保存的更改可能会丢失。' }],
   },
   {
     type: BlockElementType.BLOCKQUOTE,
     id: uuidv4(),
-    attrs: { type: 'tip', label: '提示' },
+    attrs: { type: 'tip' },
     children: [{ text: '选中文本后点击右键可以快速调出格式菜单，提高编辑效率。' }],
+  },
+  {
+    type: BlockElementType.HEADING,
+    id: uuidv4(),
+    attrs: { level: 2 },
+    children: [{ text: '提示块示例' }],
+  },
+  {
+    type: BlockElementType.HINT_BLOCK,
+    id: uuidv4(),
+    attrs: { type: 'info', label: '说明' },
+    children: [
+      {
+        text: '提示块用于对内容做重点标注与强调，可在类型图标上停留唤出面板切换四种样式。',
+      },
+    ],
+  },
+  {
+    type: BlockElementType.HINT_BLOCK,
+    id: uuidv4(),
+    attrs: { type: 'warning', label: '警告' },
+    children: [{ text: '该块基于引用块复刻而来，命名与图标与飞书相区分，后续再细化功能。' }],
   },
   {
     type: BlockElementType.HEADING,

@@ -60,10 +60,11 @@ export const BLOCKQUOTE_ICONS: Record<BlockquoteType, React.FC<IconProps>> = {
 };
 
 export const BLOCKQUOTE_LABELS: Record<BlockquoteType, string> = {
-  [BlockquoteType.INFO]: '说明',
-  [BlockquoteType.NOTE]: '注意',
-  [BlockquoteType.WARNING]: '警告',
-  [BlockquoteType.TIP]: '提示',
+  // 引用块词表与提示块（说明/注意/警告/提示）区分开，避免 tooltip 撞词
+  [BlockquoteType.INFO]: '信息',
+  [BlockquoteType.NOTE]: '备注',
+  [BlockquoteType.WARNING]: '警示',
+  [BlockquoteType.TIP]: '建议',
 };
 
 export const BLOCKQUOTE_COLORS: Record<BlockquoteType, string> = {

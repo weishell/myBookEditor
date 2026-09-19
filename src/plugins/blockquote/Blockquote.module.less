@@ -1,65 +1,29 @@
-﻿// Blockquote 组件样式 - 支持4种类型：说明/注意/警告/提示
+﻿// Blockquote 组件样式 —— 极简布局：左侧竖线 + 内容
+// 布局约定：类型由 attrs.type 决定四色；竖线颜色 = 类型主色（比浅色背景更深）；
+// 顶部标签行（label）/ 图标 / 描述已废弃，不再渲染文字标签与图标。
 .blockquote {
   position: relative;
+  display: flex;
+  align-items: stretch;
   margin: @spacing-lg 0;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid transparent;
-  transition: background-color 0.2s, border-color 0.2s;
+  border-radius: 6px;
+  background: var(--bq-bg, #f3f4f6);
+  --bq-bar: #9ca3af; // 默认中性灰
 
-  // 头部：图标 + 标签
-  .header {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    margin-bottom: 8px;
-    font-weight: 500;
-    font-size: 15px;
-  }
-
-  .typeIcon {
-    display: flex;
-    align-items: center;
-    justify-content: center;
+  // 左侧竖线：可点击颜色切换锚点，不与正文文本竞抢焦点
+  .blockquoteStripe {
     flex-shrink: 0;
-    line-height: 1;
-  }
-
-  .typeLabel {
-    line-height: 1;
-    cursor: var(--cursor-pointer);
-    border-bottom: 1px dashed transparent;
-    transition: border-color 0.15s;
-
-    &:hover {
-      border-bottom-color: currentColor;
-    }
-  }
-
-  .labelInput {
-    font-size: 15px;
-    font-weight: 500;
-    font-family: inherit;
-    line-height: 1;
-    padding: 0;
-    margin: 0;
-    border: none;
-    border-bottom: 2px solid currentColor;
-    border-radius: 0;
-    background: transparent;
-    color: inherit;
-    outline: none;
-    min-width: 60px;
-    max-width: 200px;
-    box-shadow: none;
-    -webkit-appearance: none;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+    background: var(--bq-bar);
+    cursor: pointer;
   }
 
   // 内容区
   .content {
     flex: 1;
     min-width: 0;
-    padding-left: 26px; // 与图标对齐
+    padding: 12px 16px 12px 12px;
 
     > :first-child {
       margin-top: 0;
@@ -70,101 +34,48 @@
     }
   }
 
-  // ===== 说明（info）- 跟随主题色 =====
+  // ===== 说明（info）- 主题蓝 =====
   &.typeInfo {
-    background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 6%, @bg-base), color-mix(in srgb, var(--theme-primary) 2%, @bg-base));
-    border-color: color-mix(in srgb, var(--theme-primary) 20%, @border-color-light);
-    color: @text-primary;
-
-    .typeIcon,
-    .typeLabel {
-      color: var(--theme-primary);
-    }
+    --bq-bar: var(--theme-primary, #3d6bff);
+    --bq-bg: color-mix(in srgb, var(--theme-primary) 6%, @bg-base);
   }
 
-  // ===== 注意（note）- 琥珀色 =====
+  // ===== 注意（note）- 琥珀 =====
   &.typeNote {
-    background: linear-gradient(135deg, rgba(250, 173, 20, 0.08), rgba(250, 173, 20, 0.02));
-    border-color: rgba(250, 173, 20, 0.3);
-    color: @text-primary;
-
-    .typeIcon,
-    .typeLabel {
-      color: #faad14;
-    }
+    --bq-bar: #d97706;
+    --bq-bg: #fffaeb;
   }
 
-  // ===== 警告（warning）- 红色 =====
+  // ===== 警告（warning）- 红 =====
   &.typeWarning {
-    background: linear-gradient(135deg, rgba(255, 77, 79, 0.08), rgba(255, 77, 79, 0.02));
-    border-color: rgba(255, 77, 79, 0.3);
-    color: @text-primary;
-
-    .typeIcon,
-    .typeLabel {
-      color: #ff4d4f;
-    }
+    --bq-bar: #dc2626;
+    --bq-bg: #fef2f2;
   }
 
-  // ===== 提示（tip）- 绿色 =====
+  // ===== 提示（tip）- 绿 =====
   &.typeTip {
-    background: linear-gradient(135deg, rgba(82, 196, 26, 0.08), rgba(82, 196, 26, 0.02));
-    border-color: rgba(82, 196, 26, 0.3);
-    color: @text-primary;
-
-    .typeIcon,
-    .typeLabel {
-      color: #52c41a;
-    }
+    --bq-bar: #16a34a;
+    --bq-bg: #f0fdf4;
   }
 }
 
 /* ================== 暗黑模式覆盖 ================== */
-
-/* info 类型在暗黑模式下主题色需要提亮 */
 :global(.dark-mode) .blockquote.typeInfo {
-  background: linear-gradient(135deg, color-mix(in srgb, var(--theme-primary) 10%, var(--dm-bg-base, #121721)), color-mix(in srgb, var(--theme-primary) 4%, var(--dm-bg-base, #121721)));
-  border-color: color-mix(in srgb, var(--theme-primary) 30%, var(--dm-border, #2b3240));
-  color: var(--dm-text-primary, #e5e7eb);
+  --bq-bar: color-mix(in srgb, var(--theme-primary) 70%, #ffffff);
+  --bq-bg: color-mix(in srgb, var(--theme-primary) 16%, var(--dm-bg-base, #121721));
 }
 
-:global(.dark-mode) .blockquote.typeInfo .typeIcon,
-:global(.dark-mode) .blockquote.typeInfo .typeLabel {
-  color: color-mix(in srgb, var(--theme-primary) 70%, #ffffff);
-}
-
-/* note 类型 */
 :global(.dark-mode) .blockquote.typeNote {
-  background: linear-gradient(135deg, rgba(250, 173, 20, 0.12), rgba(250, 173, 20, 0.04));
-  border-color: rgba(250, 173, 20, 0.35);
-  color: var(--dm-text-primary, #e5e7eb);
+  --bq-bar: #f0a13b;
+  --bq-bg: rgba(217, 119, 6, 0.16);
 }
 
-:global(.dark-mode) .blockquote.typeNote .typeIcon,
-:global(.dark-mode) .blockquote.typeNote .typeLabel {
-  color: #fbbf24;
-}
-
-/* warning 类型 */
 :global(.dark-mode) .blockquote.typeWarning {
-  background: linear-gradient(135deg, rgba(255, 77, 79, 0.12), rgba(255, 77, 79, 0.04));
-  border-color: rgba(255, 77, 79, 0.35);
-  color: var(--dm-text-primary, #e5e7eb);
+  --bq-bar: #ff6b6b;
+  --bq-bg: rgba(220, 38, 38, 0.18);
 }
 
-:global(.dark-mode) .blockquote.typeWarning .typeIcon,
-:global(.dark-mode) .blockquote.typeWarning .typeLabel {
-  color: #ff7875;
-}
-
-/* tip 类型 */
 :global(.dark-mode) .blockquote.typeTip {
-  background: linear-gradient(135deg, rgba(82, 196, 26, 0.12), rgba(82, 196, 26, 0.04));
-  border-color: rgba(82, 196, 26, 0.35);
-  color: var(--dm-text-primary, #e5e7eb);
-}
-
-:global(.dark-mode) .blockquote.typeTip .typeIcon,
-:global(.dark-mode) .blockquote.typeTip .typeLabel {
-  color: #95de64;
+  --bq-bar: #52d273;
+  --bq-bg: rgba(22, 163, 74, 0.16);
 }

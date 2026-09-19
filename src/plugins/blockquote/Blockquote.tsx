@@ -1,10 +1,7 @@
-import { useState, useRef, useCallback, useEffect } from 'react';
-import { useSlateStatic } from 'slate-react';
-import { Transforms, Element } from 'slate';
+import { useState, useCallback } from 'react';
 import { BlockElementType, BlockquoteType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { BlockquoteStatusSelector } from './BlockquoteStatusSelector';
-import { BLOCKQUOTE_ICONS, BLOCKQUOTE_LABELS } from './icons';
 import styles from './Blockquote.module.less';
 
 interface ElementProps {
@@ -15,8 +12,6 @@ interface ElementProps {
 }
 
 export const Blockquote = ({ attributes, children, pluginId, element }: ElementProps) => {
-  const editor = useSlateStatic();
-
   // 类型解析：新数据直接用 type 字段；旧数据用 status 字段做兼容映射
   const rawType = element?.attrs?.type as string | undefined;
   const rawStatus = element?.attrs?.status as string | undefined;
@@ -41,87 +36,16 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
     type = BlockquoteType.INFO;
   }
 
-  // 标签：优先用 attrs.label，否则按类型默认
-  const label: string = element?.attrs?.label || BLOCKQUOTE_LABELS[type] || '说明';
-
-  const [editingLabel, setEditingLabel] = useState(false);
-  const [editValue, setEditValue] = useState(label);
-  // 类型切换面板：悬浮在类型图标上停留 1s 后展示
+  // 类型切换面板：点击左侧竖线展示（类型由 attrs.type 决定四色）
   const [showSelector, setShowSelector] = useState(false);
-  const hoverTimerRef = useRef<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
-  const clearHoverTimer = useCallback(() => {
-    if (hoverTimerRef.current) {
-      clearTimeout(hoverTimerRef.current);
-      hoverTimerRef.current = null;
-    }
+  const handleStripeClick = useCallback(() => {
+    setShowSelector(true);
   }, []);
-
-  useEffect(() => clearHoverTimer, [clearHoverTimer]);
-
-  const handleIconMouseEnter = useCallback(() => {
-    clearHoverTimer();
-    hoverTimerRef.current = window.setTimeout(() => {
-      setShowSelector(true);
-      hoverTimerRef.current = null;
-    }, 1000);
-  }, [clearHoverTimer]);
-
-  const handleIconMouseLeave = useCallback(() => {
-    // 只取消未触发的定时器，已展示的面板由面板自身 hover 维持
-    clearHoverTimer();
-  }, [clearHoverTimer]);
 
   const handleSelectorClose = useCallback(() => {
     setShowSelector(false);
   }, []);
-
-  const saveLabel = useCallback(() => {
-    const newLabel = editValue.trim();
-    if (!newLabel || !pluginId) {
-      setEditingLabel(false);
-      return;
-    }
-    try {
-      const raw = (editor as any).nodes({
-        at: [],
-        match: (n: any) => Element.isElement(n) && (n as any).type === BlockElementType.BLOCKQUOTE,
-      });
-      const entries = Array.isArray(raw)
-        ? (raw as Array<[any, number[]]>)
-        : raw != null && typeof raw[Symbol.iterator] === 'function'
-          ? Array.from(raw as Iterable<[any, number[]]>)
-          : [];
-      for (const [node, path] of entries) {
-        if ((node as any).id === pluginId) {
-          const currentAttrs = (node as any).attrs || {};
-          Transforms.setNodes(editor, { attrs: { ...currentAttrs, label: newLabel } } as any, {
-            at: path,
-          });
-          break;
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-    setEditingLabel(false);
-  }, [editValue, editor, pluginId]);
-
-  const handleLabelClick = () => {
-    setEditValue(label);
-    setEditingLabel(true);
-    setTimeout(() => inputRef.current?.focus(), 0);
-  };
-
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveLabel();
-    } else if (e.key === 'Escape') {
-      setEditingLabel(false);
-    }
-  };
 
   const typeClass =
     type === BlockquoteType.INFO
@@ -132,8 +56,6 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
           ? styles.typeWarning
           : styles.typeTip;
 
-  const Icon = BLOCKQUOTE_ICONS[type] || BLOCKQUOTE_ICONS[BlockquoteType.INFO];
-
   return (
     <ElementWrapper type={BlockElementType.BLOCKQUOTE} pluginId={pluginId} attrs={element?.attrs}>
       <blockquote
@@ -141,36 +63,14 @@ export const Blockquote = ({ attributes, children, pluginId, element }: ElementP
         className={`${styles.blockquote} ${typeClass}`}
         data-type={type}
       >
-        <div
-          className={styles.header}
+        <span
+          className={styles.blockquoteStripe}
+          aria-hidden
+          title="点击切换颜色"
           contentEditable={false}
           onMouseDown={(e) => e.preventDefault()}
-        >
-          <span
-            className={styles.typeIcon}
-            aria-hidden
-            onMouseEnter={handleIconMouseEnter}
-            onMouseLeave={handleIconMouseLeave}
-          >
-            <Icon size={18} />
-          </span>
-          {editingLabel ? (
-            <input
-              ref={inputRef}
-              className={styles.labelInput}
-              value={editValue}
-              onChange={(e) => setEditValue(e.target.value)}
-              onBlur={saveLabel}
-              onKeyDown={handleKeyDown}
-              onMouseDown={(e) => e.stopPropagation()}
-              contentEditable={false}
-            />
-          ) : (
-            <span className={styles.typeLabel} onClick={handleLabelClick} title="点击编辑标签">
-              {label}
-            </span>
-          )}
-        </div>
+          onClick={handleStripeClick}
+        />
         <div className={styles.content}>{children}</div>
       </blockquote>
       {pluginId && showSelector && (

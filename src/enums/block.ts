@@ -3,6 +3,7 @@ export const BlockElementType = {
   PARAGRAPH: 'paragraph',
   HEADING: 'heading',
   BLOCKQUOTE: 'blockquote',
+  HINT_BLOCK: 'hint-block',
   CODE_BLOCK: 'code-block',
   CODE_LINE: 'code-line',
   LIST_ITEM: 'list-item',
@@ -48,3 +49,13 @@ export const BlockquoteType = {
 } as const;
 
 export type BlockquoteType = (typeof BlockquoteType)[keyof typeof BlockquoteType];
+
+/* 提示块类型（类似高亮块，但命名/图标与飞书相区分） */
+export const HintBlockType = {
+  INFO: 'info', // 说明
+  NOTE: 'note', // 注意
+  WARNING: 'warning', // 警告
+  TIP: 'tip', // 提示
+} as const;
+
+export type HintBlockType = (typeof HintBlockType)[keyof typeof HintBlockType];

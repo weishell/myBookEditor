@@ -261,6 +261,7 @@ export const ContextMenu = () => {
       'bulleted-list',
       'checkbox',
       'quote',
+      'hint',
       'code-block',
     ]);
     if (convertActions.has(action)) {
@@ -339,6 +340,8 @@ export const ContextMenu = () => {
         return targetType === BlockElementType.TODO_LIST;
       case 'quote':
         return targetType === BlockElementType.BLOCKQUOTE;
+      case 'hint':
+        return targetType === BlockElementType.HINT_BLOCK;
       case 'code-block':
         return targetType === BlockElementType.CODE_BLOCK;
       default:
@@ -597,6 +600,17 @@ export const ContextMenu = () => {
           >
             {(() => {
               const Cmp = blockTypeIconComponent('quote');
+              return Cmp ? <Cmp size={16} /> : null;
+            })()}
+          </button>
+          <button
+            onClick={() => handleMenuClick('hint')}
+            className={isConvertActive('hint') ? styles.btnPrimary : styles.btnTool}
+            disabled={DISABLED_ACTIONS.includes('hint')}
+            title="提示块"
+          >
+            {(() => {
+              const Cmp = blockTypeIconComponent('hint');
               return Cmp ? <Cmp size={16} /> : null;
             })()}
           </button>

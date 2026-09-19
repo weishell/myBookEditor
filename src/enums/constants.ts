@@ -192,6 +192,7 @@ export const BlockIconColors: Record<string, string> = {
   heading: ThemeA.primary,
   paragraph: ThemeA.primary,
   blockquote: ThemeA.warning,
+  hint_block: ThemeA.primary,
   code_block: ThemeA.purple,
   bulleted_list: ThemeA.success,
   numbered_list: ThemeA.success,

@@ -47,6 +47,17 @@ const QuoteIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
   </svg>
 );
 
+/** 提示块：底部高亮横杠 + 右上角星标（与引用块/飞书高亮块图标相区分） */
+const HintIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <rect x="4" y="3.5" width="16" height="17" rx="3" />
+    <path
+      d="M12 8.5l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 10.6l2-.3z"
+      strokeLinejoin="round"
+    />
+  </svg>
+);
+
 /** 代码块：{} 花括号（对齐飞书） */
 const CodeIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
@@ -70,6 +81,7 @@ export function blockTypeIcon(key: BlockType | null): React.ReactNode {
   if (key === 'bulleted') return <UlListIcon />;
   if (key === 'todo') return <TodoIcon />;
   if (key === 'quote') return <QuoteIcon />;
+  if (key === 'hint') return <HintIcon />;
   if (key === 'code-block') return <CodeIcon />;
   // h1..h9
   const m = /^h([1-9])$/.exec(key);
@@ -87,6 +99,7 @@ export function blockTypeIconComponent(key: BlockType): React.ComponentType<Icon
   if (key === 'bulleted') return UlListIcon as unknown as React.ComponentType<IconProps>;
   if (key === 'todo') return TodoIcon;
   if (key === 'quote') return QuoteIcon;
+  if (key === 'hint') return HintIcon;
   if (key === 'code-block') return CodeIcon;
   const m = /^h([1-9])$/.exec(key);
   if (m) {

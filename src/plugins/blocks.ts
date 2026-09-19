@@ -115,6 +115,16 @@ export const toggleBlock = (
       } as Partial<Element>,
       { match: (n) => Element.isElement(n) && (editor as any).isBlock(n) },
     );
+  } else if (format === BlockElementType.HINT_BLOCK) {
+    // 提示块需要携带默认 attrs（type/label 驱动渲染），切换时给予默认值
+    Transforms.setNodes(
+      editor,
+      {
+        type: isActive ? BlockElementType.PARAGRAPH : format,
+        attrs: { type: 'info', label: '说明' },
+      } as Partial<Element>,
+      { match: (n) => Element.isElement(n) && (editor as any).isBlock(n) },
+    );
   } else {
     Transforms.setNodes(
       editor,

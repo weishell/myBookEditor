@@ -18,6 +18,7 @@ export const TEXT_BLOCK_TYPES: BlockElementType[] = [
   BlockElementType.HEADING,
   BlockElementType.HEADING_TITLE,
   BlockElementType.BLOCKQUOTE,
+  BlockElementType.HINT_BLOCK,
   BlockElementType.CODE_BLOCK,
   BlockElementType.LIST_ITEM,
   BlockElementType.BULLETED_LIST,
@@ -62,6 +63,13 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
         children: [{ text: '' }],
       } as Element;
     case BlockElementType.BLOCKQUOTE:
+      return {
+        type,
+        id,
+        attrs: { type: 'info' },
+        children: [{ text: '' }],
+      } as Element;
+    case BlockElementType.HINT_BLOCK:
       return {
         type,
         id,

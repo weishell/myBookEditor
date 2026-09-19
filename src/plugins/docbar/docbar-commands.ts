@@ -37,6 +37,7 @@ export type DocBarConvertTarget =
   | 'bulleted-list'
   | 'checkbox'
   | 'quote'
+  | 'hint'
   | 'code-block';
 
 /** 可作为 DocBar 类型转换源/目标的块类型 */
@@ -44,6 +45,7 @@ export const CONVERTIBLE_BLOCK_TYPES: BlockElementType[] = [
   BlockElementType.PARAGRAPH,
   BlockElementType.HEADING,
   BlockElementType.BLOCKQUOTE,
+  BlockElementType.HINT_BLOCK,
   BlockElementType.TODO_LIST,
   BlockElementType.CODE_BLOCK,
 ];
@@ -51,7 +53,7 @@ export const CONVERTIBLE_BLOCK_TYPES: BlockElementType[] = [
 const cleanAttrsForType = (attrs: any, type: BlockElementType) => {
   const next = { ...(attrs || {}) };
   if (type !== BlockElementType.HEADING) delete next.level;
-  if (type !== BlockElementType.BLOCKQUOTE) {
+  if (type !== BlockElementType.BLOCKQUOTE && type !== BlockElementType.HINT_BLOCK) {
     delete next.type;
     delete next.label;
   }
@@ -309,6 +311,33 @@ export const convertDocBarBlock = (
               type: BlockElementType.BLOCKQUOTE,
               attrs: {
                 ...cleanAttrsForType(currentAttrs(), BlockElementType.BLOCKQUOTE),
+                type: 'info',
+              },
+            } as any,
+            { at: path },
+          );
+        }
+        return;
+      }
+      case 'hint': {
+        if (curLilist) removeLilist(editor, path);
+        if (node.type === BlockElementType.HINT_BLOCK) {
+          Transforms.setNodes(
+            editor,
+            {
+              type: BlockElementType.PARAGRAPH,
+              attrs: cleanAttrsForType(currentAttrs(), BlockElementType.PARAGRAPH),
+            } as any,
+            { at: path },
+          );
+        } else {
+          ensureTextHost(editor, path);
+          Transforms.setNodes(
+            editor,
+            {
+              type: BlockElementType.HINT_BLOCK,
+              attrs: {
+                ...cleanAttrsForType(currentAttrs(), BlockElementType.HINT_BLOCK),
                 type: 'info',
                 label: '说明',
               },
