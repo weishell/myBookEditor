@@ -101,4 +101,14 @@ export default {
     replaceAll: 'Replace All',
     tip: 'Enter next · Shift+Enter previous · Esc close',
   },
+  drawboard: {
+    title: 'Whiteboard',
+    edit: 'Edit',
+    delete: 'Delete',
+    clickToEdit: 'Click to edit fullscreen',
+    hint: 'Double-click the board or select and press Enter',
+    doubleClickTitle: 'Double-click to edit fullscreen',
+    escToExit: 'Esc to exit editing',
+    exitTitle: 'Exit (Esc)',
+  },
 } as const;

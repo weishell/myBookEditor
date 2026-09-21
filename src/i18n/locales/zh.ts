@@ -101,4 +101,14 @@ export default {
     replaceAll: '全部替换',
     tip: 'Enter 下一个 · Shift+Enter 上一个 · Esc 关闭',
   },
+  drawboard: {
+    title: '画板',
+    edit: '编辑',
+    delete: '删除',
+    clickToEdit: '点击进入全屏编辑',
+    hint: '双击画板 或 选中后按 Enter',
+    doubleClickTitle: '双击进入全屏编辑',
+    escToExit: 'Esc 退出编辑',
+    exitTitle: '退出 (Esc)',
+  },
 } as const;

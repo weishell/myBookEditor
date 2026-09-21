@@ -2,6 +2,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { Transforms } from 'slate';
+import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { BlockElementType } from '@/enums';
@@ -21,6 +22,7 @@ interface DrawboardProps {
 const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
   const isSelected = useSelected();
+  const { t } = useTranslation();
   const { attrs } = element;
 
   const [editing, setEditing] = useState(false);
@@ -190,7 +192,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                 <path d="M15 3h2a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h2" />
                 <rect x="8" y="8" width="8" height="8" rx="1" />
               </svg>
-              编辑
+              {t('drawboard.edit')}
             </button>
             <div className={styles.toolbarDivider} />
             <button className={styles.toolbarButton} onClick={handleRemove}>
@@ -207,7 +209,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
-              删除
+              {t('drawboard.delete')}
             </button>
           </div>
         )}
@@ -219,7 +221,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
           suppressContentEditableWarning={true}
           onClick={handleSelect}
           onDoubleClick={openEditor}
-          title="双击进入全屏编辑"
+          title={t('drawboard.doubleClickTitle')}
           style={{ maxWidth: `min(${effW}px, 100%)`, aspectRatio: `${effW} / ${effH}` }}
         >
           <div className={styles.titleBar}>
@@ -239,7 +241,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                 <rect x="8" y="14" width="9" height="7" rx="1" />
               </svg>
             </span>
-            <span>画板</span>
+            <span>{t('drawboard.title')}</span>
           </div>
           <div className={styles.previewArea}>
             {previewShapes && previewShapes.length > 0 ? (
@@ -266,8 +268,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                     <line x1="17.5" y1="14" x2="11.5" y2="14" />
                   </svg>
                 </div>
-                <span className={styles.emptyText}>点击进入全屏编辑</span>
-                <span className={styles.hint}>双击画板 或 选中后按 Enter</span>
+                <span className={styles.emptyText}>{t('drawboard.clickToEdit')}</span>
+                <span className={styles.hint}>{t('drawboard.hint')}</span>
               </>
             )}
           </div>

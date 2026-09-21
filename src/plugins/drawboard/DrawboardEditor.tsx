@@ -3,6 +3,7 @@ import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CanvasBoard } from 'drawui-react';
 import type { Editor, Shape, EditorData } from 'drawui-core';
+import { useTranslation } from 'react-i18next';
 import 'drawui-react/styles.css';
 import styles from './Drawboard.module.less';
 
@@ -30,6 +31,9 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
   onSnapshotRef.current = onSnapshot;
   const editorRef = useRef<Editor | null>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const { t, i18n } = useTranslation();
+  // 与外部语言联动：项目内 'zh'/'en' → drawui 的 BCP-47 标签
+  const drawuiLanguage = i18n.language === 'en' ? 'en-US' : 'zh-CN';
 
   const doClose = useCallback(() => {
     // 关闭时取编辑器内最终数据，确保最后一笔也写回宿主（onChange 可能漏掉最后一次）
@@ -97,10 +101,10 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
             <line x1="6.5" y1="10" x2="6.5" y2="14" />
             <line x1="17.5" y1="10" x2="17.5" y2="14" />
           </svg>
-          画板
+          {t('drawboard.title')}
         </span>
-        <span className={styles.headerHint}>Esc 退出编辑</span>
-        <button className={styles.headerClose} onClick={doClose} title="退出 (Esc)">
+        <span className={styles.headerHint}>{t('drawboard.escToExit')}</span>
+        <button className={styles.headerClose} onClick={doClose} title={t('drawboard.exitTitle')}>
           <svg
             width="18"
             height="18"
@@ -120,7 +124,7 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
         <CanvasBoard
           data={initialData ?? []}
           themeColor="#3b82f6"
-          language="zh-CN"
+          language={drawuiLanguage}
           onChange={(d: EditorData) => onDataChangeRef.current(d.shapes)}
           onReady={(editor: Editor) => {
             editorRef.current = editor;
