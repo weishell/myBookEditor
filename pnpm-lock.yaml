@@ -35,11 +35,11 @@ importers:
         specifier: 1.20.0
         version: 1.20.0(debug@4.4.3(supports-color@7.2.0))(supports-color@7.2.0)
       drawui-core:
-        specifier: 0.3.4
-        version: 0.3.4
+        specifier: 0.3.5
+        version: 0.3.5
       drawui-react:
-        specifier: 0.3.4
-        version: 0.3.4(react@19.2.7)
+        specifier: 0.3.5
+        version: 0.3.5(react@19.2.7)
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
@@ -1354,11 +1354,11 @@ packages:
     resolution: {integrity: sha512-GYqKi1aH7PJXxdhTeZBFrg8vUBeKXi+cNprXsC1kpJcbcVnV9wBsrOu1cQEdG0WeQwlfHiy3XvnKfIrJ2R0NzQ==}
     hasBin: true
 
-  drawui-core@0.3.4:
-    resolution: {integrity: sha512-PPy5fWQx0kNw8c2boaKAtwMi0CopSkkpLCz2LREeDz8mJODDh0Lhx/JJp1w/fMMVJ/Om17NoNPSbdM4WIHllJA==}
+  drawui-core@0.3.5:
+    resolution: {integrity: sha512-DDqliTRmXNb2xUVhJTxeRbOZOa2KEzCJAxOnGAgXhHUkP5FfbwpTRNlU4UG31HFis1czbsoOkezlBR82EruP8g==}
 
-  drawui-react@0.3.4:
-    resolution: {integrity: sha512-MuBArLfUO0yvkdsOtye2XWcZ+XkPODQFEqPYMU3UhdLa/o90Menu+K1WCihIvTKgpJjl6XD5SAUVRvcdNB1MnQ==}
+  drawui-react@0.3.5:
+    resolution: {integrity: sha512-jHe/1bx9iXz3Gp9X1kfnswJueMLpXSzV1c0NEJgWYv4HMpQBnqR3LPpgtalH8NFi/9DYiBwdV7mdr2EfB8ubMg==}
     peerDependencies:
       react: ^18.3.1
 
@@ -3538,11 +3538,11 @@ snapshots:
 
   direction@1.0.4: {}
 
-  drawui-core@0.3.4: {}
+  drawui-core@0.3.5: {}
 
-  drawui-react@0.3.4(react@19.2.7):
+  drawui-react@0.3.5(react@19.2.7):
     dependencies:
-      drawui-core: 0.3.4
+      drawui-core: 0.3.5
       react: 19.2.7
 
   dunder-proto@1.0.1:
