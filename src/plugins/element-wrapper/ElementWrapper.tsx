@@ -1,6 +1,7 @@
 import React, { useCallback } from 'react';
 import { BlockElementType } from '@/enums';
 import { INDENT_PX } from '@/utils/indent';
+import { useWholeBlockSelected } from '@/utils/whole-block-selection';
 
 interface ElementWrapperProps {
   type: BlockElementType;
@@ -21,6 +22,11 @@ export const ElementWrapper = ({
   className,
   children,
 }: ElementWrapperProps) => {
+  // 「整块选中」：非文本块 / 表格 / 提示块等复杂组件整体被选中时，
+  // 统一在包裹层打标（全局样式：选中描边 + 隐藏内部文字原生选区）。
+  // 普通段落/标题等类型永不命中（判定按类型白名单）。
+  const isWholeSelected = useWholeBlockSelected();
+
   const rawAttrs = (attributes as Record<string, any>) || {};
   const slateRef = rawAttrs.ref;
   const restAttributes: Record<string, unknown> = { ...rawAttrs };
@@ -54,6 +60,7 @@ export const ElementWrapper = ({
       data-block-type={type}
       data-block-attrs={attrs ? JSON.stringify(attrs) : undefined}
       data-empty={isEmpty ? 'true' : undefined}
+      data-whole-selected={isWholeSelected ? 'true' : undefined}
       className={className}
       style={{ position: 'relative', ...indentStyle, ...fontStyle }}
     >

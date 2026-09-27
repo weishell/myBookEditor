@@ -36,6 +36,7 @@ import {
   withMarkdownShortcuts,
   withEditorBehaviors,
   withDelete,
+  withBlockSelection,
   withLilist,
 } from '@/editor-extensions';
 import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
@@ -71,14 +72,16 @@ export default function BookEditor({ readOnly = false }: EditorProps) {
                 withCountdown(
                   withEditorBehaviors(
                     withSlashCommand(
-                      withLilist(
-                        withHyperlink(
-                          withColumns(
-                            withHintBlock(
-                              withMention(
-                                withInlineFormula(
-                                  withMarkdownShortcuts(
-                                    withCodeBlock(withHistory(withReact(createEditor()))),
+                      withBlockSelection(
+                        withLilist(
+                          withHyperlink(
+                            withColumns(
+                              withHintBlock(
+                                withMention(
+                                  withInlineFormula(
+                                    withMarkdownShortcuts(
+                                      withCodeBlock(withHistory(withReact(createEditor()))),
+                                    ),
                                   ),
                                 ),
                               ),

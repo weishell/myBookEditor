@@ -9,11 +9,12 @@
 //  - 全选删除 → 其他内容全部删除，标题清空 children 但 attrs(cover/author/icon/date) 保留
 //  - 标题内删字符 → 正常删单个字符，删空了节点还在（attrs 全在）
 //  - 局部选中删除 → 标题最多清空 children，不会被 remove
-import { Transforms, Node, Element, type Editor, type Path, Range } from 'slate';
+import { Transforms, Node, Element, Editor, type Path, Range, Point } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { getLilist, sortLilist } from '@/plugins/lilist';
 import { relinkAfterDelete } from '@/plugins/hyperlink/hyperlink-utils';
+import { isWholeSelectableNode } from '@/utils/whole-block-selection';
 
 const DEFAULT_TITLE_ATTRS = {
   date: new Date().toISOString().slice(0, 10),
@@ -315,7 +316,122 @@ export const withDelete = (editor: Editor) => {
     }
   };
 
+  // =========================================================
+  // Notion 式「先选中、再删除」：
+  //  - Backspace 在块首 + 上一个块是非文本块/表格 → 第一次按：整块选中；第二次按：删除
+  //  - Delete 在块尾 + 下一个块是非文本块/表格 → 对称行为
+  //  - 光标已落在 void 块（即已处于选中态，方向键/上一步移入）→ 直接删除整块
+  // =========================================================
+
+  /** 是否为可「整体选中后删除」的块：非文本（void）块 / 表格 / 提示块 */
+  const isWholeSelectable = (node: any): boolean => isWholeSelectableNode(editor, node);
+
+  /** 删除 [idx] 整块后，把光标放到一个合理的位置（优先原位置的后一块块首，其次前一块块尾） */
+  const moveSelectionAfterRemoval = (idx: number) => {
+    try {
+      const children = (editor as any).children as any[];
+      let at: any = null;
+      if (children[idx]) {
+        at = Editor.start(editor, [idx]);
+      } else if (idx > 0 && children[idx - 1]) {
+        at = Editor.end(editor, [idx - 1]);
+      } else if (children.length > 0) {
+        at = Editor.start(editor, [0]);
+      }
+      if (at) Transforms.select(editor, at);
+    } catch {
+      /* ignore */
+    }
+  };
+
+  /**
+   * 情形一：当前选区正「选中一个完整的非文本块/表格/提示块」→ 删除该整块。
+   *  - void 块（图片/日历/附件/图表…）：内部只有一个隐藏文本节点，选中态表现为
+   *    collapsed 或区间落在块内 —— 只要两端都在这个块内就是「选中了它」，直接删除。
+   *  - 复杂容器（表格/提示块）：必须恰好覆盖整块（start→end）才删，
+   *    防止误删容器内部的局部选中文字。
+   */
+  const tryRemoveSelectedBlock = (): boolean => {
+    const { selection } = editor;
+    if (!selection) return false;
+    const topIdx = (selection.anchor as any).path?.[0];
+    if (typeof topIdx !== 'number' || topIdx < 0) return false;
+    const node = (editor as any).children[topIdx];
+    if (!isWholeSelectable(node)) return false;
+
+    try {
+      if (editor.isVoid(node)) {
+        // void：无论 collapsed 还是 expanded，只要两端都在这个块内就是「选中了它」
+        if (
+          (selection.anchor as any).path?.[0] !== topIdx ||
+          (selection.focus as any).path?.[0] !== topIdx
+        ) {
+          return false;
+        }
+        Transforms.removeNodes(editor, { at: [topIdx], voids: true } as any);
+        moveSelectionAfterRemoval(topIdx);
+        return true;
+      }
+
+      // 表格：必须恰好覆盖整表
+      if (Range.isCollapsed(selection as any)) return false;
+      const start = Editor.start(editor, [topIdx]);
+      const end = Editor.end(editor, [topIdx]);
+      const { anchor, focus } = selection as any;
+      const covers =
+        (Point.equals(anchor, start) && Point.equals(focus, end)) ||
+        (Point.equals(focus, start) && Point.equals(anchor, end));
+      if (!covers) return false;
+      Transforms.removeNodes(editor, { at: [topIdx], voids: true } as any);
+      moveSelectionAfterRemoval(topIdx);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /**
+   * 情形二：光标在块首（或块尾）且紧邻块是非文本块/表格 → 整块选中它，不删除。
+   * 返回 true 表示已消费本次按键（只选中）。
+   */
+  const trySelectAdjacentBlock = (direction: 'backward' | 'forward'): boolean => {
+    const { selection } = editor;
+    if (!selection || !Range.isCollapsed(selection as any)) return false;
+    const point = selection.anchor;
+    const topIdx = (point as any).path?.[0];
+    if (typeof topIdx !== 'number') return false;
+    try {
+      const children = (editor as any).children as any[];
+      if (direction === 'backward') {
+        if (topIdx <= 0) return false;
+        // 必须在整个顶层块的真正起点（跨过列表项/单元格等所有层级）
+        if (!Editor.isStart(editor, point as any, [topIdx])) return false;
+        const prev = children[topIdx - 1];
+        if (!isWholeSelectable(prev)) return false;
+        Transforms.select(editor, Editor.range(editor, [topIdx - 1]) as any);
+      } else {
+        if (topIdx + 1 >= children.length) return false;
+        if (!Editor.isEnd(editor, point as any, [topIdx])) return false;
+        const next = children[topIdx + 1];
+        if (!isWholeSelectable(next)) return false;
+        Transforms.select(editor, Editor.range(editor, [topIdx + 1]) as any);
+      }
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
   editor.deleteBackward = (unit: any) => {
+    // ① 选区正「选中一个完整的非文本块/表格」→ 直接删除整块（第二次 Backspace）
+    if (tryRemoveSelectedBlock()) {
+      relinkAfterDelete(editor);
+      return;
+    }
+    // ② 块首 + 上一个块是非文本块/表格 → 第一次 Backspace：只选中，不删除
+    if (trySelectAdjacentBlock('backward')) {
+      return;
+    }
     // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
     const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);
@@ -333,6 +449,15 @@ export const withDelete = (editor: Editor) => {
   };
 
   editor.deleteForward = (unit: any) => {
+    // ① 对称：选区正「选中一个完整的非文本块/表格」→ 直接删除整块（第二次 Delete）
+    if (tryRemoveSelectedBlock()) {
+      relinkAfterDelete(editor);
+      return;
+    }
+    // ② 对称：块尾 + 下一个块是非文本块/表格 → 第一次 Delete：只选中，不删除
+    if (trySelectAdjacentBlock('forward')) {
+      return;
+    }
     // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
     const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);

@@ -42,6 +42,19 @@
   table-layout: fixed;
 }
 
+// ========== 整表选中（跨表格选区吸附 / Backspace 选中整表） ==========
+// 选区已吸附为整表范围：整表由 cellRangeHighlight 覆盖高亮，
+// 这里把单元格文字的原生选区高亮隐掉（否则整表蓝色覆盖上再叠一层
+// 每个字的原生选区色，视觉上很乱）。!important 用于压过全局
+// index.css 的 ::selection / .dark-mode ::selection 主题色。
+.wholeSelected {
+  & ::selection,
+  & *::selection {
+    background: transparent !important;
+    color: inherit;
+  }
+}
+
 // ========== 列宽拖拽 ==========
 .resizeHandle {
   position: absolute;

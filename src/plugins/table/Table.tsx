@@ -28,6 +28,7 @@ import {
 import { computeGrid } from './table-grid';
 import { useTheme } from '@/context/ThemeContext';
 import { LIGHT_BG_PATTERN } from '@/core/renderLeaf';
+import { useWholeBlockSelected } from '@/utils/whole-block-selection';
 import styles from './Table.module.less';
 
 interface TableProps extends RenderElementProps {
@@ -51,6 +52,12 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
   };
   const editor = useSlateStatic();
   const { isDarkMode } = useTheme();
+
+  // 整表选中：选区完整覆盖整表时命中（withBlockSelection 的跨表格吸附、
+  // Backspace 在表格下方块首选中整表、从表格外一路划到表格内都会命中）。
+  // 判定集中在 utils/whole-block-selection，与 withDelete 的删除逻辑同源。
+  const isWholeSelected = useWholeBlockSelected();
+
   const wrapperRef = useRef<HTMLDivElement>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const tableRef = useRef<HTMLTableElement>(null);
@@ -1741,6 +1748,21 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
         {/* 跨单元格整格选区 */}
         {cellRangeHighlight}
 
+        {/* 整表选中（跨表格选区吸附 / Backspace 选中整表）：全表覆盖高亮 */}
+        {isWholeSelected &&
+          (() => {
+            const top = rowDots[0]?.top ?? 0;
+            const bottom = rowDots.length > 0 ? rowDots[rowDots.length - 1].top : tableSize.height;
+            const left = colDots[0]?.left ?? 0;
+            const right = colDots.length > 0 ? colDots[colDots.length - 1].left : tableSize.width;
+            const width = Math.max(0, right - left);
+            const height = Math.max(0, bottom - top);
+            if (width <= 0 || height <= 0) return null;
+            return (
+              <div className={styles.cellRangeHighlight} style={{ top, left, width, height }} />
+            );
+          })()}
+
         <div
           ref={setSlateDivRef}
           {...otherAttributes}
@@ -1751,7 +1773,7 @@ export const Table: React.FC<TableProps> = ({ attributes, children, element }) =
           <table
             ref={tableRef}
             key={`${headerRows.join(',')}|${headerCols.join(',')}`}
-            className={styles.table}
+            className={isWholeSelected ? `${styles.table} ${styles.wholeSelected}` : styles.table}
             style={{
               border: `${borderWidth} solid ${borderColor}`,
               width: totalWidth > 0 ? `${totalWidth}px` : undefined,

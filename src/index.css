@@ -72,6 +72,23 @@ textarea,
   caret-color: var(--theme-primary);
 }
 
+/* ================== 整块选中（非文本块/表格/提示块等复杂组件） ==================
+   由 withDelete 的「先选中再删除」、withBlockSelection 的跨表格吸附产生：
+   选中态用块级描边表达（比逐字选区更清楚），同时隐藏内部文字的原生选区高亮 ——
+   否则整体描边之上还会叠一层每个字的选区色，视觉很乱。
+   标记来自 ElementWrapper / Table 的 data-whole-selected 属性。 */
+[data-whole-selected='true'] {
+  outline: 2px solid color-mix(in srgb, var(--theme-primary) 72%, transparent);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+[data-whole-selected='true'] ::selection,
+[data-whole-selected='true'] *::selection {
+  background: transparent !important;
+  color: inherit;
+}
+
 /* 暗黑模式下光标需要更明显 - 偏白色 */
 .dark-mode .caret-theme {
   caret-color: color-mix(in srgb, #ffffff 60%, var(--theme-primary));
