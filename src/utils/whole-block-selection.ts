@@ -18,15 +18,29 @@ import { isNonTextType } from '@/editor-extensions/nonText';
  *  - 非文本（void）块：图片/视频/附件/图表/日历/倒计时/时间轴/画板/drawio/嵌入/分割线…
  *  - 表格：单元格内可编辑，但整体是复杂组件
  *  - 提示块：内层是段落，但整体是复杂组件
+ *  - 代码块：内层是 code-line，但整体是复杂组件
  * 新增这类「复杂容器」时在这里加一行即可，删除逻辑与选中描边自动生效。
  */
 export const isWholeSelectableType = (type?: string | null): boolean =>
-  isNonTextType(type) || type === BlockElementType.TABLE || type === BlockElementType.HINT_BLOCK;
+  isNonTextType(type) ||
+  type === BlockElementType.TABLE ||
+  type === BlockElementType.HINT_BLOCK ||
+  type === BlockElementType.CODE_BLOCK;
 
 /** 节点维度：是否支持整块选中（void 判定走 editor.isVoid，与结构层保持一致） */
 export const isWholeSelectableNode = (editor: Editor, node: unknown): boolean =>
   Element.isElement(node) &&
   (editor.isVoid(node) || isWholeSelectableType((node as { type?: string }).type));
+
+/**
+ * 「复杂容器」节点：支持整块选中、且内部有可编辑文字（非 void）。
+ *  - 表格 / 提示块 / 代码块。
+ *  跨容器选区吸附（withBlockSelection）与「整块删除而非删内部」
+ * （withDelete.removeFullyCoveredContainers）都只针对这类节点 ——
+ *  void 块没有内部文字，不存在这两类问题。
+ */
+export const isWholeSelectableContainerNode = (editor: Editor, node: unknown): boolean =>
+  Element.isElement(node) && !editor.isVoid(node) && isWholeSelectableNode(editor, node);
 
 /**
  * 选区是否「完整覆盖」某个块。

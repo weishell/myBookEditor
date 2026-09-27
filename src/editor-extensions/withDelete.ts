@@ -14,7 +14,11 @@ import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { getLilist, sortLilist } from '@/plugins/lilist';
 import { relinkAfterDelete } from '@/plugins/hyperlink/hyperlink-utils';
-import { isWholeSelectableNode } from '@/utils/whole-block-selection';
+import {
+  isPathCoveredBySelection,
+  isWholeSelectableContainerNode,
+  isWholeSelectableNode,
+} from '@/utils/whole-block-selection';
 
 const DEFAULT_TITLE_ATTRS = {
   date: new Date().toISOString().slice(0, 10),
@@ -323,7 +327,7 @@ export const withDelete = (editor: Editor) => {
   //  - 光标已落在 void 块（即已处于选中态，方向键/上一步移入）→ 直接删除整块
   // =========================================================
 
-  /** 是否为可「整体选中后删除」的块：非文本（void）块 / 表格 / 提示块 */
+  /** 是否为可「整体选中后删除」的块：非文本（void）块 / 表格 / 提示块 / 代码块 */
   const isWholeSelectable = (node: any): boolean => isWholeSelectableNode(editor, node);
 
   /** 删除 [idx] 整块后，把光标放到一个合理的位置（优先原位置的后一块块首，其次前一块块尾） */
@@ -348,7 +352,7 @@ export const withDelete = (editor: Editor) => {
    * 情形一：当前选区正「选中一个完整的非文本块/表格/提示块」→ 删除该整块。
    *  - void 块（图片/日历/附件/图表…）：内部只有一个隐藏文本节点，选中态表现为
    *    collapsed 或区间落在块内 —— 只要两端都在这个块内就是「选中了它」，直接删除。
-   *  - 复杂容器（表格/提示块）：必须恰好覆盖整块（start→end）才删，
+   *  - 复杂容器（表格/提示块/代码块）：必须恰好覆盖整块（start→end）才删，
    *    防止误删容器内部的局部选中文字。
    */
   const tryRemoveSelectedBlock = (): boolean => {
@@ -385,6 +389,97 @@ export const withDelete = (editor: Editor) => {
       Transforms.removeNodes(editor, { at: [topIdx], voids: true } as any);
       moveSelectionAfterRemoval(topIdx);
       return true;
+    } catch {
+      return false;
+    }
+  };
+
+  /**
+   * 情形一·补充：选区横跨外部文字与「复杂容器」（表格/提示块/代码块），
+   * 且容器被选区完整覆盖（withBlockSelection 已把容器内那端吸附到容器边界）。
+   * 直接 Transforms.delete 只会删掉容器内部的文字、留下空壳 —— 必须整块移除容器本身。
+   *
+   * 返回值：
+   *  - false        没有需要整块删除的容器，继续走后续流程
+   *  - 'handled'    容器已删除且外部已无剩余选区（吸附点与外部端点重合），本次按键消费完毕
+   *  - 'partial'    容器已删除，外部还剩一段选区 → 交回 tryExpandedDelete 继续删文字
+   */
+  const removeFullyCoveredContainers = (): false | 'handled' | 'partial' => {
+    const { selection } = editor;
+    if (!selection || Range.isCollapsed(selection as any)) return false;
+    try {
+      const children = (editor as any).children as any[];
+      // 先用原始选区收集目标（从后往前删，路径才不会失效）
+      const targets: number[] = [];
+      for (let i = 0; i < children.length; i++) {
+        if (!isWholeSelectableContainerNode(editor, children[i])) continue;
+        if (!isPathCoveredBySelection(editor, [i])) continue;
+        targets.push(i);
+      }
+      if (targets.length === 0) return false;
+
+      // 只选了单个容器、且选区恰好等于整块范围 → tryRemoveSelectedBlock 已处理，不重复
+      if (targets.length === 1) {
+        const i = targets[0];
+        const s = Editor.start(editor, [i]);
+        const e = Editor.end(editor, [i]);
+        const { anchor, focus } = selection as any;
+        const exact =
+          (Point.equals(anchor, s) && Point.equals(focus, e)) ||
+          (Point.equals(focus, s) && Point.equals(anchor, e));
+        if (exact) return false;
+      }
+
+      const { anchor, focus } = selection as any;
+      const aIdx = anchor.path?.[0] ?? -1;
+      const fIdx = focus.path?.[0] ?? -1;
+
+      for (let k = targets.length - 1; k >= 0; k--) {
+        try {
+          Transforms.removeNodes(editor, { at: [targets[k]], voids: true } as any);
+        } catch {
+          /* ignore */
+        }
+      }
+
+      // 删除容器后，落在容器内的端点会被 Slate 清掉（selection 可能变 null）。
+      // 把两端点映射到删除后的文档，重建「外部剩余选区」：
+      //  - 外部端点：只修正被删容器造成的目标层索引前移
+      //  - 容器内端点（已吸附在容器边界）：映射到容器外侧相邻块的边界
+      const mapPoint = (p: any, otherIdx: number): any => {
+        const i0 = p?.path?.[0];
+        if (typeof i0 !== 'number') return p;
+        if (!targets.includes(i0)) {
+          const delta = targets.filter((t) => t < i0).length;
+          if (delta === 0) return p;
+          return { path: [i0 - delta, ...p.path.slice(1)], offset: p.offset };
+        }
+        // 容器内端点
+        const removedBefore = targets.filter((t) => t < i0).length;
+        if (otherIdx < i0) {
+          // 另一端在容器前 → 吸附点原是容器末尾 → 映射到前一块的块尾
+          const prevIdx = i0 - removedBefore - 1;
+          if (prevIdx >= 0) return Editor.end(editor, [prevIdx]);
+          return Editor.start(editor, [0]);
+        }
+        // 另一端在容器后（或在另一容器之后）→ 吸附点原是容器开头 → 映射到当前块的块首
+        const len = ((editor as any).children as any[]).length;
+        const nextIdx = Math.min(i0 - removedBefore, len - 1);
+        if (nextIdx < 0) return Editor.start(editor, [0]);
+        return Editor.start(editor, [nextIdx]);
+      };
+
+      const nextAnchor = mapPoint(anchor, fIdx);
+      const nextFocus = mapPoint(focus, aIdx);
+      try {
+        Transforms.select(editor, { anchor: nextAnchor, focus: nextFocus } as any);
+      } catch {
+        /* ignore */
+      }
+
+      const rebuilt = editor.selection;
+      if (rebuilt && !Range.isCollapsed(rebuilt as any)) return 'partial';
+      return 'handled';
     } catch {
       return false;
     }
@@ -435,6 +530,12 @@ export const withDelete = (editor: Editor) => {
     // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
     const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);
+    // ③ 选区横跨外部文字与复杂容器（表格/提示块/代码块）→ 容器整块移除，不留空壳
+    const containerResult = removeFullyCoveredContainers();
+    if (containerResult === 'handled') {
+      relinkAfterDelete(editor);
+      return;
+    }
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
       sortLilist(editor, affected.ids, affected.fromIndex);
@@ -461,6 +562,12 @@ export const withDelete = (editor: Editor) => {
     // lilist：删除前记录受影响的列表组，删除后从变更点起统一回写编号
     const affected = collectAffectedListIds(editor);
     const saved = saveTitleInfo(editor);
+    // ③ 对称：选区横跨外部文字与复杂容器（表格/提示块/代码块）→ 容器整块移除，不留空壳
+    const containerResult = removeFullyCoveredContainers();
+    if (containerResult === 'handled') {
+      relinkAfterDelete(editor);
+      return;
+    }
     if (tryExpandedDelete()) {
       restoreTitleIfMissing(editor, saved);
       sortLilist(editor, affected.ids, affected.fromIndex);
