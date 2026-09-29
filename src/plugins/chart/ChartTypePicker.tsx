@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { CHART_KINDS, type ChartKind, type ChartKindMeta } from './chart-utils';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './ChartTypePicker.module.less';
 
 interface ChartTypePickerProps {
@@ -18,6 +19,9 @@ export const ChartTypePicker: React.FC<ChartTypePickerProps> = ({ onPick, onCanc
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onCancel]);
+
+  // 弹层期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   return (
     <div className={styles.overlay}>

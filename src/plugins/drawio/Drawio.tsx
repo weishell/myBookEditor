@@ -9,6 +9,7 @@ import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 import DrawioEditor from './DrawioEditor';
 import DrawioResizeHandle from './DrawioResizeHandle';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import { decodeSvgDataUrl, encodeSvgDataUrl, fitSvgToContent } from './svg-fit';
 import styles from './Drawio.module.less';
 
@@ -166,6 +167,12 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   const handleClosePreview = useCallback(() => {
     setIsPreviewing(false);
   }, []);
+
+  // 放大预览期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => {
+    if (!isPreviewing) return;
+    return lockPageScroll();
+  }, [isPreviewing]);
 
   // 关闭编辑器
   const handleCloseEditor = useCallback(() => {

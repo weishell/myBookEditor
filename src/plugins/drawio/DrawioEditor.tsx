@@ -1,6 +1,7 @@
 // Drawio 全屏编辑器 - 通过 iframe 嵌入 draw.io，使用 postMessage 通信
 import React, { useEffect, useRef, useCallback } from 'react';
 import ReactDOM from 'react-dom';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './Drawio.module.less';
 
 interface DrawioEditorProps {
@@ -133,6 +134,9 @@ const DrawioEditor: React.FC<DrawioEditorProps> = ({ initialXml, onSave, onClose
       }
     }, 3000);
   }, [sendLoad]);
+
+  // 全屏期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   return ReactDOM.createPortal(
     <div className={styles.overlay}>

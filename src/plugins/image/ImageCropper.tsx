@@ -2,6 +2,7 @@ import React, { useState, useCallback, useRef, useEffect } from 'react';
 import ReactCrop from 'react-image-crop';
 import type { Crop, PixelCrop } from 'react-image-crop';
 import 'react-image-crop/dist/ReactCrop.css';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './ImageCropper.module.less';
 
 interface ImageCropperProps {
@@ -42,6 +43,9 @@ const ImageCropper: React.FC<ImageCropperProps> = ({
   const [completedCrop, setCompletedCrop] = useState<PixelCrop | null>(null);
   const imgRef = useRef<HTMLImageElement>(null);
   const hasExistingCrop = offsetWidth && offsetHeight;
+
+  // 弹层期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   useEffect(() => {
     if (hasExistingCrop && offsetWidth && offsetHeight) {

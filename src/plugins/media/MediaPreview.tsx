@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
 import { formatBytes } from './MediaBlock';
 import type { MediaKind, MediaAttrs } from './MediaBlock';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './MediaBlock.module.less';
 
 interface MediaPreviewProps {
@@ -66,6 +67,9 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
 
   const isText = kind === 'file' && isTextual(attrs?.name, attrs?.mimeType);
   const office = getOfficePreview(attrs?.name, attrs?.src);
+
+  // 全屏预览期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   useEffect(() => {
     if (!isText || !attrs?.src) return;

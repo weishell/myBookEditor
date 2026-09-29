@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { normalizeEmbedUrl, type EmbedAttrs } from './embed-node';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './Embed.module.less';
 
 interface EmbedSettingsProps {
@@ -23,6 +24,9 @@ export const EmbedSettings: React.FC<EmbedSettingsProps> = ({ initial, onConfirm
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onCancel]);
+
+  // 弹层期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   const handleConfirm = () => {
     const nextUrl = normalizeEmbedUrl(url);

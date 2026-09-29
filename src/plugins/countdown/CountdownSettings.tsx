@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useTheme } from '@/context/ThemeContext';
 import { durationToMs, type CountdownAttrs, type CountdownMode } from './countdown-utils';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './CountdownSettings.module.less';
 
 interface CountdownSettingsProps {
@@ -40,6 +41,9 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
   }, [onCancel]);
+
+  // 弹层期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   const numberFieldClasses = useMemo(
     () => `${styles.numberInput} ${isDarkMode ? styles.numberInputDark : ''}`,

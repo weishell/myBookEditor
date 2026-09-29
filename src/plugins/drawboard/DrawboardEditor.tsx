@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom';
 import { CanvasBoard } from 'drawui-react';
 import type { Editor, Shape, EditorData } from 'drawui-core';
 import { useTranslation } from 'react-i18next';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import 'drawui-react/styles.css';
 import styles from './Drawboard.module.less';
 
@@ -68,6 +69,9 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
     }
     onCloseRef.current();
   }, []);
+
+  // 全屏期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   // Esc 退出全屏
   useEffect(() => {

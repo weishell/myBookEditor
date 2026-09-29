@@ -6,6 +6,7 @@ import {
   type ChartAttrs,
   type ChartDataRow,
 } from './chart-utils';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import styles from './ChartConfig.module.less';
 
 interface ChartConfigDialogProps {
@@ -95,6 +96,9 @@ export const ChartConfigDialog: React.FC<ChartConfigDialogProps> = ({
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
   }, [onCancel]);
+
+  // 弹层期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
+  useEffect(() => lockPageScroll(), []);
 
   const updateRow = (i: number, key: keyof ChartDataRow, val: string) => {
     setRows((prev) => {
