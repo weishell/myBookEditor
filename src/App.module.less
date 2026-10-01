@@ -25,6 +25,7 @@
   font-size: 18px;
   font-weight: 600;
   color: @text-primary;
+  text-decoration: none;
   transition: color 0.2s;
 }
 
@@ -32,6 +33,59 @@
   display: flex;
   align-items: center;
   gap: 12px;
+}
+
+/* 顶栏中部搜索框 */
+.headerCenter {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  padding: 0 16px;
+}
+
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  color: @text-tertiary;
+  pointer-events: none;
+}
+
+.searchBox input {
+  width: 280px;
+  max-width: 40vw;
+  padding: 6px 12px 6px 32px;
+  border-radius: 999px;
+  border: 1px solid @border-color-light;
+  background: @bg-subtle;
+  font-size: 13px;
+  color: @text-primary;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s;
+}
+
+.searchBox input::placeholder {
+  color: @text-placeholder;
+}
+
+.searchBox input:focus {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px color-mix(in srgb, @color-primary 16%, transparent);
+  background: @bg-base;
+}
+
+@media (max-width: 860px) {
+  .searchBox input {
+    width: 160px;
+  }
 }
 
 .main {

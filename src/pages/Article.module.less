@@ -1,0 +1,139 @@
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 48px;
+}
+
+/* ========== 面包屑 ========== */
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: @text-tertiary;
+}
+
+.crumb a {
+  color: @text-secondary;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.crumb a:hover {
+  color: @color-primary;
+}
+
+.crumbSep {
+  opacity: 0.6;
+}
+
+.crumbCurrent {
+  color: @text-secondary;
+}
+
+/* ========== 文章元信息 ========== */
+.meta {
+  margin-bottom: 24px;
+  padding: 26px 28px 22px;
+  border-radius: 14px;
+  border: 1px solid @border-color-light;
+  background: @bg-base;
+}
+
+.catBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.catBadge:hover {
+  opacity: 0.75;
+}
+
+.catDot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.title {
+  margin: 12px 0 10px;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: @text-primary;
+}
+
+.summary {
+  margin: 0 0 14px;
+  font-size: 14px;
+  line-height: 1.8;
+  color: @text-secondary;
+}
+
+.subMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12.5px;
+  color: @text-tertiary;
+}
+
+.tagChip {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, @color-primary 8%, transparent);
+  font-weight: 600;
+  text-decoration: none;
+  transition: opacity 0.15s;
+}
+
+.tagChip:hover {
+  opacity: 0.75;
+}
+
+/* ========== 正文（编辑器） ========== */
+.editorWrap {
+  border-radius: 14px;
+  overflow: hidden;
+  border: 1px solid @border-color-light;
+  background: @bg-base;
+}
+
+/* ========== 暗黑模式 ========== */
+:global(.dark-mode) .crumb {
+  color: var(--dm-text-tertiary, #6b7280);
+}
+
+:global(.dark-mode) .crumb a,
+:global(.dark-mode) .crumbCurrent {
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .meta,
+:global(.dark-mode) .editorWrap {
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
+  border-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .title {
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .summary {
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .subMeta {
+  color: var(--dm-text-tertiary, #6b7280);
+}
+
+:global(.dark-mode) .tagChip {
+  background: color-mix(in srgb, @color-primary 14%, transparent);
+}

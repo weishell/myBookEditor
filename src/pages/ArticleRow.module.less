@@ -1,0 +1,106 @@
+.row {
+  display: block;
+  padding: 16px 18px;
+  border-radius: 12px;
+  border: 1px solid @border-color-light;
+  background: @bg-base;
+  text-decoration: none;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.row:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, @color-primary 45%, transparent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.rowTitle {
+  font-size: 16px;
+  font-weight: 600;
+  color: @text-primary;
+  transition: color 0.15s;
+}
+
+.row:hover .rowTitle {
+  color: @color-primary;
+}
+
+.rowSummary {
+  margin: 6px 0 10px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: @text-secondary;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.rowMeta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  font-size: 12px;
+  color: @text-tertiary;
+}
+
+.catBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-weight: 600;
+}
+
+.catDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.tagChip {
+  padding: 2px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, @color-primary 8%, transparent);
+  color: @text-secondary;
+}
+
+.rowDate {
+  margin-left: auto;
+}
+
+.rowReads {
+  white-space: nowrap;
+}
+
+/* ========== 暗黑模式 ========== */
+:global(.dark-mode) .row {
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
+  border-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .row:hover {
+  border-color: color-mix(in srgb, @color-primary 60%, transparent);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.35);
+}
+
+:global(.dark-mode) .rowTitle {
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .rowSummary,
+:global(.dark-mode) .tagChip {
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .tagChip {
+  background: color-mix(in srgb, @color-primary 14%, transparent);
+}
+
+:global(.dark-mode) .rowMeta,
+:global(.dark-mode) .rowDate {
+  color: var(--dm-text-tertiary, #6b7280);
+}

@@ -10,6 +10,7 @@
 // 设计：从 components/Editor 抽离，作为项目的编辑器运行核心，便于单独测试、
 //       替换上层 UI 壳子或二次开发包装。
 import { useMemo, useCallback, useEffect } from 'react';
+import type { Descendant } from 'slate';
 import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
@@ -42,7 +43,7 @@ import {
 import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
 import { withColumns } from '@/plugins';
-import { initialValue } from '@/utils/initial-value';
+import { initialValue as demoInitialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
 import { searchDecorate, useFindReplace } from '@/components/SettingsSwitcher/find-replace';
@@ -56,9 +57,14 @@ import { useNonEditableCaretGuard } from '@/editor-extensions/useNonEditableCare
 
 interface EditorProps {
   readOnly?: boolean;
+  /** 初始文档内容（如文章正文）；不传则用内置的全功能示例文档 */
+  initialValue?: Descendant[];
 }
 
-export default function BookEditor({ readOnly = false }: EditorProps) {
+export default function BookEditor({
+  readOnly = false,
+  initialValue = demoInitialValue,
+}: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
   const { isDarkMode } = useTheme();
   const { matches, currentIndex } = useFindReplace();

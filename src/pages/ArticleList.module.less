@@ -1,0 +1,101 @@
+.page {
+  max-width: 980px;
+  margin: 0 auto;
+  padding: 8px 0 48px;
+}
+
+/* ========== 面包屑 ========== */
+.crumb {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 18px;
+  font-size: 13px;
+  color: @text-tertiary;
+}
+
+.crumb a {
+  color: @text-secondary;
+  text-decoration: none;
+  transition: color 0.15s;
+}
+
+.crumb a:hover {
+  color: @color-primary;
+}
+
+.crumbSep {
+  opacity: 0.6;
+}
+
+/* ========== 头部 ========== */
+.header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+
+.headerIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 54px;
+  height: 54px;
+  border-radius: 14px;
+  font-size: 26px;
+  color: #fff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+}
+
+.title {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  color: @text-primary;
+}
+
+.subtitle {
+  margin: 6px 0 0;
+  font-size: 13px;
+  color: @text-tertiary;
+}
+
+/* ========== 列表容器 ========== */
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ========== 分页 ========== */
+.pager {
+  display: flex;
+  justify-content: center;
+  margin-top: 28px;
+}
+
+.empty {
+  padding: 60px 0;
+  text-align: center;
+  font-size: 14px;
+  color: @text-tertiary;
+}
+
+/* ========== 暗黑模式 ========== */
+:global(.dark-mode) .crumb {
+  color: var(--dm-text-tertiary, #6b7280);
+}
+
+:global(.dark-mode) .crumb a {
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .title {
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .subtitle,
+:global(.dark-mode) .empty {
+  color: var(--dm-text-tertiary, #6b7280);
+}
