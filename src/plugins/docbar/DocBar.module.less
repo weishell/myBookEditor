@@ -38,11 +38,22 @@
   background: @bg-base;
   box-shadow: @shadow-sm;
   transition: all 0.15s ease;
-  cursor: move;
+  cursor: not-allowed;
+  opacity: 0.4;
+}
 
-  &:disabled {
-    cursor: not-allowed;
-    opacity: 0.4;
+/* 启用态拖拽手柄：悬浮变亮、可拖拽 */
+.dragButtonEnabled {
+  cursor: grab;
+  opacity: 1;
+
+  &:hover {
+    background: rgba(24, 144, 255, 0.12);
+  }
+
+  &:active {
+    cursor: grabbing;
+    background: rgba(24, 144, 255, 0.18);
   }
 }
 

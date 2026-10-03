@@ -1,10 +1,12 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
+import { useSlateStatic } from 'slate-react';
 import { useDocBar } from '@/plugins/docbar-context';
 import { useMenu } from '@/plugins/menu-context';
 import { useSelection } from '@/plugins/selection-context';
 import { useTheme } from '@/context/ThemeContext';
 import { BlockElementType } from '@/enums';
 import { LilistType, OlListIcon, UlListIcon } from '@/plugins/lilist';
+import { beginDragSort, isDragSortableType, DRAG_SORT_EVENT } from '@/plugins/drag-sort';
 import styles from './DocBar.module.less';
 
 interface SvgIconProps {
@@ -252,15 +254,30 @@ const getElementColor = (isDarkMode: boolean): string => {
 };
 
 export const DocBar = () => {
+  const editor = useSlateStatic();
   const { activeElement, refreshActiveElement } = useDocBar();
-  const { openMenu, closeMenu, hoveringMenu } = useMenu();
+  const { openMenu, closeMenu, forceCloseMenu, hoveringMenu } = useMenu();
   const { hasSelection } = useSelection();
   const { isDarkMode } = useTheme();
   const [iconHovered, setIconHovered] = useState(false);
   const [isScrolling, setIsScrolling] = useState(false);
+  const [isDragSorting, setIsDragSorting] = useState(false);
   const timerRef = useRef<number | null>(null);
   const scrollTimerRef = useRef<number | null>(null);
   const lastElementRef = useRef<typeof activeElement>(null);
+
+  // 拖拽排序进行中：隐藏 DocBar 及其展开菜单，交由幽灵卡片接管视觉
+  useEffect(() => {
+    const onDragSort = (e: Event) => {
+      const dragging = (e as CustomEvent<{ dragging?: boolean }>).detail?.dragging ?? false;
+      setIsDragSorting(dragging);
+      if (dragging) forceCloseMenu(); // 立即收起展开的块菜单弹框
+    };
+    window.addEventListener(DRAG_SORT_EVENT, onDragSort as EventListener);
+    return () => {
+      window.removeEventListener(DRAG_SORT_EVENT, onDragSort as EventListener);
+    };
+  }, [forceCloseMenu]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -335,9 +352,10 @@ export const DocBar = () => {
 
   const currentElement = activeElement || lastElementRef.current;
 
-  // 文档标题（HEADING_TITLE）不需要 DocBar
+  // 文档标题（HEADING_TITLE）不需要 DocBar；拖拽排序期间也不显示（交给幽灵卡片）
   const shouldShow =
     !isScrolling &&
+    !isDragSorting &&
     (activeElement || iconHovered || hoveringMenu) &&
     !hasSelection &&
     currentElement?.type !== BlockElementType.HEADING_TITLE;
@@ -368,15 +386,19 @@ export const DocBar = () => {
       <div className={styles.iconButton}>
         <IconComponent color={iconColor} {...props} />
       </div>
-      {/* 空行不显示拖拽手柄（功能未开放且占用空间），非空行才显示但保持禁用态 */}
-      {!currentElement.isEmpty && (
+      {/* 空行不显示拖拽手柄；可拖拽类型显示启用态手柄，结构内部块（分栏/表格行列）保持禁用 */}
+      {!currentElement.isEmpty && isDragSortableType(currentElement.type) && (
         <button
-          className={styles.dragButton}
-          disabled
-          title="拖拽排序功能开发中"
+          className={`${styles.dragButton} ${styles.dragButtonEnabled}`}
+          title="按住拖动可排序"
+          onMouseDown={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            beginDragSort(editor, currentElement.id, e.clientX, e.clientY);
+          }}
           onClick={(e) => e.stopPropagation()}
         >
-          <DragIcon color="#999" />
+          <DragIcon color="#1890ff" />
         </button>
       )}
     </div>

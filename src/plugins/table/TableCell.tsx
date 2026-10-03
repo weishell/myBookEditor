@@ -86,6 +86,7 @@ export const TableCell: React.FC<TableCellProps> = ({ attributes, children, elem
       {...attributes}
       colSpan={colspan}
       rowSpan={rowspan}
+      data-table-cell-id={element.id}
       data-col-index={colIndex}
       data-logical-col={logicalColStart}
       data-header-row={isHeaderRow || undefined}
