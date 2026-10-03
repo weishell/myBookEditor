@@ -39,6 +39,7 @@ import {
   withDelete,
   withBlockSelection,
   withLilist,
+  withPasteConversion,
 } from '@/editor-extensions';
 import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
@@ -71,22 +72,24 @@ export default function BookEditor({
   const editor = useMemo(
     () =>
       withDelete(
-        withEmbed(
-          withChart(
-            withTimeline(
-              withCalendar(
-                withCountdown(
-                  withEditorBehaviors(
-                    withSlashCommand(
-                      withBlockSelection(
-                        withLilist(
-                          withHyperlink(
-                            withColumns(
-                              withHintBlock(
-                                withMention(
-                                  withInlineFormula(
-                                    withMarkdownShortcuts(
-                                      withCodeBlock(withHistory(withReact(createEditor()))),
+        withPasteConversion(
+          withEmbed(
+            withChart(
+              withTimeline(
+                withCalendar(
+                  withCountdown(
+                    withEditorBehaviors(
+                      withSlashCommand(
+                        withBlockSelection(
+                          withLilist(
+                            withHyperlink(
+                              withColumns(
+                                withHintBlock(
+                                  withMention(
+                                    withInlineFormula(
+                                      withMarkdownShortcuts(
+                                        withCodeBlock(withHistory(withReact(createEditor()))),
+                                      ),
                                     ),
                                   ),
                                 ),

@@ -181,55 +181,66 @@ const resolveDrop = (
   x: number,
   y: number,
 ): DropTarget => {
-  // 收集「可用容器」：根 + 所有允许该块进入、且非自身后代的容器
-  const candidates: RegNode[] = [];
-  for (const r of reg) {
-    if (!DROP_CONTAINER_TYPES.includes(r.type)) continue;
-    if (!canDropInto(editor, draggedPath, r.path, r.type)) continue;
-    if (r.rect.left <= x && x <= r.rect.right && r.rect.top <= y && y <= r.rect.bottom) {
-      candidates.push(r);
+  try {
+    // 收集「可用容器」：根 + 所有允许该块进入、且非自身后代的容器
+    const candidates: RegNode[] = [];
+    for (const r of reg) {
+      if (!DROP_CONTAINER_TYPES.includes(r.type)) continue;
+      if (!canDropInto(editor, draggedPath, r.path, r.type)) continue;
+      if (r.rect.left <= x && x <= r.rect.right && r.rect.top <= y && y <= r.rect.bottom) {
+        candidates.push(r);
+      }
     }
-  }
-  // 取路径最深的容器（即最内层命中）
-  let container: RegNode | null = null;
-  for (const c of candidates) {
-    if (!container || c.path.length > container.path.length) container = c;
-  }
+    // 取路径最深的容器（即最内层命中）
+    let container: RegNode | null = null;
+    for (const c of candidates) {
+      if (!container || c.path.length > container.path.length) container = c;
+    }
 
-  const containerPath = container ? container.path : [];
-  const containerType = container ? container.type : null;
-  const index = computeChildIndex(editor, reg, containerPath, y);
+    const containerPath = container ? container.path : [];
+    const containerType = container ? container.type : null;
+    const index = computeChildIndex(editor, reg, containerPath, y);
 
-  // 计算插入指示线的位置
-  const containerRect = container
-    ? container.rect
-    : (document.querySelector('[data-paper]')?.getBoundingClientRect() ?? null);
-  const children = reg
-    .filter((r) => Path.equals(r.parentPath, containerPath))
-    .sort((a, b) => a.rect.top - b.rect.top);
+    // 计算插入指示线的位置
+    const containerRect = container
+      ? container.rect
+      : (document.querySelector('[data-paper]')?.getBoundingClientRect() ?? null);
+    const children = reg
+      .filter((r) => Path.equals(r.parentPath, containerPath))
+      .sort((a, b) => a.rect.top - b.rect.top);
 
-  let lineTop: number;
-  if (children.length) {
-    const js = getInsertIndexAmong(children, y);
-    if (js >= children.length) {
-      lineTop = children[children.length - 1].rect.bottom;
+    let lineTop: number;
+    if (children.length) {
+      const js = getInsertIndexAmong(children, y);
+      if (js >= children.length) {
+        lineTop = children[children.length - 1].rect.bottom;
+      } else {
+        lineTop = children[js].rect.top;
+      }
     } else {
-      lineTop = children[js].rect.top;
+      lineTop = containerRect ? containerRect.top + 0 : y;
     }
-  } else {
-    lineTop = containerRect ? containerRect.top + 0 : y;
+
+    const left = containerRect ? containerRect.left : 40;
+    const width = containerRect ? containerRect.width : 600;
+
+    return {
+      containerPath,
+      index,
+      containerType,
+      containerRect,
+      lineRect: { top: lineTop, left, width },
+    };
+  } catch {
+    // 兜底：任何路径/矩形计算异常都回退到「顶级追加」，绝不中断拖拽
+    return {
+      containerPath: [],
+      index: (editor as any).children?.filter((c: any) => Element.isElement(c)).length ?? 0,
+      containerType: null,
+      containerRect: null,
+      lineRect: { top: y, left: 40, width: 600 },
+    };
   }
-
-  const left = containerRect ? containerRect.left : 40;
-  const width = containerRect ? containerRect.width : 600;
-
-  return {
-    containerPath,
-    index,
-    containerType,
-    containerRect,
-    lineRect: { top: lineTop, left, width },
-  };
 };
 
 /** 在已排序的 child 中按中线切分，返回应在其中插入的数组下标 */
@@ -492,6 +503,15 @@ const refreshRegistryRects = (s: DragSortSession): void => {
   for (const r of s.reg) r.rect = r.el.getBoundingClientRect();
 };
 
+/** 对某个元素施加 dy 滚动，返回是否真的发生了滚动 */
+const applyScrollTo = (el: HTMLElement, dy: number): boolean => {
+  const maxScroll = el.scrollHeight - el.clientHeight;
+  if (maxScroll <= 0) return false;
+  const before = el.scrollTop;
+  el.scrollTop = Math.max(0, Math.min(maxScroll, el.scrollTop + dy));
+  return el.scrollTop !== before;
+};
+
 /** 指针贴近容器上/下可见边缘时自动滚动，返回是否发生了滚动 */
 const maybeAutoScroll = (s: DragSortSession): boolean => {
   const sc = s.scrollContainer;
@@ -512,28 +532,45 @@ const maybeAutoScroll = (s: DragSortSession): boolean => {
     dy = ((s.lastY - (vBottom - zone)) / zone) * SCROLL_SPEED;
   }
   if (dy === 0) return false;
-  const maxScroll = sc.scrollHeight - sc.clientHeight;
-  const before = sc.scrollTop;
-  sc.scrollTop = Math.max(0, Math.min(maxScroll, sc.scrollTop + dy));
-  return sc.scrollTop !== before;
+  if (applyScrollTo(sc, dy)) return true;
+  // 兜底：若检测到的容器并非真正的滚动面（例如被改造过的滚动环境），
+  // 尝试滚动文档根元素，覆盖 documentElement / body 两种整页滚动形态。
+  const doc = (document.scrollingElement as HTMLElement) || document.documentElement;
+  if (doc && doc !== sc && applyScrollTo(doc, dy)) return true;
+  return false;
 };
 
-/** 恒定的动画帧循环：自动滚动 + 按需刷新坐标 + 刷新落点指示（拖拽期间持续运行） */
+/** 恒定的动画帧循环：自动滚动 + 按需刷新坐标 + 刷新落点指示（拖拽期间持续运行）
+ *  必须保证「单帧异常不死循环」：此循环跑在 requestAnimationFrame 中，一旦某帧
+ *  在落点解析/路径计算时抛错，若不被捕获，本帧末尾的递归调度不会执行，循环立即死亡，
+ *  表现为“拖到某类块（提示/引用/图片/日历/drawio…）后自动滚动突然停止”。
+ */
 const dragLoop = () => {
   if (!session) {
     rafId = 0;
     return;
   }
   const s = session;
-  if (s.active) {
-    if (s.refreshPending) {
-      refreshRegistryRects(s);
-      s.refreshPending = false;
+  try {
+    if (s.active) {
+      if (s.refreshPending) {
+        refreshRegistryRects(s);
+        s.refreshPending = false;
+      }
+      if (maybeAutoScroll(s)) {
+        refreshRegistryRects(s);
+      }
+      updateDrag(s.lastX, s.lastY);
     }
-    if (maybeAutoScroll(s)) {
-      refreshRegistryRects(s);
+  } catch {
+    // 单帧失败不终止：可能因拖动滚动导致 Slate 结构变化、旧 path/注册表失效。
+    // 重建一次注册表并置为待刷新，下一帧继续，避免整体停摆。
+    try {
+      session.reg = buildRegistry(session.editor);
+      session.refreshPending = true;
+    } catch {
+      /* 极端情况下静默，循环仍继续 */
     }
-    updateDrag(s.lastX, s.lastY);
   }
   rafId = window.requestAnimationFrame(dragLoop);
 };
@@ -553,9 +590,10 @@ const cleanupSession = () => {
     window.cancelAnimationFrame(rafId);
     rafId = 0;
   }
-  window.removeEventListener('mousemove', onPointerMove);
-  window.removeEventListener('mouseup', onPointerUp);
-  window.removeEventListener('keydown', onPointerKeydown);
+  // true = 捕获阶段移除（与添加时一致）
+  window.removeEventListener('mousemove', onPointerMove, true);
+  window.removeEventListener('mouseup', onPointerUp, true);
+  window.removeEventListener('keydown', onPointerKeydown, true);
   session = null;
   emitDragSort(false);
 };
@@ -564,21 +602,25 @@ const THRESHOLD = 4;
 
 const onPointerMove = (e: MouseEvent) => {
   if (!session) return;
-  const s = session;
-  s.lastX = e.clientX;
-  s.lastY = e.clientY;
-  s.refreshPending = true;
-  if (!s.active) {
-    if (Math.hypot(e.clientX - s.startX, e.clientY - s.startY) < THRESHOLD) return;
-    s.active = true;
-    emitDragSort(true);
-    s.ghost.el.style.display = '';
-    s.ghost.line.style.display = '';
-    document.body.style.userSelect = 'none';
-    document.body.style.cursor = 'grabbing';
+  try {
+    const s = session;
+    s.lastX = e.clientX;
+    s.lastY = e.clientY;
     s.refreshPending = true;
+    if (!s.active) {
+      if (Math.hypot(e.clientX - s.startX, e.clientY - s.startY) < THRESHOLD) return;
+      s.active = true;
+      emitDragSort(true);
+      s.ghost.el.style.display = '';
+      s.ghost.line.style.display = '';
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'grabbing';
+      s.refreshPending = true;
+    }
+    if (!rafId) rafId = window.requestAnimationFrame(dragLoop);
+  } catch {
+    /* 记录坐标失败不致命：帧循环仍会继续用上一次坐标 */
   }
-  if (!rafId) rafId = window.requestAnimationFrame(dragLoop);
 };
 
 const updateDrag = (x: number, y: number) => {
@@ -600,12 +642,17 @@ const updateDrag = (x: number, y: number) => {
 
 const onPointerUp = () => {
   if (!session) return;
-  const s = session;
-  const target = resolveDrop(s.editor, s.reg, s.draggedPath, s.lastX, s.lastY);
-  if (s.active) {
-    applyMove(s.editor, s.draggedPath, target);
+  try {
+    const s = session;
+    const target = resolveDrop(s.editor, s.reg, s.draggedPath, s.lastX, s.lastY);
+    if (s.active) {
+      applyMove(s.editor, s.draggedPath, target);
+    }
+  } catch {
+    /* 释放阶段的异常不阻塞清理 */
+  } finally {
+    cleanupSession();
   }
-  cleanupSession();
 };
 
 const onPointerKeydown = (e: KeyboardEvent) => {
@@ -658,9 +705,11 @@ export const beginDragSort = (editor: Editor, pluginId: string, startX: number, 
     valid: true,
   };
 
-  window.addEventListener('mousemove', onPointerMove);
-  window.addEventListener('mouseup', onPointerUp);
-  window.addEventListener('keydown', onPointerKeydown);
+  // 捕获阶段监听：任何块内部在冒泡阶段对 mousemove 的 stopPropagation（提示/引用/图片/日历/
+  // drawio 等 contentEditable=false 块）都无法屏蔽拖拽追踪，确保 lastY 持续更新从而自动滚动不断。
+  window.addEventListener('mousemove', onPointerMove, true);
+  window.addEventListener('mouseup', onPointerUp, true);
+  window.addEventListener('keydown', onPointerKeydown, true);
 
   // 预热注册表与滚动容器定位，并启动帧循环（未越过阈值前仅空转）
   window.requestAnimationFrame(() => {

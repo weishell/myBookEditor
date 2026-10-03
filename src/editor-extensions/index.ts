@@ -4,3 +4,4 @@ export { withEditorBehaviors } from './withEditorBehaviors';
 export { withDelete } from './withDelete';
 export { withBlockSelection } from './withBlockSelection';
 export { withLilist } from './withLilist';
+export { withPasteConversion } from './withPasteConversion';
