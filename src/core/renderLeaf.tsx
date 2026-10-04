@@ -2,6 +2,7 @@ import type { RenderLeafProps } from 'slate-react';
 import { CODE_TOKEN_COLORS } from '@/utils/code-decoration';
 import { useTheme } from '@/context/ThemeContext';
 import { HYPERLINK_KEY, getLinkColor, HyperlinkLeaf } from '@/plugins/hyperlink';
+import { COMMENTS_MARK } from '@/plugins/inline-comment';
 import codeStyles from '@/plugins/leaf/Leaf.module.less';
 
 const TOKEN_COLOR_ENTRIES = Object.entries(CODE_TOKEN_COLORS).map(([tokenType, color]) => ({
@@ -104,6 +105,15 @@ export const RenderLeaf = (props: RenderLeafProps) => {
   if ((leaf as any).strikethrough) textDecorations.push('line-through');
   if (textDecorations.length > 0) {
     style.textDecoration = textDecorations.join(' ');
+  }
+
+  // 行内评论高亮：被评文本在叶子数据里携带 comments 标记（写进文档结构），必然可渲染。
+  // 这里直接读叶子，加粗/高亮等任何编辑都不会让它消失。
+  if (Array.isArray((leaf as any)[COMMENTS_MARK]) && (leaf as any)[COMMENTS_MARK].length > 0) {
+    style.backgroundColor = isDarkMode ? 'rgba(51,112,255,0.32)' : 'rgba(51,112,255,0.22)';
+    style.textDecoration = (style.textDecoration ? `${style.textDecoration} ` : '') + 'underline';
+    style.textDecorationStyle = 'dashed';
+    style.textDecorationColor = 'rgba(51,112,255,0.7)';
   }
 
   // 艺术字样式

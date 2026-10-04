@@ -83,7 +83,7 @@
   gap: 6px;
   padding: 2px 8px;
   border-radius: 4px;
-  background: color-mix(in srgb, var(--theme-primary, #1890ff) 8%, #f5f5f5);
+  background: color-mix(in srgb, var(--theme-primary, #1890ff) 8%, var(--lw-paper, @bg-base));
   color: #374151;
   font-size: 14px;
   cursor: pointer;
@@ -91,7 +91,7 @@
   vertical-align: middle;
 
   &:hover {
-    background: color-mix(in srgb, var(--theme-primary, #1890ff) 14%, #f5f5f5);
+    background: color-mix(in srgb, var(--theme-primary, #1890ff) 14%, var(--lw-paper, @bg-base));
   }
 }
 
@@ -121,7 +121,7 @@
   padding: 12px 14px;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
-  background: #fff;
+  background: var(--lw-paper, @bg-base);
   max-width: 420px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 

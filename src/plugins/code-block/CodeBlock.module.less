@@ -4,7 +4,7 @@
   margin: @spacing-md 0;
   border-radius: 6px;
   border: 1px solid @border-color-light;
-  background-color: @bg-subtle;
+  background-color: var(--lw-paper, @bg-base);
   overflow: hidden;
   box-shadow: none;
   max-width: 100%;
@@ -17,12 +17,12 @@
   padding: @spacing-xs @spacing-md;
   transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   user-select: none;
-  background-color: @bg-base;
+  background-color: var(--lw-paper, @bg-base);
   border-bottom: 1px solid transparent;
 }
 
 .toolbarVisible {
-  background-color: @bg-base;
+  background-color: var(--lw-paper, @bg-base);
   border-bottom-color: @border-color-light;
 }
 
@@ -53,7 +53,7 @@
 
 .codeContent {
   padding: @spacing-sm 0;
-  background-color: @bg-subtle;
+  background-color: var(--lw-paper, @bg-base);
   outline: none;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: @font-size-sm;

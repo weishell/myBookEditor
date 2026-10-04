@@ -36,3 +36,4 @@ export * from './timeline';
 export * from './chart';
 export * from './embed';
 export * from './drawboard';
+export * from './inline-comment';

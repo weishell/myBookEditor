@@ -13,7 +13,7 @@
   position: relative;
   border: 1px solid @border-color-light;
   border-radius: @radius-sm;
-  background: @bg-base;
+  background: var(--lw-paper, @bg-base);
   overflow: hidden;
   cursor: var(--cursor-pointer);
   display: flex;
@@ -77,7 +77,7 @@
   align-items: center;
   gap: @spacing-xs;
   padding: @spacing-xs @spacing-md;
-  background: @bg-subtle;
+  background: var(--lw-paper, @bg-base);
   border-bottom: 1px solid @border-color-lighter;
   font-size: @font-size-sm;
   color: @text-secondary;

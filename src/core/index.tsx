@@ -9,7 +9,7 @@
 //
 // 设计：从 components/Editor 抽离，作为项目的编辑器运行核心，便于单独测试、
 //       替换上层 UI 壳子或二次开发包装。
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useRef, useState } from 'react';
 import type { Descendant } from 'slate';
 import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
@@ -31,6 +31,9 @@ import {
   withEmbed,
   withHintBlock,
   MentionController,
+  InlineCommentProvider,
+  InlineCommentBadges,
+  InlineCommentPopover,
 } from '@/plugins';
 import {
   withCodeBlock,
@@ -60,15 +63,40 @@ interface EditorProps {
   readOnly?: boolean;
   /** 初始文档内容（如文章正文）；不传则用内置的全功能示例文档 */
   initialValue?: Descendant[];
+  /** 文档自动保存用的本地存储 key；传空字符串则关闭持久化 */
+  persistKey?: string;
+}
+
+// 文档正文持久化：评论锚点（comments 标记）就写在文档数据里，若不落盘，
+// 刷新后文档重置为初始值，评论高亮/角标会一并消失。
+const DOC_PERSIST_KEY = 'mybook-editor-content-v1';
+
+function loadPersistedDoc(key: string): Descendant[] | null {
+  try {
+    const raw = localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as Descendant[]) : null;
+  } catch {
+    return null;
+  }
 }
 
 export default function BookEditor({
   readOnly = false,
   initialValue = demoInitialValue,
+  persistKey = DOC_PERSIST_KEY,
 }: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
   const { isDarkMode } = useTheme();
   const { matches, currentIndex } = useFindReplace();
+  // 有持久化时，优先用上次保存的文档（含评论标记），否则用传入的初始值
+  const [initial] = useState<Descendant[]>(() =>
+    persistKey ? (loadPersistedDoc(persistKey) ?? initialValue) : initialValue,
+  );
+  // 行内评论会话变化时自增，强制 Editable 重算 decoration（core 的 onChange 是 no-op）
+  const [, setCommentTick] = useState(0);
+  const forceCommentRender = useCallback(() => setCommentTick((t) => t + 1), []);
   const editor = useMemo(
     () =>
       withDelete(
@@ -139,12 +167,25 @@ export default function BookEditor({
     },
     [keyboardHandler, readOnly],
   );
-  // onChange 不再打印 editor 数据；需要看数据结构时控制台直接打 window.editor
-  const handleChange = useCallback(() => {
-    /* no-op */
-  }, []);
+  // onChange 不再打印 editor 数据；需要看数据结构时控制台直接打 window.editor。
+  // 有持久化 key 时，节流把最新文档（含评论标记）落盘，刷新后恢复。
+  const saveTimer = useRef<number | null>(null);
+  const handleChange = useCallback(
+    (value: Descendant[]) => {
+      if (!persistKey) return;
+      if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
+      saveTimer.current = window.setTimeout(() => {
+        try {
+          localStorage.setItem(persistKey, JSON.stringify(value));
+        } catch {
+          /* 忽略存储异常 */
+        }
+      }, 400);
+    },
+    [persistKey],
+  );
 
-  // 合并代码高亮 + 查找高亮两种装饰
+  // 合并代码高亮 + 查找高亮两种装饰（行内评论高亮由 renderLeaf 直接读叶子数据渲染，不走这里）
   const decorate = useCallback(
     (entry: Parameters<typeof codeDecorate>[0]) => {
       const code = codeDecorate(entry);
@@ -155,57 +196,61 @@ export default function BookEditor({
   );
 
   return (
-    <Slate editor={editor} initialValue={initialValue} onChange={handleChange}>
+    <Slate editor={editor} initialValue={initial} onChange={handleChange}>
       <SelectionProvider>
         <MenuProvider>
-          {!readOnly && <FloatBar />}
           {!readOnly && <ContextMenu />}
           {!readOnly && <MentionController isDark={isDarkMode} />}
           {!readOnly && <SlashMenu />}
           <DocBarProvider>
-            <DocBar />
-            <div
-              data-paper
-              style={{
-                maxWidth: PAGE_WIDTH_NORMAL,
-                margin: '0 auto',
-                padding: '40px 65px',
-                // 暗黑模式：编辑纸去掉背景和边框，让底层壁纸透出来
-                // 浅色壁纸（html.light-wallpaper）：纸面用 --lw-paper 柔和底色代替纯白
-                border: isDarkMode
-                  ? 'none'
-                  : '1px solid var(--lw-paper-border, rgba(232,232,232,0.9))',
-                borderRadius: '8px',
-                backgroundColor: isDarkMode ? 'transparent' : 'var(--lw-paper, #fff)',
-                // 注意：这里【不能】用 backdrop-filter / filter / transform 之类的属性！
-                // 它们会让纸面成为 position:fixed 子元素的包含块，导致图片选中框、
-                // 缩放手柄（ResizeHandle 是 fixed 定位）脱离图片本体。
-                // 「照片壁纸透出来但仍可读」改为在壁纸层做柔化（见 wallpapers/index.ts 的 blur/veil）。
-                boxShadow: isDarkMode ? 'none' : undefined,
-                minHeight: '500px',
-                pointerEvents: readOnly ? 'none' : 'auto',
-                fontFamily: globalFont,
-                transition: 'background-color 0.2s, border-color 0.2s, box-shadow 0.2s',
-              }}
-            >
-              <Editable
-                className="caret-theme"
-                renderElement={renderElement}
-                renderLeaf={RenderLeaf}
-                placeholder="开始编写文档..."
+            <InlineCommentProvider onCommentChange={forceCommentRender}>
+              <DocBar />
+              {!readOnly && <FloatBar />}
+              <InlineCommentBadges />
+              <InlineCommentPopover />
+              <div
+                data-paper
                 style={{
+                  maxWidth: PAGE_WIDTH_NORMAL,
+                  margin: '0 auto',
+                  padding: '40px 65px',
+                  // 暗黑模式：编辑纸去掉背景和边框，让底层壁纸透出来
+                  // 浅色壁纸（html.light-wallpaper）：纸面用 --lw-paper 柔和底色代替纯白
+                  border: isDarkMode
+                    ? 'none'
+                    : '1px solid var(--lw-paper-border, rgba(232,232,232,0.9))',
+                  borderRadius: '8px',
+                  backgroundColor: isDarkMode ? 'transparent' : 'var(--lw-paper, #fff)',
+                  // 注意：这里【不能】用 backdrop-filter / filter / transform 之类的属性！
+                  // 它们会让纸面成为 position:fixed 子元素的包含块，导致图片选中框、
+                  // 缩放手柄（ResizeHandle 是 fixed 定位）脱离图片本体。
+                  // 「照片壁纸透出来但仍可读」改为在壁纸层做柔化（见 wallpapers/index.ts 的 blur/veil）。
+                  boxShadow: isDarkMode ? 'none' : undefined,
                   minHeight: '500px',
-                  outline: 'none',
+                  pointerEvents: readOnly ? 'none' : 'auto',
+                  fontFamily: globalFont,
+                  transition: 'background-color 0.2s, border-color 0.2s, box-shadow 0.2s',
                 }}
-                decorate={decorate}
-                onKeyDown={handleKeyDown}
-                readOnly={readOnly}
-              />
-              {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}
-              {!readOnly && <TrailingAddZone />}
-            </div>
-            {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互 */}
-            <CommentSection />
+              >
+                <Editable
+                  className="caret-theme"
+                  renderElement={renderElement}
+                  renderLeaf={RenderLeaf}
+                  placeholder="开始编写文档..."
+                  style={{
+                    minHeight: '500px',
+                    outline: 'none',
+                  }}
+                  decorate={decorate}
+                  onKeyDown={handleKeyDown}
+                  readOnly={readOnly}
+                />
+                {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}
+                {!readOnly && <TrailingAddZone />}
+              </div>
+              {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互 */}
+              <CommentSection />
+            </InlineCommentProvider>
           </DocBarProvider>
         </MenuProvider>
       </SelectionProvider>

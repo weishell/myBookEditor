@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSlate } from 'slate-react';
 import { Element } from 'slate';
+import { useInlineComments } from '@/plugins/inline-comment';
 import {
   toggleMark,
   toggleBlock,
@@ -171,6 +172,7 @@ const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps
 
 export default function FloatBar() {
   const editor = useSlate();
+  const { createFromSelection } = useInlineComments();
   const [visible, setVisible] = useState(false);
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [activeMenu, setActiveMenu] = useState<string | null>(null);
@@ -485,7 +487,26 @@ export default function FloatBar() {
             setLinkOpen(true);
           }}
         />
-        <ToolButton icon="💬" onClick={() => {}} disabled />
+        <ToolButton
+          icon={
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M21 6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10l4 4v-4a2 2 0 0 0 2-2V6z" />
+            </svg>
+          }
+          onClick={() => {
+            const ok = createFromSelection();
+            if (ok) setVisible(false);
+          }}
+        />
       </div>
       {formulaOpen && (
         <FormulaEditor
