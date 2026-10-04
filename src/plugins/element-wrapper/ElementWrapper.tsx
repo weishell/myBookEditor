@@ -48,6 +48,11 @@ export const ElementWrapper = ({
   const indent = attrs?.indent ?? 0;
   const indentStyle = indent > 0 ? { marginLeft: `${indent * INDENT_PX}px` } : undefined;
 
+  // 对齐样式（对齐文本类块内容；非本文块无 align 字段，不生效）
+  const align = attrs?.align;
+  const alignStyle =
+    align && ['left', 'center', 'right'].includes(align) ? { textAlign: align } : undefined;
+
   // 字体样式（插件层 attrs.fontFamily，覆盖全局层，被 text 层 mark 覆盖）
   const fontFamily = attrs?.fontFamily;
   const fontStyle = fontFamily && fontFamily !== 'inherit' ? { fontFamily } : undefined;
@@ -62,7 +67,7 @@ export const ElementWrapper = ({
       data-empty={isEmpty ? 'true' : undefined}
       data-whole-selected={isWholeSelected ? 'true' : undefined}
       className={className}
-      style={{ position: 'relative', ...indentStyle, ...fontStyle }}
+      style={{ position: 'relative', ...indentStyle, ...fontStyle, ...alignStyle }}
     >
       {children}
     </div>

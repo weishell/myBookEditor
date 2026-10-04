@@ -136,3 +136,26 @@ export function decreaseIndent(editor: Editor): boolean {
 
   return true;
 }
+
+/**
+ * 按 delta 调整指定块的缩进（DocBar 场景：作用于悬浮块）。
+ * delta 可为 ±1；结果夹在 [0, MAX_INDENT]。返回是否发生改动。
+ */
+export function setBlockIndent(editor: Editor, path: Path, delta: number): boolean {
+  let node: any;
+  try {
+    node = Node.get(editor, path) as any;
+  } catch {
+    return false;
+  }
+  if (!node || !isIndentable(node.type)) return false;
+
+  const current = getIndent(node);
+  const next = Math.max(0, Math.min(MAX_INDENT, current + delta));
+  if (next === current) return false;
+
+  Transforms.setNodes(editor, { attrs: { ...(node.attrs || {}), indent: next } } as any, {
+    at: path,
+  });
+  return true;
+}

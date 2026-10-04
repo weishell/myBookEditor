@@ -1,97 +1,39 @@
-// 画板缩略图：
-// 1) 有编辑器截图（attrs.snapshot）时直接回显该截图 —— 与全屏编辑器所见完全一致；
-// 2) 没有截图（老数据/截图失败）时，用 drawui-core 的 Renderer 把 Shape[] 画到 canvas，
-//    适配范围由「像素自校准」得到（见 drawboard-fit.ts），不依赖坐标语义假设。
-import React, { useEffect, useRef } from 'react';
-import { Renderer } from 'drawui-core';
+// 画板只读缩略图：把全部图形用 drawui-core 的 renderSVGString 渲染成完整矢量 SVG，
+// 再以 <img object-fit:contain> 铺进预览区 —— 整张画板按比例缩小、完整呈现，不失真。
+// 相比旧的 canvas Renderer 方案：不再依赖像素自校准与相机换算，矢量边角清晰可读，
+// 且不把第三方生成的标记直接插入 DOM（用 data URL 当图片源，规避注入风险）。
+import React, { useMemo } from 'react';
+import { renderSVGString } from 'drawui-core';
 import type { Shape } from 'drawui-core';
-import {
-  cameraForRect,
-  estimateContentRect,
-  filterSaneShapes,
-  measureContentRect,
-  type Rect,
-} from './drawboard-fit';
+import { filterSaneShapes } from './drawboard-fit';
 import styles from './Drawboard.module.less';
 
 interface DrawboardPreviewProps {
   shapes: Shape[];
-  /** 编辑器关闭时对主画布的整幅截图（PNG dataURL），存在时优先回显 */
-  snapshot?: string;
 }
 
-const PAD = 14;
+/** 内容四周留白（页面坐标），让图形不贴边 */
+const PAD = 16;
 
-const DrawboardPreview: React.FC<DrawboardPreviewProps> = ({ shapes, snapshot }) => {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const wrapRef = useRef<HTMLDivElement>(null);
-  const rendererRef = useRef<Renderer | null>(null);
-  // 测量结果按 shapes 引用缓存：容器 resize 时复用，不重复扫描像素
-  const measureRef = useRef<{ shapes: Shape[]; used: Shape[]; rect: Rect | null } | null>(null);
-
-  useEffect(() => {
-    if (snapshot) return;
-    const canvas = canvasRef.current;
-    const wrap = wrapRef.current;
-    if (!canvas || !wrap) return;
-    if (!rendererRef.current) {
-      try {
-        rendererRef.current = new Renderer(canvas);
-      } catch {
-        return;
-      }
+const DrawboardPreview: React.FC<DrawboardPreviewProps> = ({ shapes }) => {
+  const svgSrc = useMemo(() => {
+    const used = filterSaneShapes(shapes);
+    if (!used || used.length === 0) return null;
+    try {
+      const markup = renderSVGString(used, { padding: PAD, background: '#ffffff' });
+      return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(markup)}`;
+    } catch (err) {
+      // 渲染失败时缩略图会空白，必须留下可见线索
+      console.warn('[drawboard-preview] renderSVGString failed', err);
+      return null;
     }
+  }, [shapes]);
 
-    const draw = () => {
-      const renderer = rendererRef.current;
-      if (!renderer) return;
-      const W = wrap.clientWidth || 240;
-      const H = wrap.clientHeight || 160;
-      if (W <= 0 || H <= 0) return;
-
-      let m = measureRef.current;
-      if (!m || m.shapes !== shapes) {
-        const used = filterSaneShapes(shapes);
-        m = {
-          shapes,
-          used,
-          rect: measureContentRect(used, estimateContentRect(used)),
-        };
-        measureRef.current = m;
-      }
-      const rect = m.rect;
-      if (!rect) return;
-
-      const cam = cameraForRect(rect, W, H, PAD);
-      renderer.resize(W, H);
-      renderer.setShowGrid(false);
-      try {
-        renderer.render(m.used as any, cam, new Set<string>());
-      } catch (err) {
-        // 不静默吞掉：渲染失败时缩略图会空白，必须留下可见线索
-        console.warn('[drawboard-preview] render failed', err);
-      }
-    };
-
-    draw();
-    // 容器尺寸变化时重绘
-    const ro = new ResizeObserver(draw);
-    ro.observe(wrap);
-    return () => ro.disconnect();
-  }, [shapes, snapshot]);
-
-  // 编辑器截图优先：所见即所得，不做任何坐标换算
-  if (snapshot) {
-    return (
-      <div className={styles.previewCanvasWrap}>
-        <img className={styles.previewImg} src={snapshot} alt="" draggable={false} />
-      </div>
-    );
-  }
+  if (!svgSrc) return null;
 
   return (
-    <div ref={wrapRef} className={styles.previewCanvasWrap}>
-      <canvas ref={canvasRef} className={styles.previewCanvas} />
+    <div className={styles.previewSvgWrap}>
+      <img className={styles.previewSvgImg} src={svgSrc} alt="" draggable={false} />
     </div>
   );
 };

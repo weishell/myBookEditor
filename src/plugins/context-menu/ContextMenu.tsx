@@ -12,6 +12,13 @@ import { Editor, Element, Node, Transforms } from 'slate';
 import { copyBlockToClipboard } from '@/utils/clipboard';
 import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
+import {
+  setBlockAlignment,
+  getBlockAlign,
+  ALIGN_OPTIONS,
+  type TextAlignValue,
+} from '@/utils/alignment';
+import { setBlockIndent, getIndent, MAX_INDENT, isIndentable } from '@/utils/indent';
 import { BlockElementType, LilistType } from '@/enums';
 import { BlockTypePicker, createBlockNode, isTextBlockType } from '@/plugins/block-picker';
 import { openAndInsertImages } from '@/plugins/image/uploadImage';
@@ -31,6 +38,146 @@ import {
 import { getLilist, sortLilist } from '@/plugins/lilist';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
 import styles from './ContextMenu.module.less';
+
+/* ===== 成员：对齐 / 缩进子面板 ===== */
+
+const alignLabel: Record<string, string> = {
+  left: '左对齐',
+  center: '居中对齐',
+  right: '右对齐',
+};
+
+// 对齐图标：四行横向线段，按对齐方式改变行的起点/长度
+const AlignIcon = ({
+  align,
+  active,
+  size = 18,
+}: {
+  align: string;
+  active?: boolean;
+  size?: number;
+}) => {
+  const color = active ? '#fff' : 'currentColor';
+  const baseW = 13;
+  const full = [1, 1, 0.55, 1] as const; // 各行相对长度，模拟“长短行”
+  const lines = full.map((f, i) => {
+    const w = Math.round(baseW * f);
+    const gap = (18 - w) / 2;
+    let x = 2.5;
+    if (align === 'center') x = gap;
+    else if (align === 'right') x = 18 - w - 2.5;
+    // left：左起即可
+    const y = 3 + i * 4;
+    return <rect key={i} x={x} y={y} width={w} height={2} rx={1} fill={color} />;
+  });
+  return (
+    <svg width={size} height={size} viewBox="0 0 18 18">
+      {lines}
+    </svg>
+  );
+};
+
+// 增加缩进：左侧竖条 + 向右箭头
+const IndentIncIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 18 18"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3.5 3.5v11M3.5 9h8.5M8.5 6.5l3 2.5-3 2.5" />
+  </svg>
+);
+
+// 减少缩进：左侧竖条 + 向左箭头
+const IndentDecIcon = ({ size = 18 }: { size?: number }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 18 18"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M3.5 3.5v11M14.5 9H6M9.5 6.5l-3 2.5 3 2.5" />
+  </svg>
+);
+
+interface AlignIndentPanelProps {
+  disabled: boolean;
+  align?: TextAlignValue;
+  indent: number;
+  maxIndent: number;
+  onAlign: (align: TextAlignValue) => void;
+  onIndentChange: (delta: number) => void;
+}
+
+const AlignIndentPanel = ({
+  disabled,
+  align,
+  indent,
+  maxIndent,
+  onAlign,
+  onIndentChange,
+}: AlignIndentPanelProps) => (
+  <div className={styles.alignPanel}>
+    <div className={styles.alignLabel}>对齐</div>
+    <div className={styles.alignRow}>
+      {ALIGN_OPTIONS.map((a) => {
+        const active = align === a;
+        return (
+          <button
+            key={a}
+            type="button"
+            className={active ? styles.alignBtnActive : styles.alignBtn}
+            disabled={disabled}
+            title={alignLabel[a]}
+            onClick={(e) => {
+              e.stopPropagation();
+              onAlign(a);
+            }}
+          >
+            <AlignIcon align={a} active={active} />
+          </button>
+        );
+      })}
+    </div>
+    <div className={styles.alignDivider} />
+    <div className={styles.alignLabel}>缩进</div>
+    <div className={styles.alignRow}>
+      <button
+        type="button"
+        className={styles.alignBtn}
+        disabled={disabled || indent >= maxIndent}
+        title="增加缩进"
+        onClick={(e) => {
+          e.stopPropagation();
+          onIndentChange(1);
+        }}
+      >
+        <IndentIncIcon />
+      </button>
+      <button
+        type="button"
+        className={styles.alignBtn}
+        disabled={disabled || indent <= 0}
+        title="减少缩进"
+        onClick={(e) => {
+          e.stopPropagation();
+          onIndentChange(-1);
+        }}
+      >
+        <IndentDecIcon />
+      </button>
+    </div>
+  </div>
+);
 
 export const ContextMenu = () => {
   // 注意：这里刻意不取 closeMenu —— 它是"延迟 200ms + 仅当鼠标不在菜单上才真关"的
@@ -56,6 +203,9 @@ export const ContextMenu = () => {
 
   const [fontOpen, setFontOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
+  const [indentOpen, setIndentOpen] = useState(false);
+  // 应用对齐/缩进后触发重渲染，让子面板读取到更新后的块 attrs（高亮/禁用态实时刷新）
+  const [, setFormatTick] = useState(0);
 
   // 图表插入两步式：类型选择弹框 → 配置页弹框 → 确定插入
   const [chartFlow, setChartFlow] = useState<'pick' | 'config' | null>(null);
@@ -93,6 +243,7 @@ export const ContextMenu = () => {
     if (!visible) {
       setFontOpen(false);
       setInsertOpen(false);
+      setIndentOpen(false);
     }
   }, [visible]);
 
@@ -302,7 +453,6 @@ export const ContextMenu = () => {
 
   const DISABLED_ACTIONS = [
     'code',
-    'indent',
     'color',
     'comment',
     // 不可删的块（结构性子块等）也不能剪切 —— 剪切 = 复制 + 删除
@@ -356,6 +506,23 @@ export const ContextMenu = () => {
     setFontOpen(false);
     closeAfterAction();
   };
+
+  // 对齐/缩进：作用于当前 hover 的块，应用后保持子面板展开，便于连续调整
+  const handleAlign = (align: TextAlignValue) => {
+    const p = getTargetPath();
+    if (p) setBlockAlignment(editor, align, p);
+    setFormatTick((t) => t + 1);
+  };
+  const handleIndent = (delta: number) => {
+    const p = getTargetPath();
+    if (p) setBlockIndent(editor, p, delta);
+    setFormatTick((t) => t + 1);
+  };
+
+  // 子面板的当前值与可用态：文本类块才允许对齐/缩进
+  const isTextFormatable = !!targetNode && isIndentable(targetNode.type);
+  const currentAlign = getBlockAlign(targetNode);
+  const currentIndent = getIndent(targetNode);
 
   // list-item 的父容器是列表：在父列表之后插入，避免破坏列表结构
   const getInsertPathAfter = (path: number[]): number[] => {
@@ -616,15 +783,45 @@ export const ContextMenu = () => {
           </button>
         </div>
         <div className={styles.divider} />
-        <button
-          onClick={() => handleMenuClick('indent')}
-          className={styles.btnAction}
-          disabled={DISABLED_ACTIONS.includes('indent')}
+        <Popover
+          open={indentOpen}
+          onOpenChange={(open) => {
+            setIndentOpen(open);
+            setHoveringMenu(open);
+          }}
+          overlayInnerStyle={{ padding: 0 }}
+          content={
+            <div
+              className={styles.alignFlyout}
+              onMouseEnter={() => setHoveringMenu(true)}
+              onMouseLeave={() => setHoveringMenu(false)}
+            >
+              <AlignIndentPanel
+                disabled={!isTextFormatable}
+                align={currentAlign}
+                indent={currentIndent}
+                maxIndent={MAX_INDENT}
+                onAlign={handleAlign}
+                onIndentChange={handleIndent}
+              />
+            </div>
+          }
+          trigger="click"
+          placement="right"
         >
-          <span className={styles.actionIcon}>☰</span>
-          <span>缩进和对齐</span>
-          <span className={styles.actionArrow}>›</span>
-        </button>
+          <button
+            className={`${styles.btnAction} ${indentOpen ? styles.btnActionActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIndentOpen(!indentOpen);
+              setHoveringMenu(true);
+            }}
+          >
+            <span className={styles.actionIcon}>☰</span>
+            <span>缩进和对齐</span>
+            <span className={styles.actionArrow}>{indentOpen ? '⌄' : '›'}</span>
+          </button>
+        </Popover>
         <Popover
           open={fontOpen}
           onOpenChange={(open) => {

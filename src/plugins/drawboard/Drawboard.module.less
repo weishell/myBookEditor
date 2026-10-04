@@ -65,16 +65,25 @@
   color: @text-tertiary;
 }
 
-// 缩略图承载层：绝对填充预览区，在文档卡片内回显画板图形
-.previewCanvasWrap {
+// 缩略图承载层：绝对填充预览区，在文档卡片内回显整张画板
+.previewSvgWrap {
   position: absolute;
   inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
 }
 
-.previewCanvas {
+// SVG 画板：填满预览区，object-fit:contain 保证整张画板按比例缩小完整呈现
+.previewSvgImg {
   display: block;
   width: 100%;
   height: 100%;
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  pointer-events: none;
 }
 
 .emptyIcon {

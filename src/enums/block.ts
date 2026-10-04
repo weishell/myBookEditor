@@ -32,6 +32,15 @@ export const BlockElementType = {
 
 export type BlockElementType = (typeof BlockElementType)[keyof typeof BlockElementType];
 
+/* 段落对齐方式（绑定在文本类块的 attrs.align 上） */
+export const TextAlign = {
+  LEFT: 'left',
+  CENTER: 'center',
+  RIGHT: 'right',
+} as const;
+
+export type TextAlignValue = (typeof TextAlign)[keyof typeof TextAlign];
+
 /* lilist 列表类型（绑定在段落/标题上的有序无序） */
 export const LilistType = {
   OL: 'ol', // 有序列表
