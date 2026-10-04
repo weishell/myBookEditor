@@ -2,7 +2,8 @@
 //
 // 字体选择用 antd Popover 做二级菜单（右侧弹出），
 // Popover 打开时同步 setHoveringMenu(true) 防止主菜单 200ms 后自动关闭。
-// 非空文本块 hover 时显示"在下方插入"，点击后切换为块类型选择面板。
+// 非空文本块 hover 时显示浮动工具栏（DocBar）。
+// 「在下方插入」对任意块类型均可用，点击切换到块类型选择面板。
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -20,7 +21,7 @@ import {
 } from '@/utils/alignment';
 import { setBlockIndent, getIndent, MAX_INDENT, isIndentable } from '@/utils/indent';
 import { BlockElementType, LilistType } from '@/enums';
-import { BlockTypePicker, createBlockNode, isTextBlockType } from '@/plugins/block-picker';
+import { BlockTypePicker, createBlockNode } from '@/plugins/block-picker';
 import { openAndInsertImages } from '@/plugins/image/uploadImage';
 import {
   ChartTypePicker,
@@ -196,6 +197,35 @@ export const ContextMenu = () => {
       }
     }
     return undefined;
+  };
+
+  // 取当前光标（选区）所在的块路径。「在下方插入」应锚定光标所在处，
+  // 否则当光标在一个空行、而鼠标却悬停在它上方某块时，新块会错落到光标上方。
+  const getCaretBlockPath = (): number[] | undefined => {
+    const { selection } = editor;
+    if (!selection) return undefined;
+    try {
+      const entry = Editor.above(editor, {
+        at: selection,
+        match: (n) => Element.isElement(n) && Editor.isBlock(editor, n),
+      });
+      return entry?.[1];
+    } catch {
+      return undefined;
+    }
+  };
+
+  // 判断某块是否为空行（只有一个空文本子节点）
+  const isEmptyLine = (p: number[]): boolean => {
+    try {
+      const node = Node.get(editor, p) as any;
+      if (!Element.isElement(node)) return false;
+      const children = (node as any).children ?? [];
+      if (children.length !== 1) return false;
+      return !!(children[0] && children[0].text === '');
+    } catch {
+      return false;
+    }
   };
 
   const targetPath = getTargetPath();
@@ -547,9 +577,17 @@ export const ContextMenu = () => {
     type: BlockElementType,
     options?: { level?: number; columns?: number },
   ) => {
-    const path = getTargetPath();
-    if (!path) return;
-    const insertPath = getInsertPathAfter(path);
+    // 光标若在空行，则以该空行为锚；否则以悬停块为锚（保留「在所选块下方插入」直觉），兜底光标块。
+    const caretPath = getCaretBlockPath();
+    const anchorPath =
+      (caretPath && isEmptyLine(caretPath) ? caretPath : getTargetPath()) ?? caretPath;
+    if (!anchorPath) return;
+    // 锚点若是空行 → 直接替换该空行（复杂插件原地顶替，不留空行）；否则插入到目标块下方。
+    const isAnchorEmpty = isEmptyLine(anchorPath);
+    const insertPath = isAnchorEmpty ? anchorPath : getInsertPathAfter(anchorPath);
+    if (isAnchorEmpty) {
+      Transforms.removeNodes(editor, { at: anchorPath });
+    }
     // 图片走文件选择 + 本地预览 + 模拟进度（无后端，见 uploadImage.ts）
     if (type === BlockElementType.IMAGE_BLOCK) {
       setInsertOpen(false);
@@ -655,12 +693,8 @@ export const ContextMenu = () => {
     );
   }
 
-  // "在下方插入"仅对非空文本类块可用
-  const canInsertBelow =
-    !!targetNode &&
-    Element.isElement(targetNode) &&
-    isTextBlockType(targetNode.type) &&
-    Node.string(targetNode).trim() !== '';
+  // 「在下方插入」对所有块类型始终可用（图片/表格/图表/空行等都能往下插）
+  const canInsertBelow = !!targetNode && Element.isElement(targetNode);
 
   return (
     <>

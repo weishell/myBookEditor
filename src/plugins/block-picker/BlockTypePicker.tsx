@@ -70,8 +70,8 @@ const COMMON_ITEMS: BlockTypeOption[] = [
   { type: BlockElementType.TIMELINE, label: '时间轴', icon: '📎' },
   { type: BlockElementType.EMBED, label: '内嵌网页', icon: '🌐' },
   { type: BlockElementType.DRAWBOARD, label: '画板', icon: '⬚' },
-  { type: BlockElementType.DRAWIO, label: '流程图', icon: '⇄', disabled: true },
-  { type: BlockElementType.DIVIDER, label: '分隔线', icon: '—', disabled: true },
+  { type: BlockElementType.DRAWIO, label: '流程图', icon: '⇄' },
+  { type: BlockElementType.DIVIDER, label: '分隔线', icon: '—' },
 ];
 
 const COLUMN_PRESETS = [2, 3, 4, 5];
