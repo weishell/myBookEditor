@@ -9,7 +9,10 @@
 //   - <p>/文本       → 段落；行内加粗/斜体/下划线/删除线/行内代码/链接标记保留
 // 解析出块后走 editor.insertFragment（withEditorBehaviors 负责换 id / 标题降级），
 // 无法解析或选区在代码块内时回退原 insertData 逻辑。
-import { Editor, Transforms, Element, Range, type Descendant } from 'slate';
+// 注意：这里刻意不直接导入 slate 的 `Element` —— 本文件处理的是 DOM 节点树，
+// 全局 DOM `Element` / `Node`（tagName / childNodes / querySelector…）才是主角。
+// 直接从 slate 导入 `Element` 会把 DOM 全局同名类型遮蔽，引发一片 TS 报错。
+import { Editor, Transforms, Element as SlateElement, Range, type Descendant } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
 
@@ -335,7 +338,7 @@ const isInsideCodeBlock = (editor: Editor): boolean => {
   if (!selection) return false;
   try {
     const match = (editor as any).above({
-      match: (n: any) => Element.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
+      match: (n: any) => SlateElement.isElement(n) && n.type === BlockElementType.CODE_BLOCK,
       mode: 'lowest',
     });
     return !!match;

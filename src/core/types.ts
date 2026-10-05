@@ -31,6 +31,8 @@ export interface CustomText extends BaseText {
   hyperlink?: string;
   /** 是否为输入时自动识别生成的链接（其文本必须一直保持合法 URL） */
   hyperlinkAuto?: boolean;
+  /** 行内评论：叶子上的评论 id 列表（null / 缺省表示无评论，见 plugins/inline-comment） */
+  comments?: string[] | null;
 }
 
 declare module 'slate' {

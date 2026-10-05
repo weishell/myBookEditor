@@ -49,7 +49,7 @@ export function commentSelection(editor: Editor, id: string): boolean {
       const cur = getIds(node);
       if (cur.includes(id)) continue;
       touched = true;
-      Transforms.setNodes(editor, { comments: [...cur, id] } as Partial<Node>, { at: path });
+      Transforms.setNodes(editor, { comments: [...cur, id] }, { at: path });
     }
   });
 
@@ -58,18 +58,17 @@ export function commentSelection(editor: Editor, id: string): boolean {
 
 /** 从所有叶子上去掉某个评论 id（取消/删除会话时用）。 */
 export function removeCommentId(editor: Editor, id: string): void {
-  for (const [node, path] of Array.from(
-    Editor.nodes(editor, { at: [], match: () => true, mode: 'all' }) as any,
-  )) {
+  const entries = Array.from(
+    Editor.nodes(editor, { at: [], match: () => true, mode: 'all' }),
+  ) as Array<[Node, number[]]>;
+  for (const [node, path] of entries) {
     if (!Text.isText(node)) continue;
     const cur = getIds(node);
     if (!cur.includes(id)) continue;
     const next = cur.filter((x) => x !== id);
-    Transforms.setNodes(
-      editor,
-      (next.length ? { comments: next } : { comments: null }) as Partial<Node>,
-      { at: path },
-    );
+    Transforms.setNodes(editor, next.length ? { comments: next } : { comments: null }, {
+      at: path,
+    });
   }
 }
 

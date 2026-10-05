@@ -1,6 +1,9 @@
 import { Editor, Element, Node as SlateNode, Path, Transforms } from 'slate';
 import { BlockElementType, TextAlign, type TextAlignValue } from '@/enums';
 
+// 对外再导出对齐值类型：使用方（如 ContextMenu）习惯从本模块取
+export type { TextAlignValue };
+
 // 支持对齐的文本类块类型（与缩进一致：正文/标题/引用/提示块/列表/待办）
 const ALIGNABLE_TYPES: BlockElementType[] = [
   BlockElementType.PARAGRAPH,
