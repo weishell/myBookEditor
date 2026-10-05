@@ -54,6 +54,18 @@
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.45);
 }
 
+// 嵌入其它浮层（如右键菜单 Popover）时：去掉绝对定位与自带外观，交给外层浮层
+.panelEmbedded {
+  position: static;
+  margin: 0;
+  padding: 0;
+  border: none;
+  box-shadow: none;
+  min-width: 0;
+  background: transparent;
+  z-index: auto;
+}
+
 .sectionLabel {
   padding: 4px 8px;
   font-size: 12px;

@@ -10,7 +10,7 @@ import {
   useRef,
 } from 'react';
 import { Editor, Range } from 'slate';
-import { useSlate } from 'slate-react';
+import { useSlate, ReactEditor } from 'slate-react';
 import {
   MY_AUTHOR,
   AVATAR_COLORS,
@@ -83,11 +83,20 @@ export function InlineCommentProvider({
 
     let x = 0;
     let y = 0;
-    const domSel = window.getSelection();
-    if (domSel && !domSel.isCollapsed && domSel.rangeCount > 0) {
-      const r = domSel.getRangeAt(0).getBoundingClientRect();
+    // 优先用 Slate 选区对应的 DOM 范围取坐标（菜单/程序化选中场景下 window 选区可能还没同步），
+    // 失败再退回原生 window.getSelection()。
+    try {
+      const domRange = ReactEditor.toDOMRange(editorRef.current, selection);
+      const r = domRange.getBoundingClientRect();
       x = r.left;
       y = r.top;
+    } catch {
+      const domSel = window.getSelection();
+      if (domSel && !domSel.isCollapsed && domSel.rangeCount > 0) {
+        const r = domSel.getRangeAt(0).getBoundingClientRect();
+        x = r.left;
+        y = r.top;
+      }
     }
 
     const existing = threadsRef.current.find((t) => t.rangeKey === rangeKey);

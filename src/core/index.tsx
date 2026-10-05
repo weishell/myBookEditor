@@ -199,11 +199,13 @@ export default function BookEditor({
     <Slate editor={editor} initialValue={initial} onChange={handleChange}>
       <SelectionProvider>
         <MenuProvider>
-          {!readOnly && <ContextMenu />}
           {!readOnly && <MentionController isDark={isDarkMode} />}
           {!readOnly && <SlashMenu />}
           <DocBarProvider>
             <InlineCommentProvider onCommentChange={forceCommentRender}>
+              {/* ContextMenu 需要用到行内评论（菜单里的「评论」），
+                  故必须放在 InlineCommentProvider 内部 */}
+              {!readOnly && <ContextMenu />}
               <DocBar />
               {!readOnly && <FloatBar />}
               <InlineCommentBadges />

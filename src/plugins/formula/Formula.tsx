@@ -5,6 +5,8 @@ import { useSlate, useSelected, ReactEditor } from 'slate-react';
 import { updateFormula, type FormulaElement } from './formula-utils';
 import { renderFormulaToHtml } from './katex-utils';
 import { FormulaEditor } from './FormulaEditor';
+import { useTheme } from '@/context/ThemeContext';
+import { getInlineMarkStyle } from '@/utils/inline-mark-style';
 import styles from './Formula.module.less';
 
 interface FormulaProps {
@@ -16,9 +18,14 @@ interface FormulaProps {
 export const Formula = ({ element, attributes, readOnly }: FormulaProps) => {
   const editor = useSlate();
   const isSelected = useSelected();
+  const { isDarkMode } = useTheme();
   const [editing, setEditing] = useState(false);
   const spanRef = useRef<HTMLSpanElement | null>(null);
   const value = element.attrs?.value ?? '';
+
+  // 选中公式后调「文字颜色 / 背景色」时，颜色 mark 落在子文本节点上；
+  // 公式是自绘元素，这里把它取出来套到渲染结果上，颜色才真正生效。
+  const markStyle = getInlineMarkStyle(element, isDarkMode);
 
   // 合并 slate 注入的 ref 与自身的 anchor ref
   const { ref: slateRef, ...restAttributes } = attributes;
@@ -89,6 +96,7 @@ export const Formula = ({ element, attributes, readOnly }: FormulaProps) => {
         contentEditable={false}
         suppressContentEditableWarning
         className={`${styles.formula} ${isSelected ? styles.isSelected : ''}`}
+        style={markStyle}
         onMouseDown={readOnly ? undefined : (e) => e.preventDefault()}
         onClick={handleClick}
         onCopy={handleCopy}

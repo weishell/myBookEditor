@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Transforms } from 'slate';
 import { useSlateStatic, ReactEditor } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { BuiltInCovers, type CoverItem } from './covers';
@@ -39,6 +40,7 @@ const parseIconAttr = (raw?: string): IconPickerValue | null => {
 
 export const HeadingTitle = ({ attributes, children, pluginId, element }: HeadingTitleProps) => {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
 
   // anchor 使用 ref 保存，不触发 re-render
   const iconAnchorRef = useRef<HTMLButtonElement | null>(null);
@@ -178,12 +180,12 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
             draggable={false}
             onMouseDown={handleCoverMouseDown}
           />
-          <div className={styles.coverHint}>拖动调整位置</div>
+          <div className={styles.coverHint}>{t('headingTitle.dragToAdjust')}</div>
           <div className={styles.coverActions}>
             <button
               type="button"
               className={styles.actionBtn}
-              title="更换封面"
+              title={t('headingTitle.changeCover')}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -196,7 +198,7 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
             <button
               type="button"
               className={styles.actionBtn}
-              title="移除封面"
+              title={t('headingTitle.removeCover')}
               onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.stopPropagation();
@@ -240,11 +242,11 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
           ) : (
             <span style={{ fontSize: 16 }}>😀</span>
           )}
-          <span>{currentIcon ? '更换图标' : '添加图标'}</span>
+          <span>{currentIcon ? t('headingTitle.changeIcon') : t('headingTitle.addIcon')}</span>
           {currentIcon && (
             <span
               className={styles.pillRemove}
-              title="移除图标"
+              title={t('headingTitle.removeIcon')}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -270,11 +272,11 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
           onClick={(e) => e.stopPropagation()}
         >
           <span style={{ fontSize: 16, lineHeight: 1, display: 'inline-flex' }}>🖼️</span>
-          <span>{attrs.coverUrl ? '更换封面' : '添加封面'}</span>
+          <span>{attrs.coverUrl ? t('headingTitle.changeCover') : t('headingTitle.addCover')}</span>
           {attrs.coverUrl && (
             <span
               className={styles.pillRemove}
-              title="移除封面"
+              title={t('headingTitle.removeCover')}
               onMouseDown={(e) => {
                 e.preventDefault();
                 e.stopPropagation();
@@ -316,7 +318,7 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
         <div className={styles.titleContent}>
           <h1
             className={styles.titleMain}
-            data-placeholder="请输入文档标题"
+            data-placeholder={t('headingTitle.titlePlaceholder')}
             suppressContentEditableWarning
           >
             {children}
@@ -358,6 +360,7 @@ interface CoverPickerProps {
 }
 
 function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPickerProps) {
+  const { t } = useTranslation();
   const ref = useRef<HTMLDivElement>(null);
   const [pos] = useState(() => calcCoverPickerPos(anchorEl));
   const scrollStartRef = useRef({ x: 0, y: 0 });
@@ -469,7 +472,7 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
           marginBottom: 10,
         }}
       >
-        <div className={styles.pickerTitle}>选择封面</div>
+        <div className={styles.pickerTitle}>{t('coverPicker.title')}</div>
         {value && (
           <button
             type="button"
@@ -480,7 +483,7 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
               onRemove();
             }}
           >
-            移除当前封面
+            {t('coverPicker.removeCurrent')}
           </button>
         )}
       </div>
@@ -502,7 +505,9 @@ function CoverPicker({ anchorEl, value, onSelect, onRemove, onClose }: CoverPick
             >
               <img src={cover.url} alt={cover.name} draggable={false} />
             </div>
-            <div className={styles.coverName}>{cover.name}</div>
+            <div className={styles.coverName}>
+              {t(`covers.${cover.id}`, { defaultValue: cover.name })}
+            </div>
           </div>
         ))}
       </div>

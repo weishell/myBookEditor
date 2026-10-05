@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
 import styles from './IconPicker.module.less';
@@ -116,6 +117,7 @@ const calcPosition = (
 
 export default function IconPicker(props: IconPickerProps) {
   const { anchorEl, value, onSelect, onRemove, onClose, recentStorageKey, zIndex = 10002 } = props;
+  const { t } = useTranslation();
 
   const [recent, setRecent] = useState<string[]>(() => readRecent(recentStorageKey));
   const [pos, setPos] = useState(() => calcPosition(anchorEl));
@@ -193,11 +195,11 @@ export default function IconPicker(props: IconPickerProps) {
       .filter(Boolean);
     if (recentIds.length === 0) return data;
     newData.categories = [
-      { id: 'recent', name: '最近', emojis: recentIds },
+      { id: 'recent', name: t('iconPicker.categories.recent'), emojis: recentIds },
       ...(data as any).categories.filter((c: any) => c.id !== 'flags'),
     ];
     return newData;
-  }, [recent]);
+  }, [recent, t]);
 
   const handleEmojiSelect = (emoji: any) => {
     const v: IconPickerValue = { kind: 'emoji', value: emoji.native };
@@ -221,7 +223,7 @@ export default function IconPicker(props: IconPickerProps) {
       onMouseDown={(e) => e.stopPropagation()}
     >
       <div className={styles.header}>
-        <span className={styles.title}>选择图标</span>
+        <span className={styles.title}>{t('iconPicker.title')}</span>
         {!!value && !!onRemove && (
           <button
             type="button"
@@ -232,7 +234,7 @@ export default function IconPicker(props: IconPickerProps) {
               onRemove();
             }}
           >
-            移除
+            {t('iconPicker.remove')}
           </button>
         )}
       </div>
@@ -249,18 +251,18 @@ export default function IconPicker(props: IconPickerProps) {
         navPosition="bottom"
         perLine={PER_LINE}
         i18n={{
-          search: '搜索',
-          notfound: '未找到',
+          search: t('iconPicker.search'),
+          notfound: t('iconPicker.notfound'),
           categories: {
-            recent: '最近',
-            people: '表情与人物',
-            nature: '动物与自然',
-            foods: '食物与饮料',
-            activity: '活动',
-            places: '旅行与地点',
-            objects: '物体',
-            symbols: '符号',
-            flags: '旗帜',
+            recent: t('iconPicker.categories.recent'),
+            people: t('iconPicker.categories.people'),
+            nature: t('iconPicker.categories.nature'),
+            foods: t('iconPicker.categories.foods'),
+            activity: t('iconPicker.categories.activity'),
+            places: t('iconPicker.categories.places'),
+            objects: t('iconPicker.categories.objects'),
+            symbols: t('iconPicker.categories.symbols'),
+            flags: t('iconPicker.categories.flags'),
           },
         }}
       />

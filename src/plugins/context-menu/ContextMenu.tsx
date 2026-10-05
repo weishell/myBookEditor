@@ -11,7 +11,7 @@ import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Popover } from 'antd';
-import { Editor, Element, Node, Transforms } from 'slate';
+import { Editor, Element, Node, Range, Transforms } from 'slate';
 import { copyBlockToClipboard } from '@/utils/clipboard';
 import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
@@ -33,6 +33,9 @@ import {
 } from '@/plugins/chart';
 import { EmbedSettings, createEmbedElement, type EmbedAttrs } from '@/plugins/embed';
 import FontPicker from '@/components/FontPicker';
+import { ColorPickerPanel } from '@/components/ColorPicker';
+import { setColor, setBackgroundColor } from '@/plugins/marks';
+import { useInlineComments } from '@/plugins/inline-comment';
 import {
   convertDocBarBlock,
   type DocBarConvertTarget,
@@ -188,6 +191,9 @@ export const ContextMenu = () => {
   const { visible, position, forceCloseMenu, setHoveringMenu, targetId } = useMenu();
   const menuRef = useRef<HTMLDivElement>(null);
   const editor = useSlateStatic();
+  // 行内评论：菜单里的「评论」= 先选中整块文字，再复用 FloatBar 同款的 createFromSelection。
+  // 注意：本组件必须渲染在 InlineCommentProvider 内部（见 core/index.tsx）。
+  const { createFromSelection } = useInlineComments();
 
   // DocBar 场景：按 element.id 直接遍历 Slate 文档树找路径
   const getTargetPath = (): number[] | undefined => {
@@ -246,6 +252,7 @@ export const ContextMenu = () => {
   const [fontOpen, setFontOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
   const [indentOpen, setIndentOpen] = useState(false);
+  const [colorOpen, setColorOpen] = useState(false);
   // 应用对齐/缩进后触发重渲染，让子面板读取到更新后的块 attrs（高亮/禁用态实时刷新）
   const [, setFormatTick] = useState(0);
 
@@ -286,6 +293,7 @@ export const ContextMenu = () => {
       setFontOpen(false);
       setInsertOpen(false);
       setIndentOpen(false);
+      setColorOpen(false);
     }
   }, [visible]);
 
@@ -495,8 +503,6 @@ export const ContextMenu = () => {
 
   const DISABLED_ACTIONS = [
     'code',
-    'color',
-    'comment',
     // 不可删的块（结构性子块等）也不能剪切 —— 剪切 = 复制 + 删除
     ...(!isConvertibleBlock ? ['cut', 'delete', ...CONVERT_ACTIONS] : []),
   ];
@@ -559,6 +565,49 @@ export const ContextMenu = () => {
     const p = getTargetPath();
     if (p) setBlockIndent(editor, p, delta);
     setFormatTick((t) => t + 1);
+  };
+
+  // 颜色：菜单场景没有文字选区，按「整块文本」处理 ——
+  // 临时把选区扩到整块 → 打 mark → 还原原选区，避免在正文里留下大段选中高亮。
+  const applyColorToBlock = (mutate: () => void) => {
+    const p = getTargetPath();
+    if (!p) return;
+    try {
+      const range = Editor.range(editor, p);
+      if (Range.isCollapsed(range)) return; // 空块没有可上色的文字，直接忽略
+      const prev = editor.selection;
+      Editor.withoutNormalizing(editor, () => {
+        Transforms.select(editor, range);
+        mutate();
+      });
+      if (prev) Transforms.select(editor, prev);
+      else Transforms.collapse(editor, { edge: 'end' });
+    } catch {
+      /* 选区操作异常不影响已写入的 mark */
+    }
+  };
+
+  const handleTextColorChange = (color: string | null) => {
+    applyColorToBlock(() => setColor(editor, color));
+  };
+  const handleBackgroundColorChange = (color: string | null) => {
+    applyColorToBlock(() => setBackgroundColor(editor, color));
+  };
+
+  // 评论：选中整块文字 → 交给行内评论（与 FloatBar 的评论按钮同一套逻辑）
+  const handleComment = () => {
+    const p = getTargetPath();
+    closeAfterAction();
+    if (!p) return;
+    try {
+      const range = Editor.range(editor, p);
+      if (Range.isCollapsed(range)) return; // 空块无可评论内容
+      Transforms.select(editor, range);
+      ReactEditor.focus(editor);
+    } catch {
+      /* ignore */
+    }
+    createFromSelection();
   };
 
   // 子面板的当前值与可用态：文本类块才允许对齐/缩进
@@ -927,18 +976,46 @@ export const ContextMenu = () => {
             <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
           </button>
         </Popover>
-        <button
-          onClick={() => handleMenuClick('color')}
-          className={styles.btnAction}
-          disabled={DISABLED_ACTIONS.includes('color')}
+        <Popover
+          open={colorOpen}
+          onOpenChange={(open) => {
+            setColorOpen(open);
+            setHoveringMenu(open);
+          }}
+          // 让 ColorPickerPanel 自己控制内边距（embedded 模式下无自带外观）
+          overlayInnerStyle={{ padding: 0 }}
+          content={
+            <div
+              className={styles.colorFlyout}
+              onMouseEnter={() => setHoveringMenu(true)}
+              onMouseLeave={() => setHoveringMenu(false)}
+            >
+              <ColorPickerPanel
+                embedded
+                onTextColorChange={handleTextColorChange}
+                onBackgroundColorChange={handleBackgroundColorChange}
+              />
+            </div>
+          }
+          trigger="click"
+          placement="right"
         >
-          <span className={styles.actionIcon}>🎨</span>
-          <span>颜色</span>
-          <span className={styles.actionArrow}>›</span>
-        </button>
+          <button
+            className={`${styles.btnAction} ${colorOpen ? styles.btnActionActive : ''}`}
+            onClick={(e) => {
+              e.stopPropagation();
+              setColorOpen(!colorOpen);
+              setHoveringMenu(true);
+            }}
+          >
+            <span className={styles.actionIcon}>🎨</span>
+            <span>颜色</span>
+            <span className={styles.actionArrow}>{colorOpen ? '⌄' : '›'}</span>
+          </button>
+        </Popover>
         <div className={styles.divider} />
         <button
-          onClick={() => handleMenuClick('comment')}
+          onClick={handleComment}
           className={styles.btnAction}
           disabled={DISABLED_ACTIONS.includes('comment')}
         >
