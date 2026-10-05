@@ -1,28 +1,30 @@
 // 右上角「设置」下拉（合并原 FontSwitcher / ThemeSwitcher / CursorSwitcher /
 // ModeSwitcher / LanguageSwitcher，新增「查找替换」入口）
 //
-// 交互：点击「设置」按钮展开面板；面板内可逐级进入字体 / 主题 / 光标子视图，
-//       模式与语言为即时切换项；「查找替换」点击后打开全局查找替换面板。
+// 交互：点击「设置」按钮展开面板；面板内可逐级进入字体 / 主题 / 光标 / 语言子视图，
+//       模式为即时切换项；「查找替换」点击后打开全局查找替换面板。
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
 import { useCursor, CURSOR_THEMES } from '@/context/CursorContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEditorMode } from '@/context/EditorContext';
+import { SUPPORTED_LANGUAGES, LANGUAGE_SHORT } from '@/i18n';
 import { FONT_LIST, DEFAULT_FONT_ID, loadFont, getFontById } from '@/plugins/font';
 import { WALLPAPER_NONE_ID, getWallpaperById, getWallpapersByMode } from '@/components/wallpapers';
 import { useFindReplace } from './find-replace/FindReplaceContext';
 import styles from './SettingsSwitcher.module.less';
 
-type View = 'home' | 'font' | 'theme' | 'cursor' | 'wallpaper';
+type View = 'home' | 'font' | 'theme' | 'cursor' | 'wallpaper' | 'language';
 
 const BLACK_THEME_ID: ThemeId = 'black';
 
 /** 顶部返回栏 */
 function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
+  const { t } = useTranslation();
   return (
     <div className={styles.subHeader}>
-      <button className={styles.backBtn} onClick={onBack} title="返回">
+      <button className={styles.backBtn} onClick={onBack} title={t('settings.back')}>
         ←
       </button>
       <span className={styles.subTitle}>{title}</span>
@@ -44,7 +46,7 @@ export default function SettingsSwitcher() {
     setLightWallpaper,
   } = useTheme();
   const { cursorTheme, setCursorTheme } = useCursor();
-  const { language, toggleLanguage } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const { setOpen: setFindOpen } = useFindReplace();
 
   const [open, setOpen] = useState(false);
@@ -134,7 +136,7 @@ export default function SettingsSwitcher() {
 
   return (
     <div className={styles.wrapper} ref={wrapperRef}>
-      <button className={styles.trigger} onClick={() => setOpen(!open)} title="设置">
+      <button className={styles.trigger} onClick={() => setOpen(!open)} title={t('settings.title')}>
         <svg
           viewBox="0 0 24 24"
           width="16"
@@ -148,7 +150,7 @@ export default function SettingsSwitcher() {
           <circle cx="12" cy="12" r="3" />
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33h.01a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51h.01a1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82v.01a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
         </svg>
-        <span>设置</span>
+        <span>{t('settings.title')}</span>
       </button>
 
       {open && (
@@ -158,7 +160,7 @@ export default function SettingsSwitcher() {
               <div className={styles.group}>
                 <button className={styles.rowItem} onClick={handleFind}>
                   <span className={`${styles.rowIcon} ${styles.findIcon}`}>⌕</span>
-                  <span className={styles.rowLabel}>查找替换</span>
+                  <span className={styles.rowLabel}>{t('settings.findReplace')}</span>
                   <span className={styles.rowValue}>
                     <kbd>Ctrl</kbd>+<kbd>F</kbd>
                   </span>
@@ -169,7 +171,7 @@ export default function SettingsSwitcher() {
 
               <button className={styles.rowItem} onClick={() => openView('font')}>
                 <span className={styles.rowIcon}>Aa</span>
-                <span className={styles.rowLabel}>字体</span>
+                <span className={styles.rowLabel}>{t('settings.font')}</span>
                 <span className={styles.rowValue}>
                   {currentFontId !== DEFAULT_FONT_ID
                     ? t(`fontSwitcher.names.${currentFontId}`)
@@ -179,14 +181,18 @@ export default function SettingsSwitcher() {
               </button>
               <button className={styles.rowItem} onClick={() => openView('theme')}>
                 <span className={styles.swatch} style={{ backgroundColor: themeColor }} />
-                <span className={styles.rowLabel}>主题</span>
-                <span className={styles.rowValue}>{currentTheme?.name ?? ''}</span>
+                <span className={styles.rowLabel}>{t('settings.theme')}</span>
+                <span className={styles.rowValue}>
+                  {currentTheme ? t(`themePresets.${currentTheme.id}`) : ''}
+                </span>
                 <span className={styles.caret}>›</span>
               </button>
               <button className={styles.rowItem} onClick={() => openView('cursor')}>
                 <span className={styles.rowIcon}>{currentCursor.badge}</span>
-                <span className={styles.rowLabel}>光标</span>
-                <span className={styles.rowValue}>{currentCursor.name}</span>
+                <span className={styles.rowLabel}>{t('settings.cursor')}</span>
+                <span className={styles.rowValue}>
+                  {t(`cursorThemes.${currentCursor.id}.name`)}
+                </span>
                 <span className={styles.caret}>›</span>
               </button>
 
@@ -197,14 +203,16 @@ export default function SettingsSwitcher() {
                 onClick={() => setMode(mode === 'edit' ? 'read' : 'edit')}
               >
                 <span className={styles.rowIcon}>◐</span>
-                <span className={styles.rowLabel}>模式</span>
-                <span className={styles.rowValue}>{mode === 'edit' ? '编辑' : '阅读'}</span>
+                <span className={styles.rowLabel}>{t('settings.mode')}</span>
+                <span className={styles.rowValue}>
+                  {mode === 'edit' ? t('settings.modeEdit') : t('settings.modeRead')}
+                </span>
                 <span className={styles.caret}>›</span>
               </button>
-              <button className={styles.rowItem} onClick={toggleLanguage}>
+              <button className={styles.rowItem} onClick={() => openView('language')}>
                 <span className={styles.rowIcon}>文</span>
-                <span className={styles.rowLabel}>语言</span>
-                <span className={styles.rowValue}>{language === 'zh' ? '中文' : 'EN'}</span>
+                <span className={styles.rowLabel}>{t('settings.language')}</span>
+                <span className={styles.rowValue}>{LANGUAGE_SHORT[language]}</span>
                 <span className={styles.caret}>›</span>
               </button>
             </>
@@ -212,7 +220,7 @@ export default function SettingsSwitcher() {
 
           {view === 'font' && (
             <>
-              <SubHeader title="字体" onBack={backHome} />
+              <SubHeader title={t('settings.font')} onBack={backHome} />
               <div className={styles.options}>
                 {FONT_LIST.map((font) => {
                   const isActive = currentFontId === font.id;
@@ -242,9 +250,9 @@ export default function SettingsSwitcher() {
 
           {view === 'theme' && (
             <>
-              <SubHeader title="主题" onBack={backHome} />
+              <SubHeader title={t('settings.theme')} onBack={backHome} />
               <div className={styles.options}>
-                {THEME_PRESETS.map((preset, i) => (
+                {THEME_PRESETS.map((preset) => (
                   <div
                     key={preset.id}
                     className={`${styles.option} ${theme === preset.id ? styles.optionActive : ''}`}
@@ -255,7 +263,9 @@ export default function SettingsSwitcher() {
                       style={{ backgroundColor: preset.color }}
                     />
                     <span className={styles.optionName}>
-                      {i === 11 ? '黑色（暗黑）' : preset.name}
+                      {preset.id === BLACK_THEME_ID
+                        ? t('themePresets.blackDark')
+                        : t(`themePresets.${preset.id}`)}
                     </span>
                     {theme === preset.id && <span className={styles.check}>✓</span>}
                   </div>
@@ -263,7 +273,7 @@ export default function SettingsSwitcher() {
               </div>
               {/* 任何主题下都可见：浅色选护眼/风景壁纸，黑色选暗黑壁纸 */}
               <button className={styles.subEntry} onClick={() => openView('wallpaper')}>
-                <span>壁纸 / 护眼</span>
+                <span>{t('settings.wallpaper')}</span>
                 <span className={styles.rowValue}>{activeWallpaperLabel}</span>
                 <span className={styles.caret}>›</span>
               </button>
@@ -272,7 +282,7 @@ export default function SettingsSwitcher() {
 
           {view === 'wallpaper' && (
             <>
-              <SubHeader title="壁纸 / 护眼" onBack={() => openView('theme')} />
+              <SubHeader title={t('settings.wallpaper')} onBack={() => openView('theme')} />
               <div className={styles.options}>
                 {lightGroups.map((grp) => (
                   <div key={grp.title}>
@@ -322,7 +332,7 @@ export default function SettingsSwitcher() {
 
           {view === 'cursor' && (
             <>
-              <SubHeader title="光标" onBack={backHome} />
+              <SubHeader title={t('settings.cursor')} onBack={backHome} />
               <div className={styles.options}>
                 {CURSOR_THEMES.map((c) => {
                   const active = c.id === cursorTheme;
@@ -334,9 +344,34 @@ export default function SettingsSwitcher() {
                     >
                       <span className={styles.optionBadge}>{c.badge}</span>
                       <div className={styles.optionMeta}>
-                        <span className={styles.optionName}>{c.name}</span>
-                        {c.desc && <span className={styles.optionDesc}>{c.desc}</span>}
+                        <span className={styles.optionName}>{t(`cursorThemes.${c.id}.name`)}</span>
+                        {c.desc && (
+                          <span className={styles.optionDesc}>
+                            {t(`cursorThemes.${c.id}.desc`)}
+                          </span>
+                        )}
                       </div>
+                      {active && <span className={styles.check}>✓</span>}
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {view === 'language' && (
+            <>
+              <SubHeader title={t('settings.language')} onBack={backHome} />
+              <div className={styles.options}>
+                {SUPPORTED_LANGUAGES.map((code) => {
+                  const active = language === code;
+                  return (
+                    <div
+                      key={code}
+                      className={`${styles.option} ${active ? styles.optionActive : ''}`}
+                      onClick={() => setLanguage(code)}
+                    >
+                      <span className={styles.optionName}>{t(`languages.${code}`)}</span>
                       {active && <span className={styles.check}>✓</span>}
                     </div>
                   );

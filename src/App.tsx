@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import Editor from '@/core';
 import NotFound from '@/pages/NotFound';
 import Home from '@/pages/Home';
@@ -24,6 +25,7 @@ import styles from './App.module.less';
 function HeaderSearch() {
   const [value, setValue] = useState('');
   const navigate = useNavigate();
+  const { t } = useTranslation();
 
   const submit = () => {
     const q = value.trim();
@@ -47,7 +49,7 @@ function HeaderSearch() {
       </svg>
       <input
         value={value}
-        placeholder="搜索文章、标签…"
+        placeholder={t('header.searchPlaceholder')}
         onChange={(e) => setValue(e.target.value)}
         onKeyDown={(e) => {
           if (e.key === 'Enter') submit();
