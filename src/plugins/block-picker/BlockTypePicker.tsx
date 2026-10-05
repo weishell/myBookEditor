@@ -57,12 +57,12 @@ function toChineseLevel(n: number): string {
   return ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'][n] || String(n);
 }
 
-// 常用组（非文本类，占位禁用）- 列表项风格
+// 常用组（非文本类）- 列表项风格
 const COMMON_ITEMS: BlockTypeOption[] = [
   { type: BlockElementType.IMAGE_BLOCK, label: '图片', icon: '🖼' },
   { type: BlockElementType.FILE_BLOCK, label: '文件', icon: '📄' },
   { type: BlockElementType.VIDEO_BLOCK, label: '视频', icon: '🎬' },
-  { type: BlockElementType.TABLE, label: '表格', icon: '⊞', disabled: true },
+  { type: BlockElementType.TABLE, label: '表格', icon: '⊞' },
   { type: BlockElementType.COLUMN_GROUP, label: '分栏', icon: '▦', isColumn: true },
   { type: BlockElementType.COUNTDOWN, label: '倒计时', icon: '⏳' },
   { type: BlockElementType.CHART, label: '图表', icon: '📊' },

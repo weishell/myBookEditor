@@ -4,6 +4,8 @@
 // Popover 打开时同步 setHoveringMenu(true) 防止主菜单 200ms 后自动关闭。
 // 非空文本块 hover 时显示浮动工具栏（DocBar）。
 // 「在下方插入」对任意块类型均可用，点击切换到块类型选择面板。
+// 空段落（DocBar 图标为「+」）例外：直接铺开块类型选择面板，选中即原地插入，
+// 省去「在下方插入」这一步（便于直接放流程图 / 画板等插件）。
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -230,6 +232,16 @@ export const ContextMenu = () => {
 
   const targetPath = getTargetPath();
   const targetNode = targetPath ? (Node.get(editor, targetPath) as any) : null;
+
+  // 空段落：DocBar 图标是「+」。此时不弹整个块操作菜单，而是直接把「插入块 / 插件」
+  // 面板（BlockTypePicker，含流程图、画板等）铺开，选中即在空行原地插入。
+  // 注意要排除挂了 lilist 的空列表项 —— 列表项的 DocBar 图标是列表图标而非「+」。
+  const isTargetEmptyParagraph =
+    !!targetNode &&
+    !!targetPath &&
+    targetNode.type === BlockElementType.PARAGRAPH &&
+    !targetNode.attrs?.lilist &&
+    isEmptyLine(targetPath);
 
   const [fontOpen, setFontOpen] = useState(false);
   const [insertOpen, setInsertOpen] = useState(false);
@@ -577,10 +589,17 @@ export const ContextMenu = () => {
     type: BlockElementType,
     options?: { level?: number; columns?: number },
   ) => {
-    // 光标若在空行，则以该空行为锚；否则以悬停块为锚（保留「在所选块下方插入」直觉），兜底光标块。
-    const caretPath = getCaretBlockPath();
-    const anchorPath =
-      (caretPath && isEmptyLine(caretPath) ? caretPath : getTargetPath()) ?? caretPath;
+    // 锚点选择：
+    //  - 空段落（DocBar「+」直接插入）：原地顶替悬停的这个空行，不受别处光标干扰；
+    //  - 其它块：光标若在空行则以该空行为锚，否则以悬停块为锚（保留「在下方插入」直觉），
+    //    兜底光标块。
+    let anchorPath: number[] | undefined;
+    if (isTargetEmptyParagraph) {
+      anchorPath = getTargetPath();
+    } else {
+      const caretPath = getCaretBlockPath();
+      anchorPath = (caretPath && isEmptyLine(caretPath) ? caretPath : getTargetPath()) ?? caretPath;
+    }
     if (!anchorPath) return;
     // 锚点若是空行 → 直接替换该空行（复杂插件原地顶替，不留空行）；否则插入到目标块下方。
     const isAnchorEmpty = isEmptyLine(anchorPath);
@@ -695,6 +714,28 @@ export const ContextMenu = () => {
 
   // 「在下方插入」对所有块类型始终可用（图片/表格/图表/空行等都能往下插）
   const canInsertBelow = !!targetNode && Element.isElement(targetNode);
+
+  // 空段落：DocBar 的「+」直接把「插入块 / 插件」面板铺开（含流程图、画板等），
+  // 选中即在空行原地插入 —— 不再先弹整个块操作菜单、也不需要再点一次「在下方插入」。
+  if (isTargetEmptyParagraph) {
+    return (
+      <>
+        {renderChartFlow()}
+        {renderEmbedFlow()}
+        <div className={styles.overlay} onClick={forceCloseMenu} />
+        <div
+          ref={menuRef}
+          className={styles.menu}
+          style={{ left: position.x, top: position.y }}
+          onClick={(e) => e.stopPropagation()}
+          onMouseEnter={() => setHoveringMenu(true)}
+          onMouseLeave={() => setHoveringMenu(false)}
+        >
+          <BlockTypePicker onSelect={handleInsertBlock} />
+        </div>
+      </>
+    );
+  }
 
   return (
     <>

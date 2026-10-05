@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { createColumnGroup } from '@/plugins/columns';
 import { createChartElement } from '@/plugins/chart';
 import { createEmbedElement } from '@/plugins/embed';
+import { createTable } from '@/plugins/table/table-operations';
 
 export interface InsertBlockOptions {
   level?: number;
@@ -198,6 +199,9 @@ export const createBlockNode = (type: BlockElementType, options?: InsertBlockOpt
       } as Element;
     case BlockElementType.COLUMN_GROUP:
       return createColumnGroup(options?.columns ?? 2);
+    case BlockElementType.TABLE:
+      // 表格必须是 行→列→单元格 的合法结构，不能走 default 的文本占位
+      return createTable(3, 3) as unknown as Element;
     case BlockElementType.CHART:
       return createChartElement() as unknown as Element;
     case BlockElementType.EMBED:
