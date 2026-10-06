@@ -298,4 +298,9 @@ export default {
     uploadingFile: 'ファイルをアップロード中',
     uploadingVideo: '動画をアップロード中',
   },
+  // カウントダウンブロック
+  countdown: {
+    finishedBubble: 'カウントダウン終了',
+    dismissBubble: 'クリックで閉じる',
+  },
 } as const;

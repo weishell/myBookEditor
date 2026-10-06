@@ -296,4 +296,9 @@ export default {
     uploadingFile: '檔案上傳中',
     uploadingVideo: '影片上傳中',
   },
+  // 倒數塊
+  countdown: {
+    finishedBubble: '倒數結束',
+    dismissBubble: '點擊關閉提醒',
+  },
 } as const;

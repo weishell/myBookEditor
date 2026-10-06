@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import { useTheme } from '@/context/ThemeContext';
@@ -42,13 +43,12 @@ export const Countdown: React.FC<CountdownProps> = ({
 }) => {
   const editor = useSlateStatic();
   const { attrs } = element;
+  const { t } = useTranslation();
   const { isDarkMode, themeColor } = useTheme();
 
   const [nowMs, setNowMs] = useState(() => Date.now());
   const [editing, setEditing] = useState(false);
   const [bubble, setBubble] = useState(false);
-  const notifiedRef = useRef(false);
-  const bubbleTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
 
@@ -62,22 +62,15 @@ export const Countdown: React.FC<CountdownProps> = ({
   const formatted = formatRemaining(remaining);
   const units = [formatted.days, formatted.hours, formatted.minutes, formatted.seconds];
 
-  // 到点后（若开启提醒）弹一次气泡
+  // 到点后（若开启提醒）弹气泡：几秒后自动收起；计时器的清理放在**同一个** effect 里。
+  // （此前用单独的 unmount effect 清理 + notifiedRef 防重入，dev 下 StrictMode
+  //   模拟重挂载会把计时器清掉、第二次又因 notifiedRef 直接跳过 → 气泡永远不消失。）
   useEffect(() => {
-    if (remaining.finished && attrsRef.current.notify && !notifiedRef.current) {
-      notifiedRef.current = true;
-      setBubble(true);
-      if (bubbleTimerRef.current !== null) window.clearTimeout(bubbleTimerRef.current);
-      bubbleTimerRef.current = window.setTimeout(() => setBubble(false), 3000);
-    }
+    if (!remaining.finished || !attrsRef.current.notify) return;
+    setBubble(true);
+    const timer = window.setTimeout(() => setBubble(false), 5000);
+    return () => window.clearTimeout(timer);
   }, [remaining.finished]);
-
-  useEffect(
-    () => () => {
-      if (bubbleTimerRef.current !== null) window.clearTimeout(bubbleTimerRef.current);
-    },
-    [],
-  );
 
   const getPath = useCallback(() => {
     try {
@@ -163,9 +156,16 @@ export const Countdown: React.FC<CountdownProps> = ({
 
       {bubble &&
         createPortal(
-          <div className={styles.bubble} style={{ ['--bc' as string]: accent }}>
-            <span className={styles.bubbleIcon}>⏰</span> 倒计时结束
-          </div>,
+          // 点击气泡任意位置即可提前收起（否则等 5s 自动消失）
+          <button
+            type="button"
+            className={styles.bubble}
+            style={{ ['--bc' as string]: accent }}
+            title={t('countdown.dismissBubble')}
+            onClick={() => setBubble(false)}
+          >
+            <span className={styles.bubbleIcon}>⏰</span> {t('countdown.finishedBubble')}
+          </button>,
           document.body,
         )}
     </ElementWrapper>

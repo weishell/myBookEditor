@@ -298,4 +298,9 @@ export default {
     uploadingFile: '파일 업로드 중',
     uploadingVideo: '동영상 업로드 중',
   },
+  // 카운트다운 블록
+  countdown: {
+    finishedBubble: '카운트다운 종료',
+    dismissBubble: '클릭하여 닫기',
+  },
 } as const;

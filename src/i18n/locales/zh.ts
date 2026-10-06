@@ -316,4 +316,9 @@ export default {
     uploadingFile: '文件上传中',
     uploadingVideo: '视频上传中',
   },
+  // 倒计时块
+  countdown: {
+    finishedBubble: '倒计时结束',
+    dismissBubble: '点击关闭提醒',
+  },
 } as const;

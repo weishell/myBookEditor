@@ -299,4 +299,9 @@ export default {
     uploadingFile: 'Datei wird hochgeladen',
     uploadingVideo: 'Video wird hochgeladen',
   },
+  // Countdown-Block
+  countdown: {
+    finishedBubble: 'Countdown beendet',
+    dismissBubble: 'Klicken zum Schließen',
+  },
 } as const;

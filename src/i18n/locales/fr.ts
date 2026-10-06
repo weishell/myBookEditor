@@ -301,4 +301,9 @@ export default {
     uploadingFile: 'Téléversement du fichier',
     uploadingVideo: 'Téléversement de la vidéo',
   },
+  // Bloc compte à rebours
+  countdown: {
+    finishedBubble: 'Compte à rebours terminé',
+    dismissBubble: 'Cliquer pour fermer',
+  },
 } as const;

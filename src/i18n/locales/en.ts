@@ -368,4 +368,9 @@ export default {
     uploadingFile: 'Uploading file',
     uploadingVideo: 'Uploading video',
   },
+  // Countdown block
+  countdown: {
+    finishedBubble: 'Countdown finished',
+    dismissBubble: 'Click to dismiss',
+  },
 } as const;
