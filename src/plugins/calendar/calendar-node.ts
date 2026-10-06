@@ -2,6 +2,7 @@
 // 日程直接挂在节点 attrs.events 上，随文档 JSON 一起序列化/持久化。
 
 import { Editor, Transforms, Element } from 'slate';
+import i18n from '@/i18n';
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 import {
@@ -97,7 +98,7 @@ export const createEvent = (
   const range = normalizeRange(start, end);
   return {
     id: genEventId(),
-    title: title.trim() || '新日程',
+    title: title.trim() || i18n.t('calendar.newEvent'),
     start: range.start,
     end: range.end,
     color: color || EVENT_COLORS[0],
@@ -192,9 +193,6 @@ export const shiftMonth = (
   const d = new Date(year, month - 1 + delta, 1);
   return { year: d.getFullYear(), month: d.getMonth() + 1 };
 };
-
-/** 格式化为「2026年9月」 */
-export const formatYearMonth = (year: number, month: number): string => `${year}年${month}月`;
 
 /** 今天 */
 export const todayISO = (): string => formatDate(new Date());

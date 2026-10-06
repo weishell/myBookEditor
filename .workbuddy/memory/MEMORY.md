@@ -93,3 +93,18 @@
 
 - 注释用中文，倾向解释「为什么这么做」而非「做了什么」。
 - 组件/插件结构：`src/plugins/<name>/`，核心渲染在 `src/core/{index,renderElement,renderLeaf}.tsx`。
+
+## 复杂插件悬浮 FloatBar 约定
+
+- 6 个插件（image/media/drawio/drawboard/timeline/embed）**各自内嵌**同模式工具条
+  （不是共享组件；选区文字的 `components/FloatBar` 是另一套）。当前口径：
+  hover **300ms 延迟显示**（`showTimerRef`，pending 时不重复起），离开 300ms 隐藏，
+  **hide 时必须同时取消 pending 的 show timer**（否则鼠标已离开还会弹出）；选中态立即常显。
+- 新增复杂插件工具条请照抄 Image.tsx 的 show/hide 对称模式。
+- 复杂块间距已统一 `margin: @spacing-sm 0`（8px），含 blockquote/hint/media/countdown/chart/columns。
+
+## 提示块 label 的持久化语义
+
+- `attrs.label` 是**持久化**字段：用户自定义过（或旧文档）存的是当时的默认中文。
+  显示逻辑 = `attrs.label || t('hintBlock.labels.'+type)`——只有「从未自定义」才跟随语言；
+  切类型时同样 `currentAttrs.label || t(...)` 存入。别改成无脑 t()，会覆盖用户自定义。

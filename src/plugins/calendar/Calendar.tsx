@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { ReactEditor, useSlateStatic } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '@/plugins/element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import {
@@ -18,7 +19,6 @@ import {
   createEvent,
   writeCalendarAttrs,
   shiftMonth,
-  formatYearMonth,
   addCalendarEvent,
   updateCalendarEvent,
   removeCalendarEvent,
@@ -34,9 +34,24 @@ interface CalendarProps {
   element: { attrs: CalendarAttrs } & Record<string, any>;
 }
 
-const WEEKDAY_HEADS = ['一', '二', '三', '四', '五', '六', '日'];
 const MAX_LANES = 3;
 const BAR_H = 18; // 与 less 里 --bar-h 保持一致
+
+/** 按当前语言格式化「2026年10月」/ "October 2026" 式的月份标题 */
+const formatMonthTitle = (tag: string, year: number, month: number): string =>
+  new Intl.DateTimeFormat(tag || 'zh', { year: 'numeric', month: 'long' }).format(
+    new Date(year, month - 1, 1),
+  );
+
+/** 按当前语言格式化日期（不含星期），如 2026年9月10日 / September 10, 2026 */
+const formatLocaleDate = (tag: string, d: Date): string =>
+  new Intl.DateTimeFormat(tag || 'zh', { year: 'numeric', month: 'long', day: 'numeric' }).format(
+    d,
+  );
+
+/** 按当前语言格式化星期短名，如 周四 / Thu */
+const formatLocaleWeekday = (tag: string, d: Date): string =>
+  new Intl.DateTimeFormat(tag || 'zh', { weekday: 'short' }).format(d);
 
 type PanelState =
   | { mode: 'create'; dayKey: string }
@@ -49,6 +64,10 @@ const DBL_CLICK_MS = 350;
 
 export const Calendar: React.FC<CalendarProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
+  const { t, i18n } = useTranslation();
+  const localeTag = i18n.language || 'zh';
+  // 星期表头（周一 → 周日），随语言变化
+  const weekdayHeads = t('calendar.weekdays', { returnObjects: true }) as unknown as string[];
   // attrs 可能来自外部粘贴/旧版本文档，渲染前兜底一次（normalizeNode 也会修）
   const attrs = useMemo(() => normalizeCalendarAttrs(element.attrs), [element.attrs]);
   const [panel, setPanel] = useState<PanelState>(null);
@@ -170,46 +189,48 @@ export const Calendar: React.FC<CalendarProps> = ({ attributes, children, plugin
           <button
             type="button"
             className={styles.iconBtn}
-            title="上一月"
+            title={t('calendar.prevMonth')}
             onClick={() => goMonth(-1)}
           >
             ‹
           </button>
-          <span className={styles.title}>{formatYearMonth(attrs.year, attrs.month)}</span>
+          <span className={styles.title}>
+            {formatMonthTitle(localeTag, attrs.year, attrs.month)}
+          </span>
           <button
             type="button"
             className={styles.iconBtn}
-            title="下一月"
+            title={t('calendar.nextMonth')}
             onClick={() => goMonth(1)}
           >
             ›
           </button>
           <button type="button" className={styles.todayBtn} onClick={goToday}>
-            今天
+            {t('calendar.today')}
           </button>
           <span className={styles.spacer} />
           <button
             type="button"
             className={`${styles.toggle} ${attrs.showLunar ? styles.toggleOn : ''}`}
-            title="显示农历"
+            title={t('calendar.showLunar')}
             onClick={() => toggleFlag('showLunar')}
           >
-            农历
+            {t('calendar.lunar')}
           </button>
           <button
             type="button"
             className={`${styles.toggle} ${attrs.showTerm ? styles.toggleOn : ''}`}
-            title="显示节气"
+            title={t('calendar.showTerm')}
             onClick={() => toggleFlag('showTerm')}
           >
-            节气
+            {t('calendar.term')}
           </button>
         </div>
 
         {/* 星期栏 */}
         <div className={styles.weekdays}>
-          {WEEKDAY_HEADS.map((w, i) => (
-            <div key={w} className={i >= 5 ? styles.weekendHead : undefined}>
+          {weekdayHeads.map((w, i) => (
+            <div key={i} className={i >= 5 ? styles.weekendHead : undefined}>
               {w}
             </div>
           ))}
@@ -285,52 +306,62 @@ const WeekRowView: React.FC<WeekRowViewProps> = ({
   activeEventId,
   onView,
   children,
-}) => (
-  <div className={styles.weekRow}>
-    {children}
-    <div className={styles.eventLayer}>
-      {segments.map((seg) => {
-        const span = seg.endCol - seg.startCol + 1;
-        const leftPct = (seg.startCol / 7) * 100;
-        const widthPct = (span / 7) * 100;
-        return (
-          <div
-            key={`${seg.event.id}-${rowIndex}`}
-            className={[
-              styles.eventBar,
-              !seg.isStart ? styles.barContinuesLeft : '',
-              !seg.isEnd ? styles.barContinuesRight : '',
-              seg.event.id === activeEventId ? styles.barActive : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-            style={{
-              left: `calc(${leftPct}% + 2px)`,
-              width: `calc(${widthPct}% - 4px)`,
-              top: seg.lane * (BAR_H + 3) + 1,
-              backgroundColor: seg.event.color,
-            }}
-            title={`${seg.event.title}${seg.event.start !== seg.event.end ? `（${seg.event.start} ~ ${seg.event.end}）` : ''}`}
-            onMouseDown={(e) => e.stopPropagation()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onView(seg.event.id);
-            }}
-          >
-            <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-              {seg.event.title}
-            </span>
-          </div>
-        );
-      })}
-      {overflow > 0 && (
-        <span className={styles.overflowTip} style={{ top: MAX_LANES * (BAR_H + 3) + 1 }}>
-          +{overflow}
-        </span>
-      )}
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className={styles.weekRow}>
+      {children}
+      <div className={styles.eventLayer}>
+        {segments.map((seg) => {
+          const span = seg.endCol - seg.startCol + 1;
+          const leftPct = (seg.startCol / 7) * 100;
+          const widthPct = (span / 7) * 100;
+          return (
+            <div
+              key={`${seg.event.id}-${rowIndex}`}
+              className={[
+                styles.eventBar,
+                !seg.isStart ? styles.barContinuesLeft : '',
+                !seg.isEnd ? styles.barContinuesRight : '',
+                seg.event.id === activeEventId ? styles.barActive : '',
+              ]
+                .filter(Boolean)
+                .join(' ')}
+              style={{
+                left: `calc(${leftPct}% + 2px)`,
+                width: `calc(${widthPct}% - 4px)`,
+                top: seg.lane * (BAR_H + 3) + 1,
+                backgroundColor: seg.event.color,
+              }}
+              title={
+                seg.event.start !== seg.event.end
+                  ? t('calendar.eventRangeTitle', {
+                      title: seg.event.title,
+                      range: `${seg.event.start} ~ ${seg.event.end}`,
+                    })
+                  : seg.event.title
+              }
+              onMouseDown={(e) => e.stopPropagation()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onView(seg.event.id);
+              }}
+            >
+              <span style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {seg.event.title}
+              </span>
+            </div>
+          );
+        })}
+        {overflow > 0 && (
+          <span className={styles.overflowTip} style={{ top: MAX_LANES * (BAR_H + 3) + 1 }}>
+            +{overflow}
+          </span>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ============ 日期格子 ============
 
@@ -340,6 +371,7 @@ interface DayCellViewProps {
 }
 
 const DayCellView: React.FC<DayCellViewProps> = ({ cell, onPickDay }) => {
+  const { t } = useTranslation();
   const isLegal = cell.festivals.some((f) => f.legal);
   const sub = cell.subLabel;
 
@@ -365,7 +397,11 @@ const DayCellView: React.FC<DayCellViewProps> = ({ cell, onPickDay }) => {
     <div
       className={cls}
       data-date={cell.key}
-      title={`双击新建日程${cell.subLabel?.text ? ` · ${cell.day} 日 ${cell.subLabel.text}` : ''}`}
+      title={
+        cell.subLabel?.text
+          ? t('calendar.doubleClickCreateWith', { day: cell.day, sub: cell.subLabel.text })
+          : t('calendar.doubleClickCreate')
+      }
       onClick={(e) => {
         e.stopPropagation();
         onPickDay(cell.key);
@@ -396,23 +432,27 @@ const DayCellView: React.FC<DayCellViewProps> = ({ cell, onPickDay }) => {
 
 // ============ 日程查看面板（单击日程条打开，只读） ============
 
-const WEEK_CN = ['日', '一', '二', '三', '四', '五', '六'];
-
-/** 2026-09-10 → 2026年9月10日（周四） */
-const formatDetailDate = (key: string): string => {
-  const d = parseYMD(key);
-  if (!d) return key;
-  return `${d.getFullYear()}年${d.getMonth() + 1}月${d.getDate()}日（周${WEEK_CN[d.getDay()]}）`;
-};
-
 const EventDetail: React.FC<{
   event: EventLike;
   onEdit: () => void;
   onDelete: () => void;
   onClose: () => void;
 }> = ({ event, onEdit, onDelete, onClose }) => {
+  const { t, i18n } = useTranslation();
+  const localeTag = i18n.language || 'zh';
   const multi = event.start !== event.end;
   const span = multi ? Math.max(2, eventSpanDays(event)) : 1;
+
+  // 2026-09-10 → 「2026年9月10日（周四）」样式（随语言）
+  const formatDetailDate = (key: string): string => {
+    const d = parseYMD(key);
+    if (!d) return key;
+    return t('calendar.detailDate', {
+      date: formatLocaleDate(localeTag, d),
+      week: formatLocaleWeekday(localeTag, d),
+    });
+  };
+
   return (
     <div className={styles.panel}>
       <div className={styles.detailHeader}>
@@ -423,12 +463,12 @@ const EventDetail: React.FC<{
       </div>
 
       <div className={styles.detailMeta}>
-        <span className={styles.detailMetaLabel}>日期</span>
+        <span className={styles.detailMetaLabel}>{t('calendar.date')}</span>
         <span className={styles.detailMetaValue}>
           {multi ? (
             <>
               {formatDetailDate(event.start)}
-              <span className={styles.detailSep}> 至 </span>
+              <span className={styles.detailSep}>{t('calendar.to')}</span>
               {formatDetailDate(event.end)}
             </>
           ) : (
@@ -439,21 +479,21 @@ const EventDetail: React.FC<{
 
       {multi && (
         <div className={styles.detailMeta}>
-          <span className={styles.detailMetaLabel}>跨度</span>
-          <span className={styles.detailMetaValue}>共 {span} 天</span>
+          <span className={styles.detailMetaLabel}>{t('calendar.span')}</span>
+          <span className={styles.detailMetaValue}>{t('calendar.spanDays', { n: span })}</span>
         </div>
       )}
 
       <div className={styles.detailActions}>
         <button type="button" className={styles.btnGhost} onClick={onClose}>
-          关闭
+          {t('calendar.close')}
         </button>
         <span className={styles.spacer} />
         <button type="button" className={styles.btnPrimary} onClick={onEdit}>
-          编辑
+          {t('calendar.edit')}
         </button>
         <button type="button" className={styles.btnDanger} onClick={onDelete}>
-          删除
+          {t('calendar.delete')}
         </button>
       </div>
     </div>
@@ -481,6 +521,7 @@ const EventEditor: React.FC<EventEditorProps> = ({
   onDelete,
   onCancel,
 }) => {
+  const { t } = useTranslation();
   const [title, setTitle] = useState(() => event?.title || '');
   const [start, setStart] = useState(() => event?.start || dayKey || todayKey());
   const [end, setEnd] = useState(() => event?.end || dayKey || todayKey());
@@ -502,14 +543,16 @@ const EventEditor: React.FC<EventEditorProps> = ({
       onMouseDown={(e) => e.stopPropagation()}
       onClick={(e) => e.stopPropagation()}
     >
-      <div className={styles.panelTitle}>{mode === 'create' ? '新建日程' : '编辑日程'}</div>
+      <div className={styles.panelTitle}>
+        {mode === 'create' ? t('calendar.createTitle') : t('calendar.editTitle')}
+      </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>标题</label>
+        <label className={styles.label}>{t('calendar.titleLabel')}</label>
         <input
           className={styles.input}
           value={title}
-          placeholder="日程标题"
+          placeholder={t('calendar.titlePlaceholder')}
           autoFocus
           onChange={(e) => setTitle(e.target.value)}
           onKeyDown={(e) => {
@@ -522,7 +565,7 @@ const EventEditor: React.FC<EventEditorProps> = ({
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>开始 / 结束（可跨日期）</label>
+        <label className={styles.label}>{t('calendar.rangeLabel')}</label>
         <div className={styles.dateRow}>
           <input
             type="date"
@@ -535,7 +578,7 @@ const EventEditor: React.FC<EventEditorProps> = ({
               if (v > end) setEnd(v);
             }}
           />
-          <span className={styles.dateSep}>至</span>
+          <span className={styles.dateSep}>{t('calendar.to')}</span>
           <input
             type="date"
             className={styles.dateInput}
@@ -550,32 +593,35 @@ const EventEditor: React.FC<EventEditorProps> = ({
         </div>
         {start !== end && (
           <div className={styles.hint}>
-            跨 {calcDays(start, end)} 天 · {start} ~ {end}
+            {t('calendar.crossDayHint', {
+              n: calcDays(start, end),
+              range: `${start} ~ ${end}`,
+            })}
           </div>
         )}
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>快捷</label>
+        <label className={styles.label}>{t('calendar.quick')}</label>
         <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-          <QuickBtn label="当天" onClick={() => pickDay(start, 1)} />
+          <QuickBtn label={t('calendar.quickDay')} onClick={() => pickDay(start, 1)} />
           <QuickBtn
-            label="+1天"
+            label={t('calendar.quickPlusDay')}
             onClick={() => setEnd(formatDate(addDays(parseYMD(end) || new Date(), 1)))}
           />
           <QuickBtn
-            label="+1周"
+            label={t('calendar.quickPlusWeek')}
             onClick={() => setEnd(formatDate(addDays(parseYMD(end) || new Date(), 7)))}
           />
           <QuickBtn
-            label="整月"
+            label={t('calendar.quickMonth')}
             onClick={() => setEnd(formatDate(addDays(parseYMD(start) || new Date(), 30)))}
           />
         </div>
       </div>
 
       <div className={styles.field}>
-        <label className={styles.label}>颜色</label>
+        <label className={styles.label}>{t('calendar.colorLabel')}</label>
         <div className={styles.colors}>
           {EVENT_COLORS.map((c) => (
             <button
@@ -597,15 +643,15 @@ const EventEditor: React.FC<EventEditorProps> = ({
           disabled={!canSave}
           onClick={() => onSave({ title, start, end, color })}
         >
-          {mode === 'create' ? '添加' : '保存'}
+          {mode === 'create' ? t('calendar.add') : t('calendar.save')}
         </button>
         {mode === 'edit' && onDelete && (
           <button type="button" className={styles.btnDanger} onClick={onDelete}>
-            删除
+            {t('calendar.delete')}
           </button>
         )}
         <button type="button" className={styles.btnGhost} onClick={onCancel}>
-          取消
+          {t('calendar.cancel')}
         </button>
       </div>
     </div>

@@ -58,6 +58,7 @@ import { renderElement } from './renderElement';
 import { RenderLeaf } from './renderLeaf';
 import { PAGE_WIDTH_NORMAL } from '@/enums';
 import { useNonEditableCaretGuard } from '@/editor-extensions/useNonEditableCaretGuard';
+import { handleGapDoubleClick } from '@/editor-extensions/gap-dbl-click';
 
 interface EditorProps {
   readOnly?: boolean;
@@ -167,6 +168,17 @@ export default function BookEditor({
     },
     [keyboardHandler, readOnly],
   );
+  // 双击复杂插件之间的缝隙 → 插入空段落并落焦（否则两块相邻时无落点可放光标）
+  const handleDoubleClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (readOnly) return;
+      if (handleGapDoubleClick(editor, e)) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+    },
+    [editor, readOnly],
+  );
   // onChange 不再打印 editor 数据；需要看数据结构时控制台直接打 window.editor。
   // 有持久化 key 时，节流把最新文档（含评论标记）落盘，刷新后恢复。
   const saveTimer = useRef<number | null>(null);
@@ -245,6 +257,7 @@ export default function BookEditor({
                   }}
                   decorate={decorate}
                   onKeyDown={handleKeyDown}
+                  onDoubleClick={handleDoubleClick}
                   readOnly={readOnly}
                 />
                 {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}

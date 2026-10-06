@@ -1,10 +1,11 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element } from 'slate';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType, HintBlockType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { HintBlockStatusSelector } from './HintBlockStatusSelector';
-import { HINT_BLOCK_ICONS, HINT_BLOCK_LABELS } from './icons';
+import { HINT_BLOCK_ICONS } from './icons';
 import styles from './HintBlock.module.less';
 
 interface ElementProps {
@@ -16,6 +17,7 @@ interface ElementProps {
 
 export const HintBlock = ({ attributes, children, pluginId, element }: ElementProps) => {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
 
   // 类型解析：新数据直接用 type 字段；旧数据用 status 字段做兼容映射
   const rawType = element?.attrs?.type as string | undefined;
@@ -41,8 +43,8 @@ export const HintBlock = ({ attributes, children, pluginId, element }: ElementPr
     type = HintBlockType.INFO;
   }
 
-  // 标签：优先用 attrs.label，否则按类型默认
-  const label: string = element?.attrs?.label || HINT_BLOCK_LABELS[type] || '说明';
+  // 标签：优先用 attrs.label（用户自定义过、已持久化），否则按类型取当前语言的默认标签
+  const label: string = element?.attrs?.label || t(`hintBlock.labels.${type}`);
 
   const [editingLabel, setEditingLabel] = useState(false);
   const [editValue, setEditValue] = useState(label);
@@ -166,7 +168,11 @@ export const HintBlock = ({ attributes, children, pluginId, element }: ElementPr
               contentEditable={false}
             />
           ) : (
-            <span className={styles.typeLabel} onClick={handleLabelClick} title="点击编辑标签">
+            <span
+              className={styles.typeLabel}
+              onClick={handleLabelClick}
+              title={t('hintBlock.editLabelTitle')}
+            >
               {label}
             </span>
           )}

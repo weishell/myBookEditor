@@ -221,6 +221,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   const isUploading = uploadProgress !== undefined;
 
   const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -336,11 +337,21 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-    setShowToolbar(true);
+    // 悬浮展示延迟 300ms：避免鼠标划过块体时工具条闪现
+    if (showTimerRef.current) return;
+    showTimerRef.current = window.setTimeout(() => {
+      showTimerRef.current = null;
+      setShowToolbar(true);
+    }, 300);
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
     if (isSelected) return;
+    // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
     hideTimerRef.current = window.setTimeout(() => {
       setShowToolbar(false);
       hideTimerRef.current = null;

@@ -17,7 +17,7 @@ interface CountdownProps {
   element: { attrs: CountdownAttrs } & Record<string, any>;
 }
 
-export const ABBR = ['天', '时', '分', '秒'] as const;
+export const ABBR_KEYS = ['days', 'hours', 'minutes', 'seconds'] as const;
 
 // 铅笔（编辑入口，放在卡片右侧）
 const PencilIcon = () => (
@@ -117,7 +117,7 @@ export const Countdown: React.FC<CountdownProps> = ({
                   </span>
                 </div>
                 <span className={styles.label} style={{ color: accent }}>
-                  {ABBR[i]}
+                  {t(`countdown.units.${ABBR_KEYS[i]}`)}
                 </span>
               </div>
             </React.Fragment>
@@ -126,13 +126,13 @@ export const Countdown: React.FC<CountdownProps> = ({
 
         {remaining.finished && (
           <span className={styles.finishedTag} style={{ color: accent }}>
-            已结束
+            {t('countdown.finished')}
           </span>
         )}
 
         <button
           className={styles.editBtn}
-          title="编辑倒计时"
+          title={t('countdown.edit')}
           onClick={(e) => {
             e.stopPropagation();
             setEditing(true);

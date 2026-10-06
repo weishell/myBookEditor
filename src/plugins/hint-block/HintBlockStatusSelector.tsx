@@ -1,8 +1,9 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useSlateStatic } from 'slate-react';
 import { Transforms, Element } from 'slate';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType, HintBlockType } from '@/enums';
-import { HINT_BLOCK_ICONS, HINT_BLOCK_LABELS, HINT_BLOCK_COLORS } from './icons';
+import { HINT_BLOCK_ICONS, HINT_BLOCK_COLORS } from './icons';
 
 interface HintBlockStatusSelectorProps {
   pluginId: string;
@@ -10,11 +11,11 @@ interface HintBlockStatusSelectorProps {
   onClose?: () => void;
 }
 
-const TYPE_OPTIONS: { value: HintBlockType; label: string }[] = [
-  { value: HintBlockType.INFO, label: HINT_BLOCK_LABELS[HintBlockType.INFO] },
-  { value: HintBlockType.NOTE, label: HINT_BLOCK_LABELS[HintBlockType.NOTE] },
-  { value: HintBlockType.WARNING, label: HINT_BLOCK_LABELS[HintBlockType.WARNING] },
-  { value: HintBlockType.TIP, label: HINT_BLOCK_LABELS[HintBlockType.TIP] },
+const TYPE_VALUES: HintBlockType[] = [
+  HintBlockType.INFO,
+  HintBlockType.NOTE,
+  HintBlockType.WARNING,
+  HintBlockType.TIP,
 ];
 
 export function HintBlockStatusSelector({
@@ -23,6 +24,7 @@ export function HintBlockStatusSelector({
   onClose,
 }: HintBlockStatusSelectorProps) {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
   const [rect, setRect] = useState<DOMRect | null>(null);
 
   const measure = useCallback(() => {
@@ -58,8 +60,8 @@ export function HintBlockStatusSelector({
         const nodeId = (node as any).id;
         if (nodeId === pluginId) {
           const currentAttrs = (node as any).attrs || {};
-          // 保留 label 如果用户自定义过，否则用新类型的默认标签
-          const newLabel = currentAttrs.label || HINT_BLOCK_LABELS[type];
+          // 保留 label 如果用户自定义过，否则用新类型的默认标签（跟随当前语言）
+          const newLabel = currentAttrs.label || t(`hintBlock.labels.${type}`);
           Transforms.setNodes(
             editor,
             { attrs: { ...currentAttrs, type, label: newLabel } } as any,
@@ -95,19 +97,19 @@ export function HintBlockStatusSelector({
       onMouseDown={(e) => e.preventDefault()}
       onMouseLeave={() => onClose?.()}
     >
-      {TYPE_OPTIONS.map((opt) => {
-        const Icon = HINT_BLOCK_ICONS[opt.value];
-        const isActive = currentType === opt.value;
-        const color = HINT_BLOCK_COLORS[opt.value];
+      {TYPE_VALUES.map((value) => {
+        const Icon = HINT_BLOCK_ICONS[value];
+        const isActive = currentType === value;
+        const color = HINT_BLOCK_COLORS[value];
         return (
           <button
-            key={opt.value}
+            key={value}
             type="button"
-            title={opt.label}
+            title={t(`hintBlock.labels.${value}`)}
             onMouseDown={(e) => e.preventDefault()}
             onClick={(e) => {
               e.stopPropagation();
-              handleChangeType(opt.value);
+              handleChangeType(value);
             }}
             style={{
               width: 28,

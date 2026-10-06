@@ -50,6 +50,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
   const wrapperRef = useRef<HTMLDivElement>(null);
   const toolbarRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
 
   attrsRef.current = attrs;
@@ -164,12 +165,22 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-    setShowToolbar(true);
+    // 悬浮展示延迟 300ms：避免鼠标划过块体时工具条闪现
+    if (showTimerRef.current) return;
+    showTimerRef.current = window.setTimeout(() => {
+      showTimerRef.current = null;
+      setShowToolbar(true);
+    }, 300);
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
     // 选中状态下不隐藏工具栏
     if (isSelected) return;
+    // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
     hideTimerRef.current = window.setTimeout(() => {
       setShowToolbar(false);
       hideTimerRef.current = null;

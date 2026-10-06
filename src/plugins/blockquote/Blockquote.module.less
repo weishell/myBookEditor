@@ -5,7 +5,8 @@
   position: relative;
   display: flex;
   align-items: stretch;
-  margin: @spacing-lg 0;
+  // 与提示块（hint-block）保持一致的 8px 上下间距；此前 16px 导致相邻块空隙过大
+  margin: @spacing-sm 0;
   border-radius: 6px;
   background: var(--bq-bg, #f3f4f6);
   --bq-bar: #9ca3af; // 默认中性灰

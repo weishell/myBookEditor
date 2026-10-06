@@ -28,6 +28,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const [editing, setEditing] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
   // 缩放：拖动期间用本地尺寸预览，松开(mouseup)才写回 attrs
@@ -148,11 +149,21 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-    setShowToolbar(true);
+    // 悬浮展示延迟 300ms：避免鼠标划过块体时工具条闪现
+    if (showTimerRef.current) return;
+    showTimerRef.current = window.setTimeout(() => {
+      showTimerRef.current = null;
+      setShowToolbar(true);
+    }, 300);
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
     if (isSelected) return;
+    // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
     hideTimerRef.current = window.setTimeout(() => {
       setShowToolbar(false);
     }, 300);

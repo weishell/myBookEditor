@@ -84,13 +84,6 @@ export const HINT_BLOCK_ICONS: Record<HintBlockType, React.FC<IconProps>> = {
   [HintBlockType.TIP]: WandIcon,
 };
 
-export const HINT_BLOCK_LABELS: Record<HintBlockType, string> = {
-  [HintBlockType.INFO]: '说明',
-  [HintBlockType.NOTE]: '注意',
-  [HintBlockType.WARNING]: '警告',
-  [HintBlockType.TIP]: '提示',
-};
-
 export const HINT_BLOCK_COLORS: Record<HintBlockType, string> = {
   [HintBlockType.INFO]: 'var(--theme-primary, #1890ff)',
   [HintBlockType.NOTE]: '#faad14',

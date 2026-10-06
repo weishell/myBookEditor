@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useTheme } from '@/context/ThemeContext';
 import { durationToMs, type CountdownAttrs, type CountdownMode } from './countdown-utils';
 import { lockPageScroll } from '@/utils/scroll-lock';
@@ -22,6 +23,7 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
   onCancel,
 }) => {
   const { isDarkMode } = useTheme();
+  const { t } = useTranslation();
   const [mode, setMode] = useState<CountdownMode>(initial.mode || 'duration');
   const [dur, setDur] = useState({
     days: initial.duration?.days ?? 0,
@@ -60,24 +62,24 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
     if (mode === 'duration') {
       const ms = durationToMs(dur);
       if (ms <= 0) {
-        setError('倒计时时长需大于 0');
+        setError(t('countdown.errorInvalidDuration'));
         return;
       }
       targetDate = Date.now() + ms;
     } else {
       const ts = new Date(datetimeStr).getTime();
       if (Number.isNaN(ts)) {
-        setError('请选择有效的日期时间');
+        setError(t('countdown.errorInvalidDate'));
         return;
       }
       if (ts <= Date.now()) {
-        setError('目标时间需在未来');
+        setError(t('countdown.errorPastDate'));
         return;
       }
       targetDate = ts;
     }
     onConfirm({ mode, duration: { ...dur }, targetDate, notify });
-  }, [mode, dur, datetimeStr, notify, onConfirm]);
+  }, [mode, dur, datetimeStr, notify, onConfirm, t]);
 
   const panelStyle = isDarkMode
     ? { backgroundColor: '#1f2430', borderColor: '#2b3240' }
@@ -87,8 +89,8 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
     <div className={styles.mask} onMouseDown={(e) => e.target === e.currentTarget && onCancel()}>
       <div className={styles.panel} style={panelStyle}>
         <div className={styles.header}>
-          <span className={styles.title}>倒计时设置</span>
-          <button className={styles.close} onClick={onCancel} aria-label="关闭">
+          <span className={styles.title}>{t('countdown.title')}</span>
+          <button className={styles.close} onClick={onCancel} aria-label={t('countdown.close')}>
             <svg
               width="16"
               height="16"
@@ -121,17 +123,17 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
               checked={mode === 'duration'}
               onChange={() => setMode('duration')}
             />
-            <span className={styles.modeTitle}>输入倒计时时长</span>
+            <span className={styles.modeTitle}>{t('countdown.durationMode')}</span>
 
             <div className={styles.durationRow}>
               {(
                 [
-                  ['days', '天'],
-                  ['hours', '时'],
-                  ['minutes', '分'],
-                  ['seconds', '秒'],
+                  ['days', 'countdown.units.days'],
+                  ['hours', 'countdown.units.hours'],
+                  ['minutes', 'countdown.units.minutes'],
+                  ['seconds', 'countdown.units.seconds'],
                 ] as const
-              ).map(([key, unit]) => (
+              ).map(([key, unitKey]) => (
                 <span key={key} className={styles.durationField}>
                   <input
                     type="text"
@@ -142,7 +144,7 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
                     onChange={(e) => setNum(key, e.target.value)}
                     onFocus={(e) => e.target.select()}
                   />
-                  <span className={styles.durationUnit}>{unit}</span>
+                  <span className={styles.durationUnit}>{t(unitKey)}</span>
                 </span>
               ))}
             </div>
@@ -162,7 +164,7 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
               checked={mode === 'datetime'}
               onChange={() => setMode('datetime')}
             />
-            <span className={styles.modeTitle}>倒计时到指定日期</span>
+            <span className={styles.modeTitle}>{t('countdown.dateMode')}</span>
 
             <input
               type="datetime-local"
@@ -178,17 +180,17 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
         {/* 提醒勾选 */}
         <label className={styles.notifyRow}>
           <input type="checkbox" checked={notify} onChange={(e) => setNotify(e.target.checked)} />
-          <span>倒计时结束时显示气泡提醒</span>
+          <span>{t('countdown.notify')}</span>
         </label>
 
         {error && <div className={styles.error}>{error}</div>}
 
         <div className={styles.footer}>
           <button className={styles.cancelBtn} onClick={onCancel}>
-            取消
+            {t('countdown.cancel')}
           </button>
           <button className={styles.confirmBtn} onClick={handleConfirm}>
-            确定
+            {t('countdown.confirm')}
           </button>
         </div>
       </div>

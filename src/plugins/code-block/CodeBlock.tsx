@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { Transforms } from 'slate';
 import { useSlateStatic } from 'slate-react';
 import { Select, ConfigProvider } from 'antd';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { SUPPORTED_LANGUAGES } from '@/utils/code-highlighter';
@@ -26,6 +27,7 @@ interface ElementProps {
 
 export const CodeBlock = ({ attributes, children, pluginId, element }: ElementProps) => {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
   const { isDarkMode } = useTheme();
   const [height, setHeight] = useState<number>(element?.attrs?.height || 150);
   const [isDragging, setIsDragging] = useState(false);
@@ -101,8 +103,8 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
   }));
 
   const wrapOptions = [
-    { value: 'on', label: '自动换行' },
-    { value: 'off', label: '取消换行' },
+    { value: 'on', label: t('codeBlock.wrap') },
+    { value: 'off', label: t('codeBlock.unwrap') },
   ];
 
   const isToolbarVisible = isHovered;
@@ -150,7 +152,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
                 options={languageOptions}
                 style={{ width: 120 }}
                 size="small"
-                placeholder="选择语言"
+                placeholder={t('codeBlock.languagePlaceholder')}
                 popupMatchSelectWidth={false}
                 styles={{ popup: { root: { minWidth: 160 } } }}
                 showSearch
@@ -184,7 +186,7 @@ export const CodeBlock = ({ attributes, children, pluginId, element }: ElementPr
               handleCopy();
             }}
           >
-            {showCopySuccess ? '已复制' : '复制'}
+            {showCopySuccess ? t('codeBlock.copied') : t('codeBlock.copy')}
           </div>
         </div>
 

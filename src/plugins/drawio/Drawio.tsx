@@ -4,6 +4,7 @@ import React, { useState, useCallback, useRef, useMemo, useEffect } from 'react'
 import ReactDOM from 'react-dom';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
@@ -30,6 +31,7 @@ interface DrawioProps {
 
 const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
   const { attrs } = element;
   const isSelected = useSelected();
 
@@ -50,6 +52,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   // 拖拽状态同步 ref，避免回调闭包拿到旧值
   const dragStateRef = useRef<{ w: number; h: number; ox: number; oy: number } | null>(null);
   const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -221,11 +224,21 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
       clearTimeout(hideTimerRef.current);
       hideTimerRef.current = null;
     }
-    setShowToolbar(true);
+    // 悬浮展示延迟 300ms：避免鼠标划过块体时工具条闪现
+    if (showTimerRef.current) return;
+    showTimerRef.current = window.setTimeout(() => {
+      showTimerRef.current = null;
+      setShowToolbar(true);
+    }, 300);
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
     if (isSelected) return;
+    // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
     hideTimerRef.current = window.setTimeout(() => {
       setShowToolbar(false);
       hideTimerRef.current = null;
@@ -311,7 +324,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
                 <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
               </svg>
-              编辑流程图
+              {t('drawio.edit')}
             </button>
             <div className={styles.toolbarDivider} />
             <button className={styles.toolbarButton} onClick={handleRemove}>
@@ -328,7 +341,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
                 <polyline points="3 6 5 6 21 6" />
                 <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
               </svg>
-              删除
+              {t('drawio.delete')}
             </button>
           </div>
         )}
@@ -351,7 +364,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             {/* 标题栏 */}
             <div className={styles.titleBar}>
               <span className={styles.titleIcon}>D</span>
-              <span>流程图</span>
+              <span>{t('drawio.title')}</span>
             </div>
 
             {/* 内容预览 */}
@@ -385,7 +398,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
                       <line x1="17.5" y1="14" x2="11.5" y2="14" />
                     </svg>
                   </div>
-                  <span className={styles.emptyText}>点击创建流程图</span>
+                  <span className={styles.emptyText}>{t('drawio.clickToCreate')}</span>
                 </div>
               )}
             </div>
@@ -410,7 +423,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
           <input
             className={styles.descriptionInput}
             value={description}
-            placeholder="输入流程图描述..."
+            placeholder={t('drawio.descPlaceholder')}
             onChange={(e) => setDescription(e.target.value)}
             onBlur={handleDescriptionBlur}
             onKeyDown={handleDescriptionKeyDown}
