@@ -201,7 +201,8 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
         )}
 
         <div
-          className={`${styles.frame} ${isSelected ? styles.frameSelected : ''}`}
+          data-visual-root
+          className={styles.frame}
           style={{ height }}
           contentEditable={false}
           suppressContentEditableWarning={true}

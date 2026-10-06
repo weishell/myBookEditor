@@ -278,4 +278,24 @@ export default {
     delete: '削除',
     uploading: '画像をアップロード中',
   },
+  // ファイル / 動画ブロック
+  media: {
+    layerText: 'テキスト',
+    layerCard: 'カード',
+    layerView: 'ビュー',
+    preview: '拡大プレビュー',
+    editName: '名前を編集',
+    done: '完了',
+    download: 'ダウンロード',
+    namePlaceholder: 'ファイル名',
+    file: 'ファイル',
+    video: '動画',
+    emptyVideo: '再生可能な動画URLがありません',
+    loading: '読み込み中…',
+    previewFailed: 'プレビューできません',
+    unsupported:
+      'このファイル形式はインライン表示に対応していません。右上から拡大プレビューまたはダウンロードできます',
+    uploadingFile: 'ファイルをアップロード中',
+    uploadingVideo: '動画をアップロード中',
+  },
 } as const;

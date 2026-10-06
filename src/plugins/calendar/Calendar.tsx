@@ -159,6 +159,7 @@ export const Calendar: React.FC<CalendarProps> = ({ attributes, children, plugin
   return (
     <ElementWrapper type={BlockElementType.CALENDAR} pluginId={pluginId} attributes={attributes}>
       <div
+        data-visual-root
         className={styles.calendar}
         contentEditable={false}
         suppressContentEditableWarning

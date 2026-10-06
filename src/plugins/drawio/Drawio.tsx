@@ -337,7 +337,8 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
         <div className={styles.drawioBlock}>
           <div
             ref={containerRef}
-            className={`${styles.container} ${isSelected ? styles.containerSelected : ''}`}
+            data-visual-root
+            className={styles.container}
             contentEditable={false}
             suppressContentEditableWarning={true}
             onClick={handleOpenPreview}

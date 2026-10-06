@@ -278,4 +278,24 @@ export default {
     delete: '삭제',
     uploading: '이미지 업로드 중',
   },
+  // 파일 / 동영상 블록
+  media: {
+    layerText: '텍스트',
+    layerCard: '카드',
+    layerView: '보기',
+    preview: '크게 보기',
+    editName: '이름 편집',
+    done: '완료',
+    download: '다운로드',
+    namePlaceholder: '파일 이름',
+    file: '파일',
+    video: '동영상',
+    emptyVideo: '재생 가능한 동영상 주소가 없습니다',
+    loading: '불러오는 중…',
+    previewFailed: '미리볼 수 없음',
+    unsupported:
+      '이 파일 형식은 인라인 미리보기를 지원하지 않습니다. 오른쪽 위에서 크게 보거나 다운로드하세요',
+    uploadingFile: '파일 업로드 중',
+    uploadingVideo: '동영상 업로드 중',
+  },
 } as const;

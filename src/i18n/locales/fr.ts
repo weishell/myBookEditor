@@ -281,4 +281,24 @@ export default {
     delete: 'Supprimer',
     uploading: 'Téléversement de l’image',
   },
+  // Bloc fichier / vidéo
+  media: {
+    layerText: 'Texte',
+    layerCard: 'Carte',
+    layerView: 'Aperçu',
+    preview: 'Agrandir',
+    editName: 'Modifier le nom',
+    done: 'Terminé',
+    download: 'Télécharger',
+    namePlaceholder: 'Nom du fichier',
+    file: 'Fichier',
+    video: 'Vidéo',
+    emptyVideo: 'Aucune URL vidéo disponible',
+    loading: 'Chargement…',
+    previewFailed: 'Impossible d’afficher',
+    unsupported:
+      'Ce type de fichier ne peut pas être affiché en ligne. Utilisez l’aperçu ou le téléchargement',
+    uploadingFile: 'Téléversement du fichier',
+    uploadingVideo: 'Téléversement de la vidéo',
+  },
 } as const;

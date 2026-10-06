@@ -103,6 +103,7 @@ export const Countdown: React.FC<CountdownProps> = ({
   return (
     <ElementWrapper type={BlockElementType.COUNTDOWN} pluginId={pluginId} attributes={attributes}>
       <div
+        data-visual-root
         className={`${styles.card} ${remaining.finished ? styles.cardFinished : ''}`}
         style={{ borderColor: isDarkMode ? '#2b3240' : 'rgba(31,35,41,0.14)' }}
         contentEditable={false}

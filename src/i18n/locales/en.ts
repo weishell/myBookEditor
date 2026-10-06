@@ -349,4 +349,23 @@ export default {
     delete: 'Delete',
     uploading: 'Uploading image',
   },
+  // File / video block
+  media: {
+    layerText: 'Text',
+    layerCard: 'Card',
+    layerView: 'View',
+    preview: 'Open preview',
+    editName: 'Edit name',
+    done: 'Done',
+    download: 'Download',
+    namePlaceholder: 'File name',
+    file: 'File',
+    video: 'Video',
+    emptyVideo: 'No playable video URL yet',
+    loading: 'Loading…',
+    previewFailed: 'Cannot preview',
+    unsupported: 'This file type can’t be previewed inline. Use the preview or download actions',
+    uploadingFile: 'Uploading file',
+    uploadingVideo: 'Uploading video',
+  },
 } as const;

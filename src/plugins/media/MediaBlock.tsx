@@ -5,12 +5,16 @@
 //  - view：视图层（行内展开：文本文件显示正文，视频显示播放器）
 // eye 图标始终可打开更大尺寸的预览浮层（Modal）。
 
-import React, { useState, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useCallback, useRef, useEffect, useSyncExternalStore } from 'react';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import { copyBlockToClipboard } from '@/utils/clipboard';
+import { uploadProgressStore } from '@/plugins/image/uploadImage';
+import { AlignIcon } from '@/components/AlignIndentPanel';
+import { TrashIcon, CopyIcon } from '@/components/icons/lineIcons';
 import MediaPreview from './MediaPreview';
 import styles from './MediaBlock.module.less';
 
@@ -26,6 +30,7 @@ export interface MediaAttrs {
   layer?: MediaLayer;
   width?: number;
   height?: number;
+  align?: 'left' | 'center' | 'right';
 }
 
 interface MediaProps {
@@ -175,14 +180,33 @@ const VIEW_LAYER_ICON = (
   </svg>
 );
 
+/** 上传进度遮罩（与图片块同款观感）：半透明底 + 文件名 + 进度条 + 百分比 */
+const UploadOverlay = ({ progress, kind }: { progress: number; kind: MediaKind }) => {
+  const { t } = useTranslation();
+  const clamped = Math.min(Math.max(progress ?? 0, 0), 100);
+  return (
+    <div className={styles.uploadOverlay} contentEditable={false} suppressContentEditableWarning>
+      <div className={styles.uploadInfo}>
+        {t(kind === 'video' ? 'media.uploadingVideo' : 'media.uploadingFile')}
+      </div>
+      <div className={styles.progressTrack}>
+        <div className={styles.progressBar} style={{ width: `${clamped}%` }} />
+      </div>
+      <div className={styles.uploadPercent}>{Math.floor(clamped)}%</div>
+    </div>
+  );
+};
+
 const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
   const { attrs } = element;
+  const { t } = useTranslation();
   const isSelected = useSelected();
 
   const kind: MediaKind = attrs?.kind === 'video' ? 'video' : 'file';
   const layer: MediaLayer =
     attrs?.layer === 'text' || attrs?.layer === 'view' ? attrs.layer : 'card';
+  const align = attrs?.align === 'center' || attrs?.align === 'right' ? attrs.align : 'left';
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -191,9 +215,43 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   const [textLoading, setTextLoading] = useState(false);
   const [textError, setTextError] = useState<string | null>(null);
 
+  // 上传进度来自模块级瞬态 store（不进 Slate 文档/历史），与图片同一套机制
+  useSyncExternalStore(uploadProgressStore.subscribe, uploadProgressStore.getVersion);
+  const uploadProgress = uploadProgressStore.get(element.id);
+  const isUploading = uploadProgress !== undefined;
+
   const hideTimerRef = useRef<number | null>(null);
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
+  const wrapperRef = useRef<HTMLDivElement>(null);
+
+  // 工具栏水平位置：跟住视觉根（卡片/文本/视图层）的中心，而不是通栏 wrapper 的中心，
+  // 否则内容靠左时工具栏会飘在右侧空白上。
+  const [toolbarLeft, setToolbarLeft] = useState<number | null>(null);
+  const updateToolbarLeft = useCallback(() => {
+    const node = wrapperRef.current;
+    if (!node) return;
+    const root = node.querySelector<HTMLElement>('[data-visual-root]');
+    if (!root) return;
+    const wrapRect = node.getBoundingClientRect();
+    const rootRect = root.getBoundingClientRect();
+    setToolbarLeft(rootRect.left - wrapRect.left + rootRect.width / 2);
+  }, []);
+
+  useEffect(() => {
+    if (!showToolbar && !isSelected) return;
+    updateToolbarLeft();
+    const raf = requestAnimationFrame(updateToolbarLeft);
+    const node = wrapperRef.current;
+    const ro = node ? new ResizeObserver(updateToolbarLeft) : null;
+    if (ro && node) ro.observe(node);
+    window.addEventListener('resize', updateToolbarLeft);
+    return () => {
+      cancelAnimationFrame(raf);
+      ro?.disconnect();
+      window.removeEventListener('resize', updateToolbarLeft);
+    };
+  }, [showToolbar, isSelected, layer, align, updateToolbarLeft]);
 
   const isTextFile = kind === 'file' && isTextual(attrs?.name, attrs?.mimeType);
 
@@ -234,6 +292,13 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
     if (!path) return;
     copyBlockToClipboard(editor, path);
   }, [editor, getElementPath]);
+
+  const handleAlign = useCallback(
+    (next: 'left' | 'center' | 'right') => {
+      updateAttrs({ align: next });
+    },
+    [updateAttrs],
+  );
 
   // 行内视图层（view）时，自动拉取文本正文
   useEffect(() => {
@@ -283,7 +348,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   }, [isSelected]);
 
   const Icon = kind === 'video' ? VideoIcon : FileIcon;
-  const typeLabel = kind === 'video' ? '视频' : '文件';
+  const typeLabel = t(kind === 'video' ? 'media.video' : 'media.file');
 
   return (
     <ElementWrapper
@@ -292,74 +357,88 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
       attributes={attributes}
     >
       <div
+        ref={wrapperRef}
         className={styles.wrapper}
+        style={{
+          // 对齐：内容（卡片/文本/视图层）作为 flex 项跟随 justify 排布
+          display: 'flex',
+          justifyContent:
+            align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+        }}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
         {(showToolbar || isSelected) && (
           <div
             className={styles.toolbar}
+            style={toolbarLeft != null ? { left: toolbarLeft } : undefined}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
             <LayerIcon
               active={layer === 'text'}
-              title="文本层"
+              title={t('media.layerText')}
               onClick={() => updateAttrs({ layer: 'text' })}
             >
               {TEXT_LAYER_ICON}
             </LayerIcon>
             <LayerIcon
               active={layer === 'card'}
-              title="卡片层"
+              title={t('media.layerCard')}
               onClick={() => updateAttrs({ layer: 'card' })}
             >
               {CARD_LAYER_ICON}
             </LayerIcon>
             <LayerIcon
               active={layer === 'view'}
-              title="视图层"
+              title={t('media.layerView')}
               onClick={() => updateAttrs({ layer: 'view' })}
             >
               {VIEW_LAYER_ICON}
             </LayerIcon>
             <div className={styles.divider} />
+            <LayerIcon
+              active={align === 'left'}
+              title={t('alignIndent.left')}
+              onClick={() => handleAlign('left')}
+            >
+              <AlignIcon align="left" active={align === 'left'} size={15} />
+            </LayerIcon>
+            <LayerIcon
+              active={align === 'center'}
+              title={t('alignIndent.center')}
+              onClick={() => handleAlign('center')}
+            >
+              <AlignIcon align="center" active={align === 'center'} size={15} />
+            </LayerIcon>
+            <LayerIcon
+              active={align === 'right'}
+              title={t('alignIndent.right')}
+              onClick={() => handleAlign('right')}
+            >
+              <AlignIcon align="right" active={align === 'right'} size={15} />
+            </LayerIcon>
+            <div className={styles.divider} />
             <button
               className={styles.toolbarButton}
-              title="放大预览"
+              title={t('media.preview')}
               onClick={() => setPreviewOpen(true)}
             >
               <EyeIcon />
             </button>
-            <button className={styles.toolbarButton} title="复制" onClick={handleCopy}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
+            <button
+              className={styles.toolbarButton}
+              title={t('blockMenu.copy')}
+              onClick={handleCopy}
+            >
+              <CopyIcon size={16} />
             </button>
-            <button className={styles.toolbarButton} title="删除" onClick={handleRemove}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
+            <button
+              className={styles.toolbarButton}
+              title={t('blockMenu.delete')}
+              onClick={handleRemove}
+            >
+              <TrashIcon size={16} />
             </button>
           </div>
         )}
@@ -368,6 +447,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         {layer === 'text' && (
           <div
             className={styles.textLayer}
+            data-visual-root
             contentEditable={false}
             suppressContentEditableWarning={true}
             onClick={() => setPreviewOpen(true)}
@@ -377,6 +457,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
             </span>
             <span className={styles.textLayerName}>{attrs?.name || typeLabel}</span>
             <span className={styles.textLayerMeta}>{formatBytes(attrs?.size)}</span>
+            {isUploading && <UploadOverlay progress={uploadProgress} kind={kind} />}
           </div>
         )}
 
@@ -384,6 +465,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         {layer === 'card' && (
           <div
             className={styles.cardLayer}
+            data-visual-root
             contentEditable={false}
             suppressContentEditableWarning={true}
           >
@@ -395,7 +477,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                 <input
                   className={styles.cardNameInput}
                   value={attrs?.name || ''}
-                  placeholder="文件名"
+                  placeholder={t('media.namePlaceholder')}
                   onChange={(e) => updateAttrs({ name: e.target.value })}
                   onMouseDown={(e) => e.stopPropagation()}
                   autoFocus
@@ -405,15 +487,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                   {attrs?.name || typeLabel}
                 </div>
               )}
-              {editing ? (
-                <input
-                  className={styles.cardUrlInput}
-                  value={attrs?.src || ''}
-                  placeholder="文件 / 视频链接 URL"
-                  onChange={(e) => updateAttrs({ src: e.target.value })}
-                  onMouseDown={(e) => e.stopPropagation()}
-                />
-              ) : (
+              {!editing && (
                 <div className={styles.cardMeta}>
                   {typeLabel} · {formatBytes(attrs?.size)}
                 </div>
@@ -422,7 +496,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
             <div className={styles.cardActions}>
               <button
                 className={styles.cardAction}
-                title={editing ? '完成' : '编辑名称 / 链接'}
+                title={editing ? t('media.done') : t('media.editName')}
                 onClick={() => setEditing((v) => !v)}
               >
                 <svg
@@ -441,7 +515,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
               </button>
               <button
                 className={styles.cardAction}
-                title="预览"
+                title={t('media.preview')}
                 onClick={() => setPreviewOpen(true)}
               >
                 <EyeIcon size={16} />
@@ -449,7 +523,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
               {attrs?.src && (
                 <a
                   className={styles.cardAction}
-                  title="下载"
+                  title={t('media.download')}
                   href={attrs.src}
                   download={attrs?.name || undefined}
                 >
@@ -470,6 +544,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                 </a>
               )}
             </div>
+            {isUploading && <UploadOverlay progress={uploadProgress} kind={kind} />}
           </div>
         )}
 
@@ -477,6 +552,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         {layer === 'view' && (
           <div
             className={styles.viewLayer}
+            data-visual-root
             contentEditable={false}
             suppressContentEditableWarning={true}
           >
@@ -484,7 +560,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
               attrs?.src ? (
                 <video className={styles.video} src={attrs.src} controls preload="metadata" />
               ) : (
-                <div className={styles.emptyView}>暂无可播放的视频地址</div>
+                <div className={styles.emptyView}>{t('media.emptyVideo')}</div>
               )
             ) : (
               <>
@@ -493,19 +569,22 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                   <span className={styles.viewName}>{attrs?.name || typeLabel}</span>
                 </div>
                 <div className={styles.viewBody}>
-                  {textLoading && <div className={styles.emptyView}>加载中…</div>}
-                  {textError && <div className={styles.emptyView}>无法预览：{textError}</div>}
+                  {textLoading && <div className={styles.emptyView}>{t('media.loading')}</div>}
+                  {textError && (
+                    <div className={styles.emptyView}>
+                      {t('media.previewFailed')}：{textError}
+                    </div>
+                  )}
                   {!textLoading && !textError && textContent !== null && (
                     <pre className={styles.textContent}>{textContent}</pre>
                   )}
                   {!textLoading && !textError && textContent === null && !isTextFile && (
-                    <div className={styles.emptyView}>
-                      该文件类型不支持行内预览，点击右上角放大查看或下载
-                    </div>
+                    <div className={styles.emptyView}>{t('media.unsupported')}</div>
                   )}
                 </div>
               </>
             )}
+            {isUploading && <UploadOverlay progress={uploadProgress} kind={kind} />}
           </div>
         )}
 

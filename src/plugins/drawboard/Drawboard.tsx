@@ -216,7 +216,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
 
         <div
           ref={cardRef}
-          className={`${styles.card} ${isSelected ? styles.cardSelected : ''}`}
+          data-visual-root
+          className={styles.card}
           contentEditable={false}
           suppressContentEditableWarning={true}
           onClick={handleSelect}

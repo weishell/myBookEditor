@@ -514,7 +514,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
         )}
 
         {/* 外层 frame = 定位容器；topRightBar 在这里 absolute，不受内部滚动影响 */}
-        <div className={styles.frame} style={{ width, height }}>
+        <div className={styles.frame} data-visual-root style={{ width, height }}>
           {/* 右上角操作栏（不滚动） */}
           <div className={styles.topRightBar}>
             <button
@@ -559,7 +559,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
           {/* 滚动容器：内容超出时出现滚动条 */}
           <div
             ref={containerRef}
-            className={`${styles.container} ${isSelected ? styles.containerSelected : ''}`}
+            className={styles.container}
             contentEditable={false}
             suppressContentEditableWarning={true}
           >

@@ -77,8 +77,9 @@ export const pickImages = (): Promise<File[]> =>
     input.click();
   });
 
-/** 把进度推到 100 后删除 store 条目（overlay 随之消失，露出图片本体） */
-const simulateUploadProgress = (id: string): void => {
+/** 把进度推到 100 后删除 store 条目（overlay 随之消失，露出内容本体）。
+ *  供图片/文件/视频等所有上传场景共用（media 见 uploadMedia.ts）。 */
+export const simulateUploadProgress = (id: string): void => {
   uploadProgressStore.set(id, 0);
   let progress = 0;
   const timer = window.setInterval(() => {

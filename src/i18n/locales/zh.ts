@@ -297,4 +297,23 @@ export default {
     delete: '删除',
     uploading: '图片上传中',
   },
+  // 文件 / 视频块
+  media: {
+    layerText: '文本层',
+    layerCard: '卡片层',
+    layerView: '视图层',
+    preview: '放大预览',
+    editName: '编辑名称',
+    done: '完成',
+    download: '下载',
+    namePlaceholder: '文件名',
+    file: '文件',
+    video: '视频',
+    emptyVideo: '暂无可播放的视频地址',
+    loading: '加载中…',
+    previewFailed: '无法预览',
+    unsupported: '该文件类型不支持行内预览，点击右上角放大查看或下载',
+    uploadingFile: '文件上传中',
+    uploadingVideo: '视频上传中',
+  },
 } as const;

@@ -78,6 +78,7 @@
 
 /* ============ 文本层 ============ */
 .textLayer {
+  position: relative;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -89,6 +90,7 @@
   cursor: pointer;
   max-width: 100%;
   vertical-align: middle;
+  flex-shrink: 0;
 
   &:hover {
     background: color-mix(in srgb, var(--theme-primary, #1890ff) 14%, var(--lw-paper, @bg-base));
@@ -115,6 +117,7 @@
 
 /* ============ 卡片层 ============ */
 .cardLayer {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -122,6 +125,8 @@
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   background: var(--lw-paper, @bg-base);
+  /* wrapper 是 flex 容器（对齐用），这里 width:100% 保持原来的「撑满可用宽、上限 420」 */
+  width: 100%;
   max-width: 420px;
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 
@@ -163,8 +168,7 @@
   margin-top: 2px;
 }
 
-.cardNameInput,
-.cardUrlInput {
+.cardNameInput {
   width: 100%;
   border: 1px solid var(--theme-primary, #1890ff);
   border-radius: 4px;
@@ -174,16 +178,7 @@
   background: #fff;
   outline: none;
   box-sizing: border-box;
-}
-
-.cardNameInput {
   font-weight: 600;
-}
-
-.cardUrlInput {
-  margin-top: 4px;
-  font-size: 11px;
-  color: #6b7280;
 }
 
 .cardActions {
@@ -215,11 +210,59 @@
 
 /* ============ 视图层（行内展开，固定高度 400px） ============ */
 .viewLayer {
+  position: relative;
+  width: 100%;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   overflow: hidden;
   background: #fff;
   max-width: 100%;
+}
+
+/* ============ 上传进度遮罩（与图片块同款） ============ */
+.uploadOverlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background-color: rgba(0, 0, 0, 0.45);
+  color: #fff;
+  border-radius: inherit;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.uploadInfo {
+  max-width: 80%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: @font-size-sm;
+  opacity: 0.9;
+}
+
+.progressTrack {
+  width: 60%;
+  height: 6px;
+  border-radius: 3px;
+  background-color: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: 3px;
+  background-color: var(--theme-primary, #1890ff);
+  transition: width 0.15s linear;
+}
+
+.uploadPercent {
+  font-size: @font-size-sm;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.9;
 }
 
 .viewHeader {

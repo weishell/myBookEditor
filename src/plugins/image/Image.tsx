@@ -264,7 +264,8 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
         <div
           ref={containerRef}
-          className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''} ${isSelected ? styles.imageContainerSelected : ''}`}
+          data-visual-root
+          className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''}`}
           style={{
             width: DISPLAY_WIDTH,
             aspectRatio: ASPECT_RATIO,

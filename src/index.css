@@ -79,8 +79,25 @@ textarea,
    标记来自 ElementWrapper / Table 的 data-whole-selected 属性。 */
 [data-whole-selected='true'] {
   outline: 2px solid color-mix(in srgb, var(--theme-primary) 72%, transparent);
-  outline-offset: 2px;
+  /* 与块自身边框重合（不留缝），视觉上只有一层选中框 */
+  outline-offset: 0;
   border-radius: 6px;
+}
+
+/* 贴身描边的 void 块（图片/附件/流程图…）：描边由 ElementWrapper 的
+   贴身覆盖层画到视觉根上，wrapper 本身不再画通栏描边。 */
+[data-whole-selected='true'][data-fit-outline='true'] {
+  outline: none;
+}
+
+/* 贴身选中描边覆盖层（由 ElementWrapper 按 data-visual-root 的实测框定位，
+   与插件自身边框重合，替代插件原来的 selected 外框） */
+.whole-block-fit-outline {
+  position: absolute;
+  border: 2px solid color-mix(in srgb, var(--theme-primary) 72%, transparent);
+  border-radius: 6px;
+  pointer-events: none;
+  z-index: 5;
 }
 
 [data-whole-selected='true'] ::selection,

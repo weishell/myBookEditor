@@ -277,4 +277,23 @@ export default {
     delete: '刪除',
     uploading: '圖片上傳中',
   },
+  // 檔案 / 影片塊
+  media: {
+    layerText: '文字層',
+    layerCard: '卡片層',
+    layerView: '檢視層',
+    preview: '放大預覽',
+    editName: '編輯名稱',
+    done: '完成',
+    download: '下載',
+    namePlaceholder: '檔案名稱',
+    file: '檔案',
+    video: '影片',
+    emptyVideo: '暫無可播放的影片位址',
+    loading: '載入中…',
+    previewFailed: '無法預覽',
+    unsupported: '該檔案類型不支援行內預覽，點擊右上角放大查看或下載',
+    uploadingFile: '檔案上傳中',
+    uploadingVideo: '影片上傳中',
+  },
 } as const;

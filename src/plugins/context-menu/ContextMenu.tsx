@@ -21,6 +21,7 @@ import { setBlockIndent, getIndent, MAX_INDENT, isIndentable } from '@/utils/ind
 import { BlockElementType, LilistType } from '@/enums';
 import { BlockTypePicker, createBlockNode } from '@/plugins/block-picker';
 import { openAndInsertImages } from '@/plugins/image/uploadImage';
+import { openAndInsertMedia } from '@/plugins/media/uploadMedia';
 import {
   ChartTypePicker,
   ChartConfigDialog,
@@ -534,6 +535,17 @@ export const ContextMenu = () => {
       setInsertOpen(false);
       closeAfterAction();
       void openAndInsertImages(editor, insertPath);
+      return;
+    }
+    // 文件/视频同样走上传（见 uploadMedia.ts），不再用占位链接
+    if (type === BlockElementType.FILE_BLOCK || type === BlockElementType.VIDEO_BLOCK) {
+      setInsertOpen(false);
+      closeAfterAction();
+      void openAndInsertMedia(
+        editor,
+        insertPath,
+        type === BlockElementType.VIDEO_BLOCK ? 'video' : 'file',
+      );
       return;
     }
     // 图表走两步式：先选类型，再进配置页，最后才插入

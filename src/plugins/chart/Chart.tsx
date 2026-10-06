@@ -151,6 +151,7 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
     <ElementWrapper type={BlockElementType.CHART} pluginId={pluginId} attributes={attributes}>
       <div
         ref={cardRef}
+        data-visual-root
         className={styles.card}
         style={{
           width: `min(${effW}px, 100%)`,

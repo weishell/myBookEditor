@@ -279,4 +279,24 @@ export default {
     delete: 'Löschen',
     uploading: 'Bild wird hochgeladen',
   },
+  // Datei-/Video-Block
+  media: {
+    layerText: 'Text',
+    layerCard: 'Karte',
+    layerView: 'Ansicht',
+    preview: 'Vergrößerte Vorschau',
+    editName: 'Name bearbeiten',
+    done: 'Fertig',
+    download: 'Herunterladen',
+    namePlaceholder: 'Dateiname',
+    file: 'Datei',
+    video: 'Video',
+    emptyVideo: 'Keine abspielbare Video-Adresse',
+    loading: 'Wird geladen…',
+    previewFailed: 'Vorschau nicht möglich',
+    unsupported:
+      'Dieser Dateityp kann nicht inline angezeigt werden. Nutzen Sie Vorschau oder Download',
+    uploadingFile: 'Datei wird hochgeladen',
+    uploadingVideo: 'Video wird hochgeladen',
+  },
 } as const;

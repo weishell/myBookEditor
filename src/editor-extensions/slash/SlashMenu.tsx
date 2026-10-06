@@ -14,6 +14,7 @@ import { BlockElementType } from '@/enums';
 import { convertDocBarBlock, type DocBarConvertTarget } from '@/plugins/docbar/docbar-commands';
 import { createBlockNode } from '@/plugins/block-picker';
 import { openAndInsertImages } from '@/plugins/image/uploadImage';
+import { openAndInsertMedia } from '@/plugins/media/uploadMedia';
 import { insertTable } from '@/plugins/table/table-operations';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
 import { DividerIcon, GlobeIcon, ImageIcon, TableIcon } from '@/components/icons/lineIcons';
@@ -342,6 +343,15 @@ const applyInsert = (
   switch (cmd.target) {
     case BlockElementType.IMAGE_BLOCK:
       void openAndInsertImages(ed, nextPathAfter(blockPath));
+      return;
+    case BlockElementType.FILE_BLOCK:
+    case BlockElementType.VIDEO_BLOCK:
+      // 文件/视频走上传（选文件 + 瞬态进度），不再插占位链接
+      void openAndInsertMedia(
+        ed,
+        nextPathAfter(blockPath),
+        cmd.target === BlockElementType.VIDEO_BLOCK ? 'video' : 'file',
+      );
       return;
     case BlockElementType.TABLE:
       insertTable(ed, 3, 3);
