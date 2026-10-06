@@ -3,7 +3,7 @@
 import { Editor, Element, Node, Transforms, Path, Range } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
-import { MAX_INDENT } from '@/utils/indent';
+import { MAX_INDENT, setBlockIndent } from '@/utils/indent';
 import {
   getLilist,
   isLilistHost,
@@ -533,4 +533,69 @@ export const indentLilistSubtree = (
   } catch {
     return 'noop';
   }
+};
+
+/**
+ * 选区缩进（FloatBar 场景，步进 ±1）—— 与单块的 setBlockIndent 语义一致：
+ * 夹在 [0, MAX_INDENT]，**不加** Tab 键的「不超过前一块 +1 / 首块不可缩进」约束，
+ * 否则鼠标点按钮经常变成无反应（那是 increaseIndent / indentLilistSubtree 的键盘语义）。
+ *
+ * 列表特殊处理（用户明确要求"额外重视有序列表，更新后需要调整序号"）：
+ *  - 选中列表项时，其后「更深的同组子项」整支跟着平移，保持树形结构不被拆散；
+ *  - 改完统一 sortLilist 重排序号 —— 否则同组编号会错乱。
+ *
+ * @returns 是否发生了改动
+ */
+export const indentSelection = (editor: Editor, dir: 1 | -1): boolean => {
+  const { selection } = editor;
+  if (!selection) return false;
+  const children = (editor as any).children as any[];
+  if (!Array.isArray(children)) return false;
+
+  // 1) 收集目标：选区顶层块；列表项额外带上其后更深的同组子项
+  // ⚠️ match 必须先 `Element.isElement(n)` 守卫：只写 Editor.isBlock 时，
+  //    编辑器根节点也会命中，mode:'highest' 便不再向下遍历 → 拿不到任何块，
+  //    表现为"面板能点但点击无效果"。
+  const picked = new Map<number, any>();
+  for (const [node, path] of Editor.nodes(editor, {
+    at: selection,
+    match: (n: any) => Element.isElement(n) && Editor.isBlock(editor, n),
+    mode: 'highest',
+  })) {
+    const fullPath = path as number[];
+    if (fullPath.length !== 1) continue;
+    const idx = fullPath[0];
+    picked.set(idx, node);
+
+    const lilist = getLilist(node as any);
+    if (!lilist) continue;
+    const base: number = (node as any)?.attrs?.indent ?? 0;
+    for (let i = idx + 1; i < children.length; i++) {
+      const cur = children[i];
+      if (getLilist(cur)?.list_id !== lilist.list_id) break;
+      if ((cur?.attrs?.indent ?? 0) <= base) break;
+      picked.set(i, cur);
+    }
+  }
+  if (picked.size === 0) return false;
+
+  // 2) 从深到浅应用（同一组里子项先动，父项判定不受影响）
+  const indexes = [...picked.keys()].sort(
+    (a, b) => (picked.get(b)?.attrs?.indent ?? 0) - (picked.get(a)?.attrs?.indent ?? 0),
+  );
+
+  const listIds = new Set<string>();
+  let changed = false;
+  Editor.withoutNormalizing(editor, () => {
+    for (const idx of indexes) {
+      const node = picked.get(idx);
+      const lilist = getLilist(node);
+      if (lilist?.list_id) listIds.add(lilist.list_id);
+      if (setBlockIndent(editor, [idx], dir)) changed = true;
+    }
+  });
+
+  // 3) 列表统一重排序号（sortLilist 幂等，编号无变化时零写入）
+  if (listIds.size) sortLilist(editor, [...listIds]);
+  return changed;
 };

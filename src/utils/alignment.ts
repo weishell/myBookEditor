@@ -59,6 +59,17 @@ function getAlignTargets(editor: Editor, path?: Path): { node: any; path: Path }
 }
 
 /**
+ * 取「选区顶层可对齐块」，供 FloatBar 的对齐面板计算当前值 / 可用态。
+ *
+ * 必须用它而不是 `Editor.above`：跨多块选区时 `Editor.above` 返回 undefined，
+ * 会让面板被误判成"不可用"而整片变灰。与 setBlockAlignment 内部取块逻辑同源。
+ * 返回 null 表示选区为空或含不可对齐的块。
+ */
+export function getSelectionAlignBlocks(editor: Editor): { node: any; path: Path }[] | null {
+  return getAlignTargets(editor);
+}
+
+/**
  * 设置块对齐。align 为 'left' 时清除 align 字段（left 是默认值，无需显式存储）。
  * 可指定 path（DocBar 悬浮块）；不传则作用于选区顶层块。返回是否发生了改动。
  */

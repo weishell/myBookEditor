@@ -5,8 +5,10 @@
 
 // 工具栏尺寸常量（用于定位算法）
 export const TOOLBAR_HEIGHT = 44;
-export const TOOLBAR_HALF_WIDTH = 180; // 浮栏一半宽（用于把锚点居中）
-export const TOOLBAR_WIDTH = TOOLBAR_HALF_WIDTH * 2 + 20; // 380
+// 浮栏一半宽（用于把锚点居中）。工具栏宽度随内容变化，这里取近似值：
+// 新增「缩进和对齐」按钮（约 34px）后 +17，横向居中不偏移。
+export const TOOLBAR_HALF_WIDTH = 197;
+export const TOOLBAR_WIDTH = TOOLBAR_HALF_WIDTH * 2 + 20; // 414
 export const VIEWPORT_GAP = 8; // 工具栏与选区的间距
 export const MIN_MARGIN = 20; // 横向视口安全距（仅横向使用）
 

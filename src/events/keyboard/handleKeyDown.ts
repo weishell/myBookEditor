@@ -7,9 +7,10 @@
 //
 // 分发规则：
 //   - 组合键（Ctrl/Cmd/Alt + 字符键）：登记日志后不拦截，先放行默认行为
-//   - Enter / Tab / Shift+Tab / Backspace / Delete：已有专属 handler，转交执行
+//   - Enter（拆块）/ Shift+Enter（块内软换行 '\n'）/ Tab / Shift+Tab / Backspace / Delete：
+//     已有专属 handler，转交执行
 //   - 其余按键：不拦截，走 Slate 默认行为
-import { Transforms, Editor, Range, Point } from 'slate';
+import { Transforms, Editor, Element as SlateElement, Range, Point } from 'slate';
 import type { Location } from 'slate';
 import { isHotkey } from 'is-hotkey';
 import { BlockElementType } from '@/enums';
@@ -52,7 +53,8 @@ export const isKeyConsumed = (e: React.KeyboardEvent): boolean => {
   if (e.ctrlKey || e.metaKey || e.altKey) return false;
   switch (e.key) {
     case 'Enter':
-      return !e.shiftKey; // Shift+Enter 软换行暂不拦
+      // Enter（拆块）与 Shift+Enter（块内软换行）均由本调度器接管
+      return true;
     case 'Tab':
     case 'Backspace':
       return true;
@@ -226,6 +228,36 @@ const handleMarkShortcut = (editor: Editor, e: React.KeyboardEvent): boolean => 
   return true;
 };
 
+/**
+ * Shift+Enter 软换行：在【同一个块内】插入 '\n' 字符，而不是拆出一个新块。
+ *
+ * 为什么不能依赖浏览器默认行为：
+ *   浏览器对 Shift+Enter 触发 beforeinput(insertLineBreak)，slate-react 会转成
+ *   `Editor.insertSoftBreak`。但本项目所用 slate 版本里该方法的实现是
+ *   `Transforms.splitNodes(editor, { always: true })` —— 效果等同于回车拆块，
+ *   根本不写入 '\n'。所以「Shift+Enter = 换行符」必须自己实现。
+ *
+ * 与代码块一致（handleEnter 里代码块就是 `Transforms.insertText(editor, '\n')`），
+ * 渲染侧由 src/index.css 的 `[data-slate-string] { white-space: pre-wrap }` 保证 '\n' 折行。
+ */
+const handleSoftBreak = (editor: Editor): boolean => {
+  if (!editor.selection) return false;
+  try {
+    // void 块（图片/图表/画板/日历…）的子文本不参与渲染，往里写 '\n' 只会污染数据；
+    // 此类情况返回 false，交回默认行为处理。
+    const block = Editor.above(editor, {
+      match: (n: any) => SlateElement.isElement(n) && Editor.isBlock(editor, n),
+      mode: 'lowest',
+    });
+    if (block && Editor.isVoid(editor, block[0] as any)) return false;
+
+    Transforms.insertText(editor, '\n');
+    return true;
+  } catch {
+    return false; // 落点异常时静默忽略，不打断输入
+  }
+};
+
 export const createKeyDownHandler = (editor: Editor) => {
   return (e: React.KeyboardEvent) => {
     const keyLabel = describeKey(e);
@@ -252,7 +284,12 @@ export const createKeyDownHandler = (editor: Editor) => {
     switch (e.key) {
       case 'Enter': {
         if (e.shiftKey) {
-          console.log('[keydown] Shift+Enter（未拦截，走默认软换行）', { blockType });
+          // Shift+Enter → 块内软换行（写入 '\n' 字符，不拆块、不产生新插件）
+          if (handleSoftBreak(editor)) {
+            console.log('[keydown] Shift+Enter → 块内软换行 \\n', { blockType });
+            e.preventDefault();
+            e.stopPropagation();
+          }
           return;
         }
         // 画板块的 Enter→全屏编辑由 Drawboard 组件自身在 window 捕获阶段拦截，

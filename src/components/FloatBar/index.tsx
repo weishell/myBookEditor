@@ -12,6 +12,15 @@ import {
 } from '@/plugins';
 import { BlockElementType } from '@/enums';
 import ColorPicker from '@/components/ColorPicker';
+import AlignIndentPanel, { AlignIcon } from '@/components/AlignIndentPanel';
+import {
+  setBlockAlignment,
+  getBlockAlign,
+  getSelectionAlignBlocks,
+  type TextAlignValue,
+} from '@/utils/alignment';
+import { getIndent, getSelectionIndentBlocks } from '@/utils/indent';
+import { indentSelection } from '@/plugins/lilist';
 import FontPicker from '@/components/FontPicker';
 import { ArtTextMenu } from '@/plugins/art-text';
 import { insertTable } from '@/plugins/table/table-operations';
@@ -311,6 +320,28 @@ export default function FloatBar() {
     setActiveMenu(null);
   };
 
+  // —— 缩进 / 对齐：作用于"当前选区的顶层块"，多行选区同样支持 ——
+  // ⚠️ 取块不能用 Editor.above：跨多块选区时它返回 undefined，会让面板被误判成
+  // "不可用"而整片变灰 —— 这正是"多选不能控制"的原因。这里与真正执行改动的取块逻辑同源。
+  const indentBlocks = getSelectionIndentBlocks(editor);
+  const alignBlocks = getSelectionAlignBlocks(editor);
+  // 可缩进的块一定也可对齐（INDENTABLE ⊆ ALIGNABLE），优先用缩进结果
+  const formatBlocks = (indentBlocks ?? alignBlocks) as { node: any; path: number[] }[] | null;
+  const isAlignFormatable = !!formatBlocks?.length;
+  const currentAlign = getBlockAlign(formatBlocks?.[0]?.node);
+  const indentLevels = (formatBlocks ?? []).map((b) => getIndent(b.node));
+  const currentIndent = indentLevels.length ? Math.min(...indentLevels) : 0;
+  const currentIndentMax = indentLevels.length ? Math.max(...indentLevels) : 0;
+
+  const handleAlign = (align: TextAlignValue) => {
+    // 不传 path：setBlockAlignment 内部取选区顶层块
+    setBlockAlignment(editor, align);
+  };
+  const handleIndentChange = (delta: number) => {
+    // indentSelection：选区缩进（±1）。列表项会连带其更深的子项整支平移，并重排序号。
+    indentSelection(editor, delta > 0 ? 1 : -1);
+  };
+
   const ToolButton = ({
     icon,
     label,
@@ -369,6 +400,27 @@ export default function FloatBar() {
                 setActiveMenu(null);
               }}
             />
+          )}
+        </div>
+        <div className={styles.wrapper}>
+          <ToolButton
+            // 图标跟随当前对齐方式（左/中/右），一眼能看出当前状态
+            icon={<AlignIcon align={currentAlign ?? 'left'} size={18} />}
+            onClick={() => setActiveMenu(activeMenu === 'align' ? null : 'align')}
+            hasDropdown
+          />
+          {activeMenu === 'align' && (
+            <div className={styles.dropdown}>
+              <AlignIndentPanel
+                disabled={!isAlignFormatable}
+                align={currentAlign}
+                indent={currentIndent}
+                indentMin={currentIndent}
+                indentMax={currentIndentMax}
+                onAlign={handleAlign}
+                onIndentChange={handleIndentChange}
+              />
+            </div>
           )}
         </div>
         <div className={styles.divider} />

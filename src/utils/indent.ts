@@ -159,3 +159,15 @@ export function setBlockIndent(editor: Editor, path: Path, delta: number): boole
   });
   return true;
 }
+
+/**
+ * 取「选区顶层块」，供 FloatBar 的缩进面板计算当前值 / 可用态。
+ *
+ * 注意必须用它而不是 `Editor.above`：跨多块选区时 `Editor.above` 返回 undefined，
+ * 会让面板被误判成"不可用"而整片变灰（多选无法控制的老问题）。
+ * 与真正执行改动的 getSelectedBlocks 同源，保证 UI 判定与实际结果一致。
+ * 返回 null 表示选区为空或含不支持缩进的块。
+ */
+export function getSelectionIndentBlocks(editor: Editor): { node: any; path: number[] }[] | null {
+  return getSelectedBlocks(editor);
+}

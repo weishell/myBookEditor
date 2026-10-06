@@ -125,6 +125,25 @@ export const convertNumber = (indent: number, value: number, type: LilistType): 
 export const getUlBullet = (indent: number): string => convertNumber(indent, 1, LilistType.UL);
 
 /**
+ * 列表前缀的占位宽度（em）。
+ *
+ * 前缀是「右对齐的 inline-block」——它占一个固定宽的方框，编号靠右贴着正文。
+ * 块级悬挂缩进（Paragraph / Heading 的 padding-left + 负 text-indent）必须用同一个值，
+ * 换行后的文字才会落在「首行文字」的正下方，而不是跑回编号下面。
+ * 所以宽度只在这里定义一次，两处都从这里取，避免写死后对不齐。
+ *
+ * 注意：用 min-width 而非 width —— 位数超出时方框会变宽（宁可首行文字右移几像素，
+ * 也不让编号溢出压到正文）。em 相对本元素 font-size，与块级缩进同基准。
+ */
+export const getLilistPrefixWidth = (element: any): string => {
+  const lilist = getLilist(element);
+  // 无序符号只有一个字符，留出最窄的槽位即可
+  if (!lilist || lilist.list_type === LilistType.UL) return '1.2em';
+  // 标题的有序编号是层级路径（1. / 1.1 / 1.1.1），比普通序号长
+  return element?.type === BlockElementType.HEADING ? '2.6em' : '1.6em';
+};
+
+/**
  * 编号回写排序（对齐 template.md 的 olulListSort，但全程同步、无 sleep）
  * 每次结构变更（回车/增删/转换/改编号/缩进）后调用：
  * 按文档顺序遍历同组（同 list_id）块，逐缩进层级顺序编号并写回 list_number。

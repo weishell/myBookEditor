@@ -116,6 +116,15 @@ textarea,
   caret-color: var(--theme-primary);
 }
 
+/* ================== 软换行（Shift+Enter）==================
+   Shift+Enter 在同一个块内插入 '\n' 字符（不拆块，见 events/keyboard/handleKeyDown.ts）。
+   slate-react 把文本渲染在 <span data-slate-string> 里，默认 white-space: normal，
+   '\n' 会被折叠成空格、看起来"没反应"。这里统一改成 pre-wrap，让 '\n' 真正折行。
+   代码块 / 提示块本身已各自声明 pre-wrap，对它们无副作用。 */
+[data-slate-editor] [data-slate-string] {
+  white-space: pre-wrap;
+}
+
 /* ================== 代码块内 antd Select 全局样式 ================== */
 
 /* 默认模式：边框和文字跟随主题色 */

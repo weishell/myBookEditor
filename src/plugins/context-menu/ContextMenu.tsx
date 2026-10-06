@@ -15,12 +15,7 @@ import { Editor, Element, Node, Range, Transforms } from 'slate';
 import { copyBlockToClipboard } from '@/utils/clipboard';
 import { useMenu } from '@/plugins/menu-context';
 import { setBlockFont } from '@/plugins/font';
-import {
-  setBlockAlignment,
-  getBlockAlign,
-  ALIGN_OPTIONS,
-  type TextAlignValue,
-} from '@/utils/alignment';
+import { setBlockAlignment, getBlockAlign, type TextAlignValue } from '@/utils/alignment';
 import { setBlockIndent, getIndent, MAX_INDENT, isIndentable } from '@/utils/indent';
 import { BlockElementType, LilistType } from '@/enums';
 import { BlockTypePicker, createBlockNode } from '@/plugins/block-picker';
@@ -43,147 +38,8 @@ import {
 } from '@/plugins/docbar/docbar-commands';
 import { getLilist, sortLilist } from '@/plugins/lilist';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
+import AlignIndentPanel from '@/components/AlignIndentPanel';
 import styles from './ContextMenu.module.less';
-
-/* ===== 成员：对齐 / 缩进子面板 ===== */
-
-const alignLabel: Record<string, string> = {
-  left: '左对齐',
-  center: '居中对齐',
-  right: '右对齐',
-};
-
-// 对齐图标：四行横向线段，按对齐方式改变行的起点/长度
-const AlignIcon = ({
-  align,
-  active,
-  size = 18,
-}: {
-  align: string;
-  active?: boolean;
-  size?: number;
-}) => {
-  const color = active ? '#fff' : 'currentColor';
-  const baseW = 13;
-  const full = [1, 1, 0.55, 1] as const; // 各行相对长度，模拟“长短行”
-  const lines = full.map((f, i) => {
-    const w = Math.round(baseW * f);
-    const gap = (18 - w) / 2;
-    let x = 2.5;
-    if (align === 'center') x = gap;
-    else if (align === 'right') x = 18 - w - 2.5;
-    // left：左起即可
-    const y = 3 + i * 4;
-    return <rect key={i} x={x} y={y} width={w} height={2} rx={1} fill={color} />;
-  });
-  return (
-    <svg width={size} height={size} viewBox="0 0 18 18">
-      {lines}
-    </svg>
-  );
-};
-
-// 增加缩进：左侧竖条 + 向右箭头
-const IndentIncIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 18 18"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3.5 3.5v11M3.5 9h8.5M8.5 6.5l3 2.5-3 2.5" />
-  </svg>
-);
-
-// 减少缩进：左侧竖条 + 向左箭头
-const IndentDecIcon = ({ size = 18 }: { size?: number }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 18 18"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="1.8"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
-    <path d="M3.5 3.5v11M14.5 9H6M9.5 6.5l-3 2.5 3 2.5" />
-  </svg>
-);
-
-interface AlignIndentPanelProps {
-  disabled: boolean;
-  align?: TextAlignValue;
-  indent: number;
-  maxIndent: number;
-  onAlign: (align: TextAlignValue) => void;
-  onIndentChange: (delta: number) => void;
-}
-
-const AlignIndentPanel = ({
-  disabled,
-  align,
-  indent,
-  maxIndent,
-  onAlign,
-  onIndentChange,
-}: AlignIndentPanelProps) => (
-  <div className={styles.alignPanel}>
-    <div className={styles.alignLabel}>对齐</div>
-    <div className={styles.alignRow}>
-      {ALIGN_OPTIONS.map((a) => {
-        const active = align === a;
-        return (
-          <button
-            key={a}
-            type="button"
-            className={active ? styles.alignBtnActive : styles.alignBtn}
-            disabled={disabled}
-            title={alignLabel[a]}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAlign(a);
-            }}
-          >
-            <AlignIcon align={a} active={active} />
-          </button>
-        );
-      })}
-    </div>
-    <div className={styles.alignDivider} />
-    <div className={styles.alignLabel}>缩进</div>
-    <div className={styles.alignRow}>
-      <button
-        type="button"
-        className={styles.alignBtn}
-        disabled={disabled || indent >= maxIndent}
-        title="增加缩进"
-        onClick={(e) => {
-          e.stopPropagation();
-          onIndentChange(1);
-        }}
-      >
-        <IndentIncIcon />
-      </button>
-      <button
-        type="button"
-        className={styles.alignBtn}
-        disabled={disabled || indent <= 0}
-        title="减少缩进"
-        onClick={(e) => {
-          e.stopPropagation();
-          onIndentChange(-1);
-        }}
-      >
-        <IndentDecIcon />
-      </button>
-    </div>
-  </div>
-);
 
 export const ContextMenu = () => {
   // 注意：这里刻意不取 closeMenu —— 它是"延迟 200ms + 仅当鼠标不在菜单上才真关"的
@@ -563,7 +419,12 @@ export const ContextMenu = () => {
   };
   const handleIndent = (delta: number) => {
     const p = getTargetPath();
-    if (p) setBlockIndent(editor, p, delta);
+    if (p) {
+      const changed = setBlockIndent(editor, p, delta);
+      // 有序列表缩进会改变分组层级 → 必须重排序号（与 FloatBar 的缩进保持一致）
+      const listId = getLilist(Node.get(editor, p) as any)?.list_id;
+      if (changed && listId) sortLilist(editor, [listId]);
+    }
     setFormatTick((t) => t + 1);
   };
 

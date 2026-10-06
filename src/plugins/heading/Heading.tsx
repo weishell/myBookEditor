@@ -2,7 +2,7 @@ import React from 'react';
 import { useSelected } from 'slate-react';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
-import { getLilist, LilistPrefix } from '@/plugins/lilist';
+import { getLilist, getLilistPrefixWidth, LilistPrefix } from '@/plugins/lilist';
 import styles from './Heading.module.less';
 
 interface ElementProps {
@@ -34,6 +34,16 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
   const style = HEADING_STYLES[level] || HEADING_STYLES[1];
 
   const isEmpty = element?.children?.[0]?.text === '' || element?.children?.[0]?.text === undefined;
+  const hasLilist = !!getLilist(element);
+
+  // 列表项悬挂缩进：左侧留出「序号槽位」，换行后的文字与首行文字左对齐，
+  // 而不是回到块左缘、压到序号下面（槽位宽度与 LilistPrefix 的占位宽度同源）。
+  const listStyle = hasLilist
+    ? {
+        paddingLeft: `calc(${getLilistPrefixWidth(element)} + 6px)`,
+        textIndent: `calc(-1 * (${getLilistPrefixWidth(element)} + 6px))`,
+      }
+    : undefined;
 
   return (
     <ElementWrapper
@@ -49,6 +59,7 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
           fontSize: style.fontSize,
           lineHeight: style.lineHeight,
           marginBottom: style.marginBottom,
+          ...listStyle,
         }}
       >
         {isEmpty && isSelected && (
@@ -60,7 +71,7 @@ export const Heading = ({ attributes, children, pluginId, element }: ElementProp
             H{level}
           </span>
         )}
-        {getLilist(element) && <LilistPrefix element={element} />}
+        {hasLilist && <LilistPrefix element={element} />}
         {children}
       </h1>
     </ElementWrapper>

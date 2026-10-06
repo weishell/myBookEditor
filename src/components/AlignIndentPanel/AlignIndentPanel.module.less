@@ -1,0 +1,67 @@
+// 对齐 / 缩进子面板样式（原在 ContextMenu.module.less，抽成共享组件后迁到这里）
+
+.alignPanel {
+  display: flex;
+  flex-direction: column;
+  gap: @spacing-xs;
+  min-width: 168px;
+}
+
+.alignLabel {
+  font-size: @font-size-xs;
+  color: @text-tertiary;
+  padding: 2px 4px 0;
+}
+
+.alignRow {
+  display: flex;
+  gap: 2px;
+}
+
+.alignBtn,
+.alignBtnActive {
+  width: 34px;
+  height: 32px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: var(--cursor-pointer);
+  color: @text-primary;
+  border-radius: @radius-sm;
+  flex: 1;
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+
+  &:hover {
+    background-color: @bg-hover;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.4;
+    color: @text-tertiary;
+
+    &:hover {
+      background-color: transparent;
+    }
+  }
+}
+
+.alignBtnActive {
+  background-color: @color-primary;
+  color: #fff;
+
+  &:hover {
+    background-color: @color-primary;
+  }
+}
+
+.alignDivider {
+  height: 1px;
+  background-color: @border-color-light;
+  margin: 2px -4px;
+}

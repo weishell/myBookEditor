@@ -21,6 +21,17 @@
 - 「自绘 + void」元素（公式/提及/图表/画板/倒计时…）：`isVoid` 让 `addMark` 进不去，
   改它们的数据要用 `Editor.nodes({ voids: true, match })` + `Transforms.setNodes({ attrs }, { at: path, voids: true })`。
 - 文档结构：块统一 `{ type, id, attrs, children }`；列表是挂在段落 attrs 上的 `lilist`（不是 wrapper 类型）。
+- **软换行（Shift+Enter）**：本项目 slate 0.126.2 的 `Editor.insertSoftBreak` 实现是
+  `Transforms.splitNodes({ always: true })` —— **它拆块，不写 `\n`**，所以不能靠浏览器默认。
+  正确做法 = `Transforms.insertText(editor, '\n')`（代码块本来就是这么做的）；
+  且**必须**有 `[data-slate-editor] [data-slate-string] { white-space: pre-wrap }`（`src/index.css`），
+  否则 slate-react 的文本 span 会把 `\n` 折叠成空格、表现为「没反应」。
+  键盘唯一入口：`src/events/keyboard/handleKeyDown.ts`（`core/index.tsx` 的 `onKeyDown`）。
+- **取「选区涉及的块」用 `Editor.nodes({ at: selection, mode: 'highest' })`，别用 `Editor.above`**：
+  `above` 对**跨多块**选区返回 `undefined`（会导致面板误判为不可用 / 整片变灰）。
+- **`Editor.nodes` 的 `match` 里用 `Editor.isBlock` 时必须前置 `Element.isElement(n)` 守卫**：
+  否则 `mode: 'highest'` 会把**编辑器根节点**也当成块命中（path 为 `[]`），遍历直接终止、取不到子块，
+  表现为「按钮亮着但点了没用」。
 
 ## i18n 约定
 

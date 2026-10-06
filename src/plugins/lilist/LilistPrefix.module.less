@@ -1,5 +1,7 @@
 ﻿.prefix {
   display: inline-block;
+  // 兜底宽度；实际宽度由 getLilistPrefixWidth() 以内联 min-width 给出，
+  // 必须与 Paragraph / Heading 的悬挂缩进（padding-left）保持同一个值。
   min-width: 1.2em;
   margin-right: 6px;
   text-align: right;

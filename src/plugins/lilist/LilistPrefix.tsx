@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Tooltip } from 'antd';
 import { BlockElementType } from '@/enums';
-import { convertNumber, getLilist, LilistType } from './lilist-model';
+import { convertNumber, getLilist, getLilistPrefixWidth, LilistType } from './lilist-model';
 import { LilistSettingPopover } from './LilistSettingPopover';
 import styles from './LilistPrefix.module.less';
 
@@ -54,6 +54,8 @@ export const LilistPrefix = ({ element }: LilistPrefixProps) => {
       className={`${styles.prefix} ${isOl ? styles.olNumber : styles.ulBullet}`}
       contentEditable={false}
       data-lilist-prefix={lilist.list_type}
+      // 占位宽度与块的悬挂缩进同源（见 getLilistPrefixWidth），保证换行文字与首行文字对齐
+      style={{ minWidth: getLilistPrefixWidth(element) }}
       onClick={handleClick}
     >
       {label}
