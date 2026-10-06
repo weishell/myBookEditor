@@ -340,12 +340,14 @@ export default {
     fullscreen: 'Fullscreen',
     exitFullscreen: 'Exit fullscreen',
   },
-  // Image toolbar
+  // 图片工具栏
   imageToolbar: {
     alignLeft: 'Align left',
     alignCenter: 'Align center',
     alignRight: 'Align right',
-    resetSize: 'Reset size',
+    reset: 'Reset',
+    crop: 'Crop',
+    preview: 'Preview',
     delete: 'Delete',
     uploading: 'Uploading image',
   },

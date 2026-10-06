@@ -269,12 +269,14 @@ export default {
     fullscreen: '전체 화면',
     exitFullscreen: '전체 화면 종료',
   },
-  // 이미지 툴바
+  // 이미지 도구 모음
   imageToolbar: {
     alignLeft: '왼쪽 정렬',
     alignCenter: '가운데 정렬',
     alignRight: '오른쪽 정렬',
-    resetSize: '크기 초기화',
+    reset: '재설정',
+    crop: '자르기',
+    preview: '미리보기',
     delete: '삭제',
     uploading: '이미지 업로드 중',
   },

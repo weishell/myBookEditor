@@ -1,0 +1,48 @@
+// ImagePreview 全屏预览遮罩（飞书风格）
+
+.overlay {
+  position: fixed;
+  inset: 0;
+  // 纯黑半透：够深，确保遮罩外的下拉/侧栏完全不可见
+  background-color: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2147483000; // 接近 z-index 上限，避开几乎所有站内的 modal/dropdown
+  cursor: zoom-out;
+  user-select: none;
+  // 关键：overlay 自己开一个 stacking context，避开任何 transform 父元素对 fixed 子元素的影响
+  isolation: isolate;
+}
+
+.hint {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 4px 12px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.16);
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.viewport {
+  position: relative;
+  overflow: hidden; // 关键：把"裁剪选区"严格裁到容器尺寸内，挡住选区外的原图
+  background-color: transparent;
+  transform-origin: center center;
+  transition: transform 0.06s linear;
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+.image {
+  display: block;
+}

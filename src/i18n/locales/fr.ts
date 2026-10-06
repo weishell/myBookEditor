@@ -272,12 +272,14 @@ export default {
     fullscreen: 'Plein écran',
     exitFullscreen: 'Quitter le plein écran',
   },
-  // Barre d’outils image
+  // Barre d'outils d'image
   imageToolbar: {
     alignLeft: 'Aligner à gauche',
     alignCenter: 'Centrer',
     alignRight: 'Aligner à droite',
-    resetSize: 'Réinitialiser la taille',
+    reset: 'Réinitialiser',
+    crop: 'Rogner',
+    preview: 'Aperçu',
     delete: 'Supprimer',
     uploading: 'Téléversement de l’image',
   },

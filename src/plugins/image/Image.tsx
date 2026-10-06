@@ -5,9 +5,10 @@ import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import ImageCropper from './ImageCropper';
+import ImagePreview from './ImagePreview';
 import { uploadProgressStore } from './uploadImage';
 import { useTranslation } from 'react-i18next';
-import { ResetIcon, TrashIcon } from '@/components/icons/lineIcons';
+import { ResetIcon, TrashIcon, CropIcon } from '@/components/icons/lineIcons';
 import { AlignIcon } from '@/components/AlignIndentPanel';
 import styles from './Image.module.less';
 
@@ -40,6 +41,9 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
   const [showToolbar, setShowToolbar] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const [isCropping, setIsCropping] = useState(false);
+  const [isPreviewing, setIsPreviewing] = useState(false);
+  // 图片原始宽高：onLoad 时记录一次，"重置"时回到它而不是 800/450。
+  const naturalSizeRef = useRef<{ width: number; height: number } | null>(null);
   // 上传进度来自模块级瞬态 store（不进 Slate 文档/历史）。
   // store 里有该节点 id 的进度 → 显示进度条 overlay；否则正常显示图片。
   useSyncExternalStore(uploadProgressStore.subscribe, uploadProgressStore.getVersion);
@@ -132,6 +136,50 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
     },
     [editor, getElementPath],
   );
+
+  /** 恢复默认图片：清除裁剪偏移、清对齐，回退到原始像素尺寸（若已记录）。 */
+  const handleReset = useCallback(() => {
+    const path = getElementPath();
+    if (!path) return;
+    const natural = naturalSizeRef.current;
+    const fallbackWidth = attrsRef.current.width || 800;
+    const fallbackHeight = attrsRef.current.height || 450;
+    Transforms.setNodes(
+      editor,
+      {
+        attrs: {
+          ...attrsRef.current,
+          width: natural?.width ?? fallbackWidth,
+          height: natural?.height ?? fallbackHeight,
+          offsetLeft: 0,
+          offsetTop: 0,
+          offsetWidth: 0,
+          offsetHeight: 0,
+          align: 'center',
+        },
+      } as any,
+      { at: path },
+    );
+  }, [editor, getElementPath]);
+
+  const handleCropStart = useCallback(() => {
+    setIsCropping(true);
+  }, []);
+
+  /** 选中态下再次点击图片 → 打开预览（与飞书一致）。 */
+  const handleContainerClick = useCallback(
+    (e: React.MouseEvent) => {
+      if (!isSelected) return;
+      // 阻止 Slate 把点击当成"重新选择"继续冒泡
+      e.stopPropagation();
+      setIsPreviewing(true);
+    },
+    [isSelected],
+  );
+
+  const handlePreviewClose = useCallback(() => {
+    setIsPreviewing(false);
+  }, []);
 
   const handleCrop = useCallback(
     (offsetLeft: number, offsetTop: number, offsetWidth: number, offsetHeight: number) => {
@@ -256,8 +304,16 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
             </button>
             <div className={styles.divider} />
             <button
-              onClick={() => handleResize(attrs.width || 800, attrs.height || 450)}
-              title={t('imageToolbar.resetSize')}
+              onClick={handleCropStart}
+              title={t('imageToolbar.crop')}
+              className={styles.toolbarButton}
+            >
+              <CropIcon size={16} />
+            </button>
+            <div className={styles.divider} />
+            <button
+              onClick={handleReset}
+              title={t('imageToolbar.reset')}
               className={styles.toolbarButton}
             >
               <ResetIcon size={16} />
@@ -276,13 +332,16 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
         <div
           ref={containerRef}
           data-visual-root
-          className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''}`}
+          className={`${styles.imageContainer} ${hasCrop ? styles.imageContainerCropped : ''} ${
+            isSelected ? styles.imageContainerSelected : ''
+          }`}
           style={{
             width: DISPLAY_WIDTH,
             aspectRatio: ASPECT_RATIO,
           }}
           contentEditable={false}
           suppressContentEditableWarning={true}
+          onClick={handleContainerClick}
         >
           <img
             src={attrs.url}
@@ -299,7 +358,14 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
                 : undefined
             }
             draggable={false}
-            onLoad={updateBounds}
+            onLoad={(e) => {
+              // 仅在首次成功加载时记录原始像素（避免 ResizeObserver 触发的重复 onLoad 覆盖）
+              const img = e.currentTarget;
+              if (!naturalSizeRef.current && img.naturalWidth && img.naturalHeight) {
+                naturalSizeRef.current = { width: img.naturalWidth, height: img.naturalHeight };
+              }
+              updateBounds();
+            }}
           />
 
           {isUploading && (
@@ -337,6 +403,19 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
           offsetHeight={attrs.offsetHeight}
           onCrop={handleCrop}
           onCancel={handleCancelCrop}
+        />
+      )}
+
+      {isPreviewing && (
+        <ImagePreview
+          src={attrs.url}
+          offsetLeft={attrs.offsetLeft}
+          offsetTop={attrs.offsetTop}
+          offsetWidth={attrs.offsetWidth}
+          offsetHeight={attrs.offsetHeight}
+          naturalWidth={attrs.width}
+          naturalHeight={attrs.height}
+          onClose={handlePreviewClose}
         />
       )}
     </ElementWrapper>

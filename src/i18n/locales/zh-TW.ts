@@ -270,10 +270,12 @@ export default {
   },
   // 圖片工具列
   imageToolbar: {
-    alignLeft: '靠左對齊',
+    alignLeft: '左對齊',
     alignCenter: '置中',
-    alignRight: '靠右對齊',
-    resetSize: '重設尺寸',
+    alignRight: '右對齊',
+    reset: '重設',
+    crop: '裁剪',
+    preview: '預覽',
     delete: '刪除',
     uploading: '圖片上傳中',
   },

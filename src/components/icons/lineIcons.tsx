@@ -274,6 +274,18 @@ export const ResetIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) =
   </svg>
 );
 
+/** 裁剪：四角 L 形选区（飞书风格）。区别于 ScissorsIcon（剪刀）：本图标强调"选区"。 */
+export const CropIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M6 2v6H2" />
+    <path d="M18 2v6h4" />
+    <path d="M6 22v-6H2" />
+    <path d="M18 22v-6h4" />
+    <path d="M8 10h8a2 2 0 0 1 2 2v6" />
+    <rect x="8" y="10" width="8" height="8" rx="1" fill="none" />
+  </svg>
+);
+
 /** 复制：两张叠纸 */
 export const CopyIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
