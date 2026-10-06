@@ -198,6 +198,7 @@ export default {
     columnCount: '段数を選択',
     columnCountTitle: '{{n}} 段',
     back: '戻る',
+    noMatch: '一致するブロックがありません',
   },
   // ブロックメニューの行
   blockMenu: {
@@ -233,5 +234,48 @@ export default {
     newValue: '新しい番号',
     confirm: 'OK',
     headingHint: '新しい番号はこの階層の番号です。親階層は自動で引き継がれます',
+  },
+  // 数式エディタのポップオーバー
+  formula: {
+    placeholder: 'LaTeX 数式を入力（例：E=mc^2）',
+    previewPlaceholder: '数式プレビュー',
+    footerTip: 'ESC で入力を確定、他の場所をクリックで保存',
+    helpDocs: 'ヘルプドキュメントを見る',
+  },
+  // ハイパーリンク：ホバーレイヤー + 編集ポップオーバー
+  hyperlink: {
+    text: 'テキスト',
+    textPlaceholder: 'リンクの表示テキスト',
+    url: 'リンク URL',
+    edit: 'リンクを編集',
+    remove: 'リンクを削除',
+    cancel: 'キャンセル',
+    save: '保存',
+  },
+  // タイムラインブロック
+  timeline: {
+    delete: '削除',
+    deleteNode: 'ノードを削除',
+    addNode: 'ノードを追加',
+    insertHere: 'ここにノードを挿入',
+    titlePlaceholder: 'タイトルを入力',
+    detailPlaceholder: '詳細を入力',
+    timePlaceholder: '時間を入力',
+    alternate: '交互',
+    sameSide: '同じ側',
+    horizontal: '水平方向',
+    vertical: '垂直方向',
+    settings: '設定',
+    fullscreen: 'フルスクリーン',
+    exitFullscreen: 'フルスクリーンを終了',
+  },
+  // 画像ツールバー
+  imageToolbar: {
+    alignLeft: '左揃え',
+    alignCenter: '中央揃え',
+    alignRight: '右揃え',
+    resetSize: 'サイズをリセット',
+    delete: '削除',
+    uploading: '画像をアップロード中',
   },
 } as const;

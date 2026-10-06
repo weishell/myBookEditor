@@ -6,7 +6,9 @@ import { BlockElementType } from '@/enums';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import ImageCropper from './ImageCropper';
 import { uploadProgressStore } from './uploadImage';
-import { v4 as uuidv4 } from 'uuid';
+import { useTranslation } from 'react-i18next';
+import { ResetIcon, TrashIcon } from '@/components/icons/lineIcons';
+import { AlignIcon } from '@/components/AlignIndentPanel';
 import styles from './Image.module.less';
 
 interface ImageAttrs {
@@ -31,6 +33,7 @@ interface ImageProps {
 const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }) => {
   const editor = useSlateStatic();
   const { attrs } = element;
+  const { t } = useTranslation();
   // 用 Slate 原生 useSelected 检测选中状态
   const isSelected = useSelected();
 
@@ -129,10 +132,6 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
     [editor, getElementPath],
   );
 
-  const handleOpenCrop = useCallback(() => {
-    setIsCropping(true);
-  }, []);
-
   const handleCrop = useCallback(
     (offsetLeft: number, offsetTop: number, offsetWidth: number, offsetHeight: number) => {
       const path = getElementPath();
@@ -225,154 +224,40 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
           >
             <button
               onClick={() => handleAlign('left')}
+              title={t('imageToolbar.alignLeft')}
               className={`${styles.toolbarButton} ${attrs.align === 'left' ? styles.toolbarButtonActive : ''}`}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="15" y1="3" x2="6" y2="3"></line>
-                <line x1="19" y1="21" x2="6" y2="21"></line>
-                <path d="M4 9h10"></path>
-                <path d="M4 15h14"></path>
-              </svg>
+              <AlignIcon align="left" active={attrs.align === 'left'} size={16} />
             </button>
             <button
               onClick={() => handleAlign('center')}
+              title={t('imageToolbar.alignCenter')}
               className={`${styles.toolbarButton} ${attrs.align === 'center' ? styles.toolbarButtonActive : ''}`}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="18" y1="3" x2="6" y2="3"></line>
-                <line x1="21" y1="21" x2="3" y2="21"></line>
-                <path d="M9 9h6"></path>
-                <path d="M8 15h8"></path>
-              </svg>
+              <AlignIcon align="center" active={attrs.align === 'center'} size={16} />
             </button>
             <button
               onClick={() => handleAlign('right')}
+              title={t('imageToolbar.alignRight')}
               className={`${styles.toolbarButton} ${attrs.align === 'right' ? styles.toolbarButtonActive : ''}`}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <line x1="9" y1="3" x2="18" y2="3"></line>
-                <line x1="3" y1="21" x2="18" y2="21"></line>
-                <path d="M14 9h6"></path>
-                <path d="M10 15h6"></path>
-              </svg>
+              <AlignIcon align="right" active={attrs.align === 'right'} size={16} />
             </button>
             <div className={styles.divider} />
-            <button
-              onClick={() => handleResize(CROP_WIDTH * 0.25, CROP_HEIGHT * 0.25)}
-              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
-            >
-              S
-            </button>
-            <button
-              onClick={() => handleResize(CROP_WIDTH * 0.5, CROP_HEIGHT * 0.5)}
-              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
-            >
-              M
-            </button>
-            <button
-              onClick={() => handleResize(CROP_WIDTH * 0.75, CROP_HEIGHT * 0.75)}
-              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
-            >
-              L
-            </button>
             <button
               onClick={() => handleResize(attrs.width || 800, attrs.height || 450)}
-              className={`${styles.toolbarButton} ${styles.toolbarButtonText}`}
-            >
-              原
-            </button>
-            <div className={styles.divider} />
-            <button onClick={handleOpenCrop} className={styles.toolbarButton}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                <polyline points="7 10 12 15 17 10"></polyline>
-                <line x1="12" y1="15" x2="12" y2="3"></line>
-              </svg>
-            </button>
-            <button
-              onClick={() => {
-                const path = getElementPath();
-                if (!path) return;
-
-                const insertPath = [...path];
-                insertPath[insertPath.length - 1] += 1;
-                Transforms.insertNodes(
-                  editor,
-                  {
-                    type: BlockElementType.IMAGE_BLOCK,
-                    id: uuidv4(),
-                    attrs: { ...attrsRef.current },
-                    children: [{ text: '' }],
-                  } as any,
-                  { at: insertPath },
-                );
-              }}
+              title={t('imageToolbar.resetSize')}
               className={styles.toolbarButton}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect>
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path>
-              </svg>
+              <ResetIcon size={16} />
             </button>
-            <button onClick={handleRemove} className={styles.toolbarButton}>
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-              </svg>
+            <div className={styles.divider} />
+            <button
+              onClick={handleRemove}
+              title={t('imageToolbar.delete')}
+              className={styles.toolbarButton}
+            >
+              <TrashIcon size={16} />
             </button>
           </div>
         )}
@@ -407,7 +292,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
           {isUploading && (
             <div className={styles.uploadOverlay}>
-              <div className={styles.uploadInfo}>{attrs.name || '图片上传中'}</div>
+              <div className={styles.uploadInfo}>{attrs.name || t('imageToolbar.uploading')}</div>
               <div className={styles.progressTrack}>
                 <div className={styles.progressBar} style={{ width: `${uploadProgress}%` }} />
               </div>

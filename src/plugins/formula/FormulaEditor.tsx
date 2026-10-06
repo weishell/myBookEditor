@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { renderFormulaToHtml } from './katex-utils';
 import styles from './FormulaEditor.module.less';
 
@@ -19,6 +20,7 @@ export const FormulaEditor = ({
   align = 'center',
   onCommit,
 }: FormulaEditorProps) => {
+  const { t } = useTranslation();
   const [value, setValue] = useState(initialValue);
   const [position, setPosition] = useState<{ top: number; left: number }>({
     top: 0,
@@ -96,7 +98,7 @@ export const FormulaEditor = ({
           ref={inputRef}
           className={styles.input}
           value={value}
-          placeholder="输入 LaTeX 公式，如 E=mc^2"
+          placeholder={t('formula.placeholder')}
           spellCheck={false}
           autoCapitalize="off"
           autoCorrect="off"
@@ -119,11 +121,11 @@ export const FormulaEditor = ({
             dangerouslySetInnerHTML={{ __html: previewHtml }}
           />
         ) : (
-          <span className={styles.previewPlaceholder}>公式预览效果</span>
+          <span className={styles.previewPlaceholder}>{t('formula.previewPlaceholder')}</span>
         )}
       </div>
       <div className={styles.footer}>
-        <span className={styles.footerTip}>按 ESC 完成输入，点击其他位置保存</span>
+        <span className={styles.footerTip}>{t('formula.footerTip')}</span>
         <a
           className={styles.footerHelp}
           href="https://katex.org/docs/supported"
@@ -131,7 +133,7 @@ export const FormulaEditor = ({
           rel="noreferrer"
           onClick={(e) => e.stopPropagation()}
         >
-          查看帮助文档
+          {t('formula.helpDocs')}
         </a>
       </div>
     </div>

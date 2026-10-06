@@ -9,12 +9,15 @@ import { createElement, useEffect, useMemo, useRef, useState, useSyncExternalSto
 import { createPortal } from 'react-dom';
 import { Editor, Transforms } from 'slate';
 import { ReactEditor } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType } from '@/enums';
 import { convertDocBarBlock, type DocBarConvertTarget } from '@/plugins/docbar/docbar-commands';
 import { createBlockNode } from '@/plugins/block-picker';
 import { openAndInsertImages } from '@/plugins/image/uploadImage';
 import { insertTable } from '@/plugins/table/table-operations';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
+import { DividerIcon, GlobeIcon, ImageIcon, TableIcon } from '@/components/icons/lineIcons';
+import { headingBlockLabel } from '@/utils/block-label';
 import { slashStore, getSlashEditor } from './slash-store';
 import styles from './SlashMenu.module.less';
 
@@ -22,7 +25,9 @@ type SlashCmd =
   | {
       kind: 'convert';
       target: DocBarConvertTarget;
-      label: string;
+      /** i18n key；标题类带 level（见 labelOf） */
+      labelKey: string;
+      level?: number;
       icon: React.ReactNode;
       mono?: boolean;
       group: 'basic';
@@ -30,7 +35,8 @@ type SlashCmd =
   | {
       kind: 'insert';
       target: BlockElementType;
-      label: string;
+      labelKey: string;
+      level?: number;
       icon: React.ReactNode;
       group: 'common';
     };
@@ -55,32 +61,36 @@ const ICON_KEY: Record<DocBarConvertTarget, string> = {
   'code-block': 'code-block',
 };
 
-const convertItem = (target: DocBarConvertTarget, label: string): SlashCmd => {
+const convertItem = (target: DocBarConvertTarget, labelKey: string, level?: number): SlashCmd => {
   // blockTypeIconComponent 返回组件类型（function/class），需先渲染成 ReactNode，
   // 否则 ComponentType 不能直接赋给 ReactNode（TS2322）。
   const IconCmp = blockTypeIconComponent(ICON_KEY[target] as any);
   return {
     kind: 'convert',
     target,
-    label,
+    labelKey,
+    level,
     group: 'basic',
-    icon: IconCmp ? createElement(IconCmp) : <span>{label}</span>,
+    icon: IconCmp ? createElement(IconCmp) : null,
   };
 };
 
+// 文案全走 i18n（blockPicker.* / blockMenu.*），与块类型面板一致：
+//   基础组顺序 = T → H1..H9 → 有序 → 无序 → 任务 → 代码块 → 引用 → 提示块
+//   与 BlockTypePicker、FloatBar 合并菜单保持同一顺序（见各自文件注释）。
 const BASIC_CMDS: SlashCmd[] = [
-  convertItem('text', '文本'),
-  convertItem('h1', '一级标题'),
-  convertItem('h2', '二级标题'),
-  convertItem('h3', '三级标题'),
-  convertItem('h4', '四级标题'),
-  convertItem('h5', '五级标题'),
-  convertItem('numbered-list', '有序列表'),
-  convertItem('bulleted-list', '无序列表'),
-  convertItem('checkbox', '待办任务'),
-  convertItem('code-block', '代码块'),
-  convertItem('quote', '引用'),
-  convertItem('hint', '提示块'),
+  convertItem('text', 'blockPicker.paragraph'),
+  convertItem('h1', 'blockPicker.heading', 1),
+  convertItem('h2', 'blockPicker.heading', 2),
+  convertItem('h3', 'blockPicker.heading', 3),
+  convertItem('h4', 'blockPicker.heading', 4),
+  convertItem('h5', 'blockPicker.heading', 5),
+  convertItem('numbered-list', 'blockPicker.numberedList'),
+  convertItem('bulleted-list', 'blockPicker.bulletedList'),
+  convertItem('checkbox', 'blockPicker.todoList'),
+  convertItem('code-block', 'blockPicker.codeBlock'),
+  convertItem('quote', 'blockPicker.blockquote'),
+  convertItem('hint', 'blockPicker.hintBlock'),
 ];
 
 const COMMON_CMDS: SlashCmd[] = [
@@ -88,26 +98,38 @@ const COMMON_CMDS: SlashCmd[] = [
     kind: 'insert',
     group: 'common',
     target: BlockElementType.IMAGE_BLOCK,
-    label: '图片',
-    icon: '🖼',
+    labelKey: 'blockPicker.image',
+    icon: <ImageIcon size={16} />,
   },
-  { kind: 'insert', group: 'common', target: BlockElementType.TABLE, label: '表格', icon: '⊞' },
+  {
+    kind: 'insert',
+    group: 'common',
+    target: BlockElementType.TABLE,
+    labelKey: 'blockPicker.table',
+    icon: <TableIcon size={16} />,
+  },
   {
     kind: 'insert',
     group: 'common',
     target: BlockElementType.EMBED,
-    label: '内嵌网页',
-    icon: '🌐',
+    labelKey: 'blockPicker.embed',
+    icon: <GlobeIcon size={16} />,
   },
-  { kind: 'insert', group: 'common', target: BlockElementType.DIVIDER, label: '分隔线', icon: '—' },
+  {
+    kind: 'insert',
+    group: 'common',
+    target: BlockElementType.DIVIDER,
+    labelKey: 'blockPicker.divider',
+    icon: <DividerIcon size={16} />,
+  },
 ];
 
 const ALL_CMDS = [...BASIC_CMDS, ...COMMON_CMDS];
 
-const matchCmd = (cmd: SlashCmd, query: string): boolean => {
+const matchCmd = (cmd: SlashCmd, query: string, labelOf: (c: SlashCmd) => string): boolean => {
   if (!query) return true;
   const q = query.toLowerCase();
-  return cmd.label.toLowerCase().includes(q) || cmd.target.toLowerCase().includes(q);
+  return labelOf(cmd).toLowerCase().includes(q) || cmd.target.toLowerCase().includes(q);
 };
 
 /** 当前位置之后插入新块的 path（与右键菜单语义一致） */
@@ -117,14 +139,19 @@ const nextPathAfter = (path: number[]): number[] => [
 ];
 
 export const SlashMenu = () => {
+  const { t } = useTranslation();
   const state = useSyncExternalStore(slashStore.subscribe, slashStore.get, slashStore.get);
   const [active, setActive] = useState(0);
   const menuRef = useRef<HTMLDivElement>(null);
 
+  // 把 labelKey（+level）翻成当前语言的文案；依赖 t，换语言即重算。
+  const labelOf = (cmd: SlashCmd): string =>
+    cmd.level ? headingBlockLabel(t, cmd.level) : t(cmd.labelKey);
+
   // 过滤后的命令（保持 基础->常用 原有顺序）
   const visibleCmds = useMemo(
-    () => ALL_CMDS.filter((c) => matchCmd(c, state.query)),
-    [state.query],
+    () => ALL_CMDS.filter((c) => matchCmd(c, state.query, labelOf)),
+    [state.query, labelOf],
   );
   // 第一个"常用"项在 visibleCmds 里的位置，用于分组渲染时对齐高亮下标
   const commonStart = useMemo(
@@ -205,12 +232,13 @@ export const SlashMenu = () => {
     >
       {basics.length > 0 && (
         <>
-          <div className={styles.groupLabel}>基础</div>
+          <div className={styles.groupLabel}>{t('blockPicker.basic')}</div>
           <div className={styles.group}>
             {basics.map((cmd, i) => (
               <CmdItem
                 key={`b-${cmd.target}`}
                 cmd={cmd}
+                label={labelOf(cmd)}
                 isActive={active === i}
                 onHover={() => setActive(i)}
                 onClick={execute}
@@ -222,7 +250,7 @@ export const SlashMenu = () => {
       {basics.length > 0 && commons.length > 0 && <div className={styles.divider} />}
       {commons.length > 0 && (
         <>
-          <div className={styles.groupLabel}>常用</div>
+          <div className={styles.groupLabel}>{t('blockPicker.common')}</div>
           <div className={styles.group}>
             {commons.map((cmd, j) => {
               const idx = commonStart + j;
@@ -230,6 +258,7 @@ export const SlashMenu = () => {
                 <CmdItem
                   key={`c-${cmd.target}`}
                   cmd={cmd}
+                  label={labelOf(cmd)}
                   isActive={active === idx}
                   onHover={() => setActive(idx)}
                   onClick={execute}
@@ -239,7 +268,7 @@ export const SlashMenu = () => {
           </div>
         </>
       )}
-      {visibleCmds.length === 0 && <div className={styles.empty}>没有匹配的块类型</div>}
+      {visibleCmds.length === 0 && <div className={styles.empty}>{t('blockPicker.noMatch')}</div>}
     </div>,
     document.body,
   );
@@ -247,11 +276,13 @@ export const SlashMenu = () => {
 
 const CmdItem = ({
   cmd,
+  label,
   isActive,
   onHover,
   onClick,
 }: {
   cmd: SlashCmd;
+  label: string;
   isActive: boolean;
   onHover: () => void;
   onClick: (cmd: SlashCmd) => void;
@@ -265,7 +296,7 @@ const CmdItem = ({
     }}
   >
     <span className={styles.itemIcon}>{cmd.icon}</span>
-    <span className={styles.itemLabel}>{cmd.label}</span>
+    <span className={styles.itemLabel}>{label}</span>
   </button>
 );
 

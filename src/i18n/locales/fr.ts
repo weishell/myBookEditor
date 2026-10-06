@@ -201,6 +201,7 @@ export default {
     columnCount: 'Nombre de colonnes',
     columnCountTitle: '{{n}} colonnes',
     back: 'Retour',
+    noMatch: 'Aucun type de bloc correspondant',
   },
   // Lignes du menu de bloc
   blockMenu: {
@@ -236,5 +237,48 @@ export default {
     newValue: 'Nouveau numéro',
     confirm: 'OK',
     headingHint: 'Le nouveau numéro est celui de ce niveau ; le parent est hérité automatiquement',
+  },
+  // Panneau d’édition de formule
+  formula: {
+    placeholder: 'Saisir une formule LaTeX, ex. E=mc^2',
+    previewPlaceholder: 'Aperçu de la formule',
+    footerTip: 'Appuyez sur Échap pour terminer, cliquez ailleurs pour enregistrer',
+    helpDocs: 'Voir la documentation',
+  },
+  // Lien hypertexte : couche au survol + panneau d’édition
+  hyperlink: {
+    text: 'Texte',
+    textPlaceholder: 'Texte à afficher',
+    url: 'Adresse du lien',
+    edit: 'Modifier le lien',
+    remove: 'Supprimer le lien',
+    cancel: 'Annuler',
+    save: 'Enregistrer',
+  },
+  // Bloc frise chronologique
+  timeline: {
+    delete: 'Supprimer',
+    deleteNode: 'Supprimer le nœud',
+    addNode: 'Ajouter un nœud',
+    insertHere: 'Insérer un nœud ici',
+    titlePlaceholder: 'Saisir un titre',
+    detailPlaceholder: 'Saisir les détails',
+    timePlaceholder: 'Saisir une date',
+    alternate: 'Alterné',
+    sameSide: 'Même côté',
+    horizontal: 'Horizontal',
+    vertical: 'Vertical',
+    settings: 'Paramètres',
+    fullscreen: 'Plein écran',
+    exitFullscreen: 'Quitter le plein écran',
+  },
+  // Barre d’outils image
+  imageToolbar: {
+    alignLeft: 'Aligner à gauche',
+    alignCenter: 'Centrer',
+    alignRight: 'Aligner à droite',
+    resetSize: 'Réinitialiser la taille',
+    delete: 'Supprimer',
+    uploading: 'Téléversement de l’image',
   },
 } as const;

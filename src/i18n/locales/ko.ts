@@ -198,6 +198,7 @@ export default {
     columnCount: '단 수 선택',
     columnCountTitle: '{{n}}단',
     back: '뒤로',
+    noMatch: '일치하는 블록 없음',
   },
   // 블록 메뉴 항목
   blockMenu: {
@@ -233,5 +234,48 @@ export default {
     newValue: '새 번호',
     confirm: '확인',
     headingHint: '새 번호는 이 수준의 번호이며, 상위 번호는 자동으로 이어집니다',
+  },
+  // 수식 편집 팝오버
+  formula: {
+    placeholder: 'LaTeX 수식을 입력하세요 (예: E=mc^2)',
+    previewPlaceholder: '수식 미리보기',
+    footerTip: 'ESC로 입력 완료, 다른 곳을 클릭하면 저장됩니다',
+    helpDocs: '도움말 문서 보기',
+  },
+  // 하이퍼링크: 호버 레이어 + 편집 팝오버
+  hyperlink: {
+    text: '텍스트',
+    textPlaceholder: '링크 표시 텍스트',
+    url: '링크 URL',
+    edit: '링크 편집',
+    remove: '링크 제거',
+    cancel: '취소',
+    save: '저장',
+  },
+  // 타임라인 블록
+  timeline: {
+    delete: '삭제',
+    deleteNode: '노드 삭제',
+    addNode: '노드 추가',
+    insertHere: '여기에 노드 삽입',
+    titlePlaceholder: '제목 입력',
+    detailPlaceholder: '상세 입력',
+    timePlaceholder: '시간 입력',
+    alternate: '교대',
+    sameSide: '같은 쪽',
+    horizontal: '가로 배치',
+    vertical: '세로 배치',
+    settings: '설정',
+    fullscreen: '전체 화면',
+    exitFullscreen: '전체 화면 종료',
+  },
+  // 이미지 툴바
+  imageToolbar: {
+    alignLeft: '왼쪽 정렬',
+    alignCenter: '가운데 정렬',
+    alignRight: '오른쪽 정렬',
+    resetSize: '크기 초기화',
+    delete: '삭제',
+    uploading: '이미지 업로드 중',
   },
 } as const;

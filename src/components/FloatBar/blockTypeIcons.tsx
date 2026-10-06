@@ -1,15 +1,8 @@
-// 块类型菜单的统一图标集（飞书款线性 SVG，跟 DocBar 同源）
+// 块类型菜单的图标出口（跟 DocBar 同源）
 // 主工具栏的"块类型"按钮 + 合并下拉里所有项都从这里取，保证视觉一致。
+// 具体图标定义已统一到 @/components/icons/lineIcons，这里只做「块类型 key → 图标」的映射。
 
 import type { BlockType } from './blockType';
-
-// 通用线性图标样式（对齐 DocBar / 飞书简洁线性风格）
-const lineProps = {
-  fill: 'none',
-  strokeWidth: 2,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-};
 
 interface IconProps {
   color?: string;
@@ -31,40 +24,14 @@ const HIcon = ({ level = 1 }: { level?: number }) => (
   <span style={{ fontSize: 12, fontWeight: 'bold' }}>H{level}</span>
 );
 
-/** 任务：方框 + 勾 */
-const TodoIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="5.5" y="5.5" width="13" height="13" rx="2" />
-    <path d="M9 12l2 2 4-4" />
-  </svg>
-);
-
-/** 引用：双引号 */
-const QuoteIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M10.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6H8.4c0-1.2.7-2 2.1-2" />
-    <path d="M18.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6h-2.2c0-1.2.7-2 2.1-2" />
-  </svg>
-);
-
-/** 提示块：底部高亮横杠 + 右上角星标（与引用块/飞书高亮块图标相区分） */
-const HintIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="4" y="3.5" width="16" height="17" rx="3" />
-    <path
-      d="M12 8.5l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 10.6l2-.3z"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-/** 代码块：{} 花括号（对齐飞书） */
-const CodeIcon = ({ color = 'currentColor', size = 16 }: IconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
-    <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
-  </svg>
-);
+// 块类型图标统一取自全站图标集（与 DocBar / 块菜单 / 块类型面板同源同风格）。
+// T / Hn 仍是文字图标（字母本身就是图标），列表图标复用 lilist 的实现。
+import {
+  TodoIcon,
+  QuoteIcon,
+  HintIcon,
+  CodeBlockIcon as CodeIcon,
+} from '@/components/icons/lineIcons';
 
 /** 有序列表 + 无序列表：复用 lilist 包里的实现（跟 DocBar 完全一致） */
 import { OlListIcon, UlListIcon } from '@/plugins/lilist';

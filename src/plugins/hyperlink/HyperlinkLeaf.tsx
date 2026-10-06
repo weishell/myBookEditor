@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useSlate, useReadOnly, ReactEditor } from 'slate-react';
 import { Text, Transforms } from 'slate';
 import type { Range } from 'slate';
@@ -34,6 +35,7 @@ type Placement = 'top' | 'bottom';
  *  - 链接本身悬浮带下划线
  */
 export const HyperlinkLeaf = ({ url, attributes, style, children }: HyperlinkLeafProps) => {
+  const { t } = useTranslation();
   const editor = useSlate();
   const readOnly = useReadOnly();
   const [popover, setPopover] = useState(false);
@@ -203,7 +205,11 @@ export const HyperlinkLeaf = ({ url, attributes, style, children }: HyperlinkLea
             <span className={styles.urlText} title={url} onClick={() => openUrl()}>
               {url}
             </span>
-            <button className={styles.actionBtn} title="编辑链接" onClick={() => setEditing(true)}>
+            <button
+              className={styles.actionBtn}
+              title={t('hyperlink.edit')}
+              onClick={() => setEditing(true)}
+            >
               <span className={styles.linkIcon}>
                 <svg
                   width="14"
@@ -221,7 +227,7 @@ export const HyperlinkLeaf = ({ url, attributes, style, children }: HyperlinkLea
             </button>
             <button
               className={`${styles.actionBtn} ${styles.danger}`}
-              title="移除链接"
+              title={t('hyperlink.remove')}
               onClick={removeLink}
             >
               <span className={styles.linkIcon}>

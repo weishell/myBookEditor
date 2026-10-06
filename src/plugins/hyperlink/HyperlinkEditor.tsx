@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import styles from './HyperlinkEditor.module.less';
 
 interface HyperlinkEditorProps {
@@ -22,6 +23,7 @@ export const HyperlinkEditor = ({
   onRemove,
   onCancel,
 }: HyperlinkEditorProps) => {
+  const { t } = useTranslation();
   const [text, setText] = useState(initialText);
   const [url, setUrl] = useState(initialUrl);
   const [position, setPosition] = useState({ top: 0, left: -160 });
@@ -92,12 +94,12 @@ export const HyperlinkEditor = ({
       style={{ top: position.top, left: position.left }}
     >
       <div className={styles.field}>
-        <label className={styles.label}>文本</label>
+        <label className={styles.label}>{t('hyperlink.text')}</label>
         <input
           ref={textInputRef}
           className={styles.input}
           value={text}
-          placeholder="链接的显示文字"
+          placeholder={t('hyperlink.textPlaceholder')}
           spellCheck={false}
           onChange={(e) => setText(e.target.value)}
           onKeyDown={(e) => {
@@ -109,7 +111,7 @@ export const HyperlinkEditor = ({
         />
       </div>
       <div className={styles.field}>
-        <label className={styles.label}>链接地址</label>
+        <label className={styles.label}>{t('hyperlink.url')}</label>
         <input
           ref={urlInputRef}
           className={styles.input}
@@ -138,7 +140,7 @@ export const HyperlinkEditor = ({
               onRemove();
             }}
           >
-            移除链接
+            {t('hyperlink.remove')}
           </button>
         )}
         <button
@@ -149,7 +151,7 @@ export const HyperlinkEditor = ({
             onCancel();
           }}
         >
-          取消
+          {t('hyperlink.cancel')}
         </button>
         <button
           className={styles.primaryBtn}
@@ -161,7 +163,7 @@ export const HyperlinkEditor = ({
             handleCommit();
           }}
         >
-          保存
+          {t('hyperlink.save')}
         </button>
       </div>
     </div>,

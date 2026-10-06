@@ -198,6 +198,7 @@ export default {
     columnCount: 'Spaltenanzahl',
     columnCountTitle: '{{n}} Spalten',
     back: 'Zurück',
+    noMatch: 'Kein passender Blocktyp',
   },
   // Zeilen des Blockmenüs
   blockMenu: {
@@ -234,5 +235,48 @@ export default {
     confirm: 'OK',
     headingHint:
       'Die neue Nummer gilt für diese Ebene; die übergeordnete wird automatisch übernommen',
+  },
+  // Formel-Editor-Popover
+  formula: {
+    placeholder: 'LaTeX-Formel eingeben, z. B. E=mc^2',
+    previewPlaceholder: 'Formelvorschau',
+    footerTip: 'Mit ESC abschließen, außerhalb klicken zum Speichern',
+    helpDocs: 'Dokumentation ansehen',
+  },
+  // Hyperlink: Hover-Layer + Bearbeiten-Popover
+  hyperlink: {
+    text: 'Text',
+    textPlaceholder: 'Anzuzeigender Text',
+    url: 'Link-URL',
+    edit: 'Link bearbeiten',
+    remove: 'Link entfernen',
+    cancel: 'Abbrechen',
+    save: 'Speichern',
+  },
+  // Zeitachsen-Block
+  timeline: {
+    delete: 'Löschen',
+    deleteNode: 'Knoten löschen',
+    addNode: 'Knoten hinzufügen',
+    insertHere: 'Knoten hier einfügen',
+    titlePlaceholder: 'Titel eingeben',
+    detailPlaceholder: 'Details eingeben',
+    timePlaceholder: 'Zeit eingeben',
+    alternate: 'Versetzt',
+    sameSide: 'Gleiche Seite',
+    horizontal: 'Horizontal',
+    vertical: 'Vertikal',
+    settings: 'Einstellungen',
+    fullscreen: 'Vollbild',
+    exitFullscreen: 'Vollbild beenden',
+  },
+  // Bild-Symbolleiste
+  imageToolbar: {
+    alignLeft: 'Linksbündig',
+    alignCenter: 'Zentrieren',
+    alignRight: 'Rechtsbündig',
+    resetSize: 'Größe zurücksetzen',
+    delete: 'Löschen',
+    uploading: 'Bild wird hochgeladen',
   },
 } as const;

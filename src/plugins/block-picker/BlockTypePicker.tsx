@@ -10,6 +10,21 @@ import { BlockElementType } from '@/enums';
 import { blockTypeIcon } from '@/components/FloatBar/blockTypeIcons';
 import type { BlockType } from '@/components/FloatBar/blockType';
 import { headingBlockLabel } from '@/utils/block-label';
+import {
+  CalendarIcon,
+  ChartIcon,
+  ColumnsIcon,
+  CountdownIcon,
+  DividerIcon,
+  DrawboardIcon,
+  DrawioIcon,
+  FileIcon,
+  GlobeIcon,
+  ImageIcon,
+  TableIcon,
+  TimelineIcon,
+  VideoIcon,
+} from '@/components/icons/lineIcons';
 import styles from './BlockTypePicker.module.less';
 
 export interface BlockTypeOption {
@@ -77,26 +92,56 @@ const BASIC_ITEMS: BlockTypeOption[] = [
   },
 ];
 
-// 常用组（非文本类）- 列表项风格
+// 常用组（非文本类）- 列表项风格。
+// 图标统一走 @/components/icons/lineIcons（与 DocBar / 块菜单同源），不再用 emoji ——
+// emoji 在不同系统渲染出的形态/大小都不一样，是"各个风格"的主要来源。
 const COMMON_ITEMS: BlockTypeOption[] = [
-  { type: BlockElementType.IMAGE_BLOCK, labelKey: 'blockPicker.image', icon: '🖼' },
-  { type: BlockElementType.FILE_BLOCK, labelKey: 'blockPicker.file', icon: '📄' },
-  { type: BlockElementType.VIDEO_BLOCK, labelKey: 'blockPicker.video', icon: '🎬' },
-  { type: BlockElementType.TABLE, labelKey: 'blockPicker.table', icon: '⊞' },
+  {
+    type: BlockElementType.IMAGE_BLOCK,
+    labelKey: 'blockPicker.image',
+    icon: <ImageIcon size={16} />,
+  },
+  { type: BlockElementType.FILE_BLOCK, labelKey: 'blockPicker.file', icon: <FileIcon size={16} /> },
+  {
+    type: BlockElementType.VIDEO_BLOCK,
+    labelKey: 'blockPicker.video',
+    icon: <VideoIcon size={16} />,
+  },
+  { type: BlockElementType.TABLE, labelKey: 'blockPicker.table', icon: <TableIcon size={16} /> },
   {
     type: BlockElementType.COLUMN_GROUP,
     labelKey: 'blockPicker.columns',
-    icon: '▦',
+    icon: <ColumnsIcon size={16} />,
     isColumn: true,
   },
-  { type: BlockElementType.COUNTDOWN, labelKey: 'blockPicker.countdown', icon: '⏳' },
-  { type: BlockElementType.CHART, labelKey: 'blockPicker.chart', icon: '📊' },
-  { type: BlockElementType.CALENDAR, labelKey: 'blockPicker.calendar', icon: '📅' },
-  { type: BlockElementType.TIMELINE, labelKey: 'blockPicker.timeline', icon: '📎' },
-  { type: BlockElementType.EMBED, labelKey: 'blockPicker.embed', icon: '🌐' },
-  { type: BlockElementType.DRAWBOARD, labelKey: 'blockPicker.drawboard', icon: '⬚' },
-  { type: BlockElementType.DRAWIO, labelKey: 'blockPicker.drawio', icon: '⇄' },
-  { type: BlockElementType.DIVIDER, labelKey: 'blockPicker.divider', icon: '—' },
+  {
+    type: BlockElementType.COUNTDOWN,
+    labelKey: 'blockPicker.countdown',
+    icon: <CountdownIcon size={16} />,
+  },
+  { type: BlockElementType.CHART, labelKey: 'blockPicker.chart', icon: <ChartIcon size={16} /> },
+  {
+    type: BlockElementType.CALENDAR,
+    labelKey: 'blockPicker.calendar',
+    icon: <CalendarIcon size={16} />,
+  },
+  {
+    type: BlockElementType.TIMELINE,
+    labelKey: 'blockPicker.timeline',
+    icon: <TimelineIcon size={16} />,
+  },
+  { type: BlockElementType.EMBED, labelKey: 'blockPicker.embed', icon: <GlobeIcon size={16} /> },
+  {
+    type: BlockElementType.DRAWBOARD,
+    labelKey: 'blockPicker.drawboard',
+    icon: <DrawboardIcon size={16} />,
+  },
+  { type: BlockElementType.DRAWIO, labelKey: 'blockPicker.drawio', icon: <DrawioIcon size={16} /> },
+  {
+    type: BlockElementType.DIVIDER,
+    labelKey: 'blockPicker.divider',
+    icon: <DividerIcon size={16} />,
+  },
 ];
 
 const COLUMN_PRESETS = [2, 3, 4, 5];

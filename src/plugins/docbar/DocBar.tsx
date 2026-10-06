@@ -9,172 +9,30 @@ import { LilistType, OlListIcon, UlListIcon } from '@/plugins/lilist';
 import { beginDragSort, isDragSortableType, DRAG_SORT_EVENT } from '@/plugins/drag-sort';
 import styles from './DocBar.module.less';
 
-interface SvgIconProps {
-  color: string;
-  size?: number;
-}
-
-// 通用线性图标样式（对齐飞书简洁线性风格）
-const lineProps = {
-  fill: 'none',
-  strokeWidth: 1.8,
-  strokeLinecap: 'round' as const,
-  strokeLinejoin: 'round' as const,
-};
-
-// 段落：无背景字母 T，直接融入文档（参考飞书 docbar）
-const ParagraphIcon = ({ color, size = 20 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24">
-    <text x="12" y="17" fontSize="13.5" fill={color} textAnchor="middle" fontWeight="bold">
-      T
-    </text>
-  </svg>
-);
-
-// 标题 H1-H9：无背景字母 H{level}，直接融入文档（参考飞书 docbar）
-const HeadingIcon = ({ color, size = 20, level = 1 }: SvgIconProps & { level?: number }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24">
-    <text
-      x="12"
-      y="17"
-      fontSize={level > 9 ? 9.5 : 11.5}
-      fill={color}
-      textAnchor="middle"
-      fontWeight="bold"
-    >
-      H{level}
-    </text>
-  </svg>
-);
-
-// 文档标题：T 形线性图标
-const TitleIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M7 5.5h10M12 5.5v13" />
-  </svg>
-);
-
-// 空块（仅段落）：纯 + 字，无背景
-const EmptyIcon = ({ color, size = 22 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-    <path d="M12 5v14M5 12h14" stroke={color} strokeWidth="2" strokeLinecap="round" />
-  </svg>
-);
-
-// 引用：双引号
-const QuoteIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M10.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6H8.4c0-1.2.7-2 2.1-2" />
-    <path d="M18.5 7.5c-2.6 0-4.5 1.9-4.5 4.4V17h4.6v-4.6h-2.2c0-1.2.7-2 2.1-2" />
-  </svg>
-);
-
-// 提示块：底部高亮横杠 + 右上角星标（与引用/飞书高亮块图标相区分）
-const HintIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="4" y="3.5" width="16" height="17" rx="3" />
-    <path
-      d="M12 8.5l.9 1.8 2 .3-1.45 1.4.35 2-1.8-.95-1.8.95.35-2L9.1 10.6l2-.3z"
-      strokeLinejoin="round"
-    />
-  </svg>
-);
-
-// 代码块：{} 花括号（对齐飞书）
-const CodeIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1" />
-    <path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1" />
-  </svg>
-);
-
-// 任务列表：方框 + 勾
-const TodoListIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="5.5" y="5.5" width="13" height="13" rx="2" />
-    <path d="M9 12l2 2 4-4" />
-  </svg>
-);
-
-// 表格：表格线
-const TableIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
-    <path d="M3.5 9.5h17M3.5 15.5h17M9.5 3.5v17M15.5 3.5v17" />
-  </svg>
-);
-
-// 图片：框 + 山 + 太阳
-const ImageIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="3.5" y="3.5" width="17" height="17" rx="2" />
-    <circle cx="8.5" cy="8.5" r="1.5" />
-    <path d="M21 15.5l-5-5L5 21" />
-  </svg>
-);
-
-// 流程图：菱形 + 矩形 + 连线（参考飞书流程图图标）
-const DrawioIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="9" y="2.5" width="6" height="6" rx="1" transform="rotate(45 12 5.5)" />
-    <rect x="3" y="15.5" width="7" height="6" rx="1" />
-    <rect x="14" y="15.5" width="7" height="6" rx="1" />
-    <path d="M12 8.5v3M12 11.5H6.5v4M12 11.5h5.5v4" />
-  </svg>
-);
-
-// 倒计时：沙漏（对齐飞书倒计时图标）
-const CountdownIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M5 22h14M5 2h14" />
-    <path d="M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22" />
-    <path d="M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2" />
-  </svg>
-);
-
-// 日历：方框 + 顶部双耳 + 圆点日期（对齐飞书日历图标）
-const CalendarIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="3.5" y="5" width="17" height="15" rx="2" />
-    <path d="M3.5 10h17M8 3v4M16 3v4" />
-    <circle cx="8" cy="14" r="1" fill={color} stroke="none" />
-    <circle cx="12" cy="14" r="1" fill={color} stroke="none" />
-    <circle cx="16" cy="14" r="1" fill={color} stroke="none" />
-  </svg>
-);
-
-// 时间轴：三个圆点 + 虚线连接（对齐飞书时间轴图标）
-const TimelineIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M3 12h18" strokeDasharray="2 2" />
-    <circle cx="6" cy="12" r="1.6" fill={color} stroke="none" />
-    <circle cx="12" cy="12" r="1.6" fill={color} stroke="none" />
-    <circle cx="18" cy="12" r="1.6" fill={color} stroke="none" />
-  </svg>
-);
-
-// 图表：三根渐变柱状条（对齐飞书图表图标）
-const ChartIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M6 20V10M12 20V4M18 20v-7" strokeWidth="2" />
-  </svg>
-);
-
-// 画板（drawui）：三个方框组合，与画板自身标题栏/预览图标保持一致
-const DrawboardIcon = ({ color, size = 18 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <rect x="3" y="3" width="7" height="7" rx="1" />
-    <rect x="14" y="3" width="7" height="7" rx="1" />
-    <rect x="8" y="14" width="9" height="7" rx="1" />
-  </svg>
-);
-
-// 拖拽手柄
-const DragIcon = ({ color = '#999', size = 16 }: SvgIconProps) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M9 6h6M9 12h6M9 18h6" />
-  </svg>
-);
+// 图标全部来自全站统一图标集 —— 与 FloatBar / 块菜单 / 块类型面板 / 斜杠菜单同源同风格。
+// 下面按 DocBar 原有的名字做别名，getElementIcon 的映射表因此无需改动。
+import {
+  ParagraphIcon,
+  HeadingIcon,
+  DocTitleIcon as TitleIcon,
+  PlusIcon as EmptyIcon,
+  QuoteIcon,
+  HintIcon,
+  CodeBlockIcon as CodeIcon,
+  TodoIcon as TodoListIcon,
+  TableIcon,
+  ImageIcon,
+  FileIcon,
+  VideoIcon,
+  DrawioIcon,
+  CountdownIcon,
+  CalendarIcon,
+  TimelineIcon,
+  ChartIcon,
+  DrawboardIcon,
+  DragHandleIcon as DragIcon,
+  type SvgIconProps,
+} from '@/components/icons/lineIcons';
 
 interface IconConfig {
   component: React.FC<SvgIconProps & { level?: number }>;
@@ -222,15 +80,9 @@ const getElementIcon = (type: BlockElementType, attrs?: any, isEmpty?: boolean):
     case BlockElementType.IMAGE_BLOCK:
       return { component: ImageIcon };
     case BlockElementType.FILE_BLOCK:
-    case BlockElementType.VIDEO_BLOCK: {
-      const MediaIcon = ({ color, size = 16 }: SvgIconProps) => (
-        <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-          <path d="M14 2.5H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
-          <path d="M14 2.5V8h5.5" />
-        </svg>
-      );
-      return { component: MediaIcon };
-    }
+      return { component: FileIcon };
+    case BlockElementType.VIDEO_BLOCK:
+      return { component: VideoIcon };
     case BlockElementType.DRAWIO:
       return { component: DrawioIcon };
     case BlockElementType.COUNTDOWN:
@@ -398,7 +250,7 @@ export const DocBar = () => {
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <DragIcon color="#1890ff" />
+          <DragIcon color={iconColor} />
         </button>
       )}
     </div>

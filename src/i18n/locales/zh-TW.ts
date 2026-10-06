@@ -197,6 +197,7 @@ export default {
     columnCount: '選擇欄數',
     columnCountTitle: '{{n}} 欄',
     back: '返回',
+    noMatch: '沒有匹配的區塊類型',
   },
   // 區塊選單列文案
   blockMenu: {
@@ -232,5 +233,48 @@ export default {
     newValue: '新編號為',
     confirm: '確定',
     headingHint: '新編號為本層級序號，父層級編號自動繼承',
+  },
+  // 公式編輯彈窗
+  formula: {
+    placeholder: '輸入 LaTeX 公式，如 E=mc^2',
+    previewPlaceholder: '公式預覽效果',
+    footerTip: '按 ESC 完成輸入，點擊其他位置儲存',
+    helpDocs: '檢視說明文件',
+  },
+  // 超連結：浮動層 + 編輯彈窗
+  hyperlink: {
+    text: '文字',
+    textPlaceholder: '連結的顯示文字',
+    url: '連結地址',
+    edit: '編輯連結',
+    remove: '移除連結',
+    cancel: '取消',
+    save: '儲存',
+  },
+  // 時間軸塊
+  timeline: {
+    delete: '刪除',
+    deleteNode: '刪除節點',
+    addNode: '新增節點',
+    insertHere: '在此處插入節點',
+    titlePlaceholder: '輸入標題',
+    detailPlaceholder: '輸入詳情',
+    timePlaceholder: '輸入時間',
+    alternate: '交替',
+    sameSide: '同側',
+    horizontal: '水平排列',
+    vertical: '垂直排列',
+    settings: '設定',
+    fullscreen: '全螢幕',
+    exitFullscreen: '退出全螢幕',
+  },
+  // 圖片工具列
+  imageToolbar: {
+    alignLeft: '靠左對齊',
+    alignCenter: '置中',
+    alignRight: '靠右對齊',
+    resetSize: '重設尺寸',
+    delete: '刪除',
+    uploading: '圖片上傳中',
   },
 } as const;

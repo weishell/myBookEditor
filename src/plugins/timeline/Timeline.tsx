@@ -1,8 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Transforms } from 'slate';
 import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
+import { lockPageScroll } from '@/utils/scroll-lock';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import styles from './Timeline.module.less';
 import {
@@ -88,6 +91,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
 
 /** 悬浮加号按钮（横向连接线段） */
 const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide }) => {
+  const { t } = useTranslation();
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -99,7 +103,7 @@ const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
         <button
           className={styles.gapAddBtn}
           onClick={onAdd}
-          title={wide ? '添加节点' : '在此处插入节点'}
+          title={wide ? t('timeline.addNode') : t('timeline.insertHere')}
           contentEditable={false}
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -112,6 +116,7 @@ const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
 
 /** 悬浮加号按钮（纵向连接线段） */
 const AddGapV: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide }) => {
+  const { t } = useTranslation();
   const [hover, setHover] = useState(false);
   return (
     <div
@@ -123,7 +128,7 @@ const AddGapV: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
         <button
           className={styles.gapAddBtn}
           onClick={onAdd}
-          title={wide ? '添加节点' : '在此处插入节点'}
+          title={wide ? t('timeline.addNode') : t('timeline.insertHere')}
           contentEditable={false}
           onMouseDown={(e) => e.preventDefault()}
         >
@@ -167,7 +172,7 @@ const FullscreenIcon = () => (
   </svg>
 );
 
-const CommentIcon = () => (
+const ExitFullscreenIcon = () => (
   <svg
     width="16"
     height="16"
@@ -178,7 +183,7 @@ const CommentIcon = () => (
     strokeLinecap="round"
     strokeLinejoin="round"
   >
-    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+    <path d="M8 3v3a2 2 0 0 1-2 2H3m18 0h-3a2 2 0 0 1-2-2V3m0 18v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />
   </svg>
 );
 
@@ -201,6 +206,7 @@ const TrashIcon = () => (
 // ========== 主组件 ==========
 
 const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, element }) => {
+  const { t } = useTranslation();
   const editor = useSlateStatic();
   // normalizeNode 已兜底，这里再兜一层防止异常数据导致渲染崩溃
   const attrs: TimelineAttrs = normalizeTimelineAttrs(element.attrs);
@@ -210,6 +216,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showSettings, setShowSettings] = useState(false);
+  const [fullscreen, setFullscreen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   const hideTimerRef = useRef<number | null>(null);
@@ -344,6 +351,24 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
     return () => document.removeEventListener('mousedown', handleClick);
   }, [showSettings]);
 
+  // 全屏：锁页面滚动 + ESC 退出（捕获阶段，先于编辑器快捷键）
+  useEffect(() => {
+    if (!fullscreen) return;
+    const unlock = lockPageScroll();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        e.stopPropagation();
+        setFullscreen(false);
+      }
+    };
+    document.addEventListener('keydown', onKey, true);
+    return () => {
+      unlock();
+      document.removeEventListener('keydown', onKey, true);
+    };
+  }, [fullscreen]);
+
   // ===== 卡片 / 时间标签 =====
 
   const renderCard = (item: TimelineItem, ci: number) => (
@@ -356,13 +381,13 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
       <EditableField
         className={styles.cardTitle}
         value={item.title}
-        placeholder="输入标题"
+        placeholder={t('timeline.titlePlaceholder')}
         onChange={(v) => handleItemChange(item.id, 'title', v)}
       />
       <EditableField
         className={styles.cardDetail}
         value={item.detail}
-        placeholder="输入详情"
+        placeholder={t('timeline.detailPlaceholder')}
         onChange={(v) => handleItemChange(item.id, 'detail', v)}
       />
       <button
@@ -371,7 +396,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
           e.stopPropagation();
           handleDeleteItem(item.id);
         }}
-        title="删除节点"
+        title={t('timeline.deleteNode')}
         onMouseDown={(e) => e.preventDefault()}
       >
         <TrashIcon />
@@ -383,7 +408,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
     <EditableField
       className={styles.timeLabel}
       value={item.time}
-      placeholder="输入时间"
+      placeholder={t('timeline.timePlaceholder')}
       onChange={(v) => handleItemChange(item.id, 'time', v)}
     />
   );
@@ -466,7 +491,11 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <button onClick={handleRemove} className={styles.toolbarButton} title="删除">
+            <button
+              onClick={handleRemove}
+              className={styles.toolbarButton}
+              title={t('timeline.delete')}
+            >
               <svg
                 width="16"
                 height="16"
@@ -488,16 +517,16 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
         <div className={styles.frame} style={{ width, height }}>
           {/* 右上角操作栏（不滚动） */}
           <div className={styles.topRightBar}>
-            <button className={styles.commentBtn} title="组件内评论">
-              <CommentIcon />
-              <span className={styles.commentText}>组件内评论</span>
-            </button>
-            <button className={styles.iconBtn} title="全屏">
+            <button
+              className={styles.iconBtn}
+              title={t('timeline.fullscreen')}
+              onClick={() => setFullscreen(true)}
+            >
               <FullscreenIcon />
             </button>
             <button
               className={styles.iconBtn}
-              title="设置"
+              title={t('timeline.settings')}
               onClick={() => setShowSettings(!showSettings)}
             >
               <SettingsIcon />
@@ -508,20 +537,20 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
           {showSettings && (
             <div ref={settingsRef} className={styles.settingsPanel}>
               <div className={styles.settingsItem} onClick={toggleSideMode}>
-                <span className={styles.settingsLabel}>交替</span>
+                <span className={styles.settingsLabel}>{t('timeline.alternate')}</span>
                 {sideMode === 'alternate' && <span className={styles.checkIcon}>✓</span>}
               </div>
               <div className={styles.settingsItem} onClick={toggleSideMode}>
-                <span className={styles.settingsLabel}>同侧</span>
+                <span className={styles.settingsLabel}>{t('timeline.sameSide')}</span>
                 {sideMode === 'same' && <span className={styles.checkIcon}>✓</span>}
               </div>
               <div className={styles.settingsDivider} />
               <div className={styles.settingsItem} onClick={toggleDirection}>
-                <span className={styles.settingsLabel}>水平排列</span>
+                <span className={styles.settingsLabel}>{t('timeline.horizontal')}</span>
                 {direction === 'horizontal' && <span className={styles.checkIcon}>✓</span>}
               </div>
               <div className={styles.settingsItem} onClick={toggleDirection}>
-                <span className={styles.settingsLabel}>垂直排列</span>
+                <span className={styles.settingsLabel}>{t('timeline.vertical')}</span>
                 {direction === 'vertical' && <span className={styles.checkIcon}>✓</span>}
               </div>
             </div>
@@ -552,6 +581,60 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
           />
         )}
       </div>
+
+      {/* 全屏覆盖层：portal 到 body，铺满视口；内容与内联版本同源（attrs 驱动，双端可编辑互同步） */}
+      {fullscreen &&
+        createPortal(
+          <div className={styles.fullscreenOverlay}>
+            <div className={styles.fullscreenFrame}>
+              <div className={styles.topRightBar}>
+                <button
+                  className={styles.iconBtn}
+                  title={t('timeline.exitFullscreen')}
+                  onClick={() => setFullscreen(false)}
+                >
+                  <ExitFullscreenIcon />
+                </button>
+                <button
+                  className={styles.iconBtn}
+                  title={t('timeline.settings')}
+                  onClick={() => setShowSettings(!showSettings)}
+                >
+                  <SettingsIcon />
+                </button>
+              </div>
+              {showSettings && (
+                <div ref={settingsRef} className={styles.settingsPanel}>
+                  <div className={styles.settingsItem} onClick={toggleSideMode}>
+                    <span className={styles.settingsLabel}>{t('timeline.alternate')}</span>
+                    {sideMode === 'alternate' && <span className={styles.checkIcon}>✓</span>}
+                  </div>
+                  <div className={styles.settingsItem} onClick={toggleSideMode}>
+                    <span className={styles.settingsLabel}>{t('timeline.sameSide')}</span>
+                    {sideMode === 'same' && <span className={styles.checkIcon}>✓</span>}
+                  </div>
+                  <div className={styles.settingsDivider} />
+                  <div className={styles.settingsItem} onClick={toggleDirection}>
+                    <span className={styles.settingsLabel}>{t('timeline.horizontal')}</span>
+                    {direction === 'horizontal' && <span className={styles.checkIcon}>✓</span>}
+                  </div>
+                  <div className={styles.settingsItem} onClick={toggleDirection}>
+                    <span className={styles.settingsLabel}>{t('timeline.vertical')}</span>
+                    {direction === 'vertical' && <span className={styles.checkIcon}>✓</span>}
+                  </div>
+                </div>
+              )}
+              <div
+                className={styles.container}
+                contentEditable={false}
+                suppressContentEditableWarning
+              >
+                {direction === 'horizontal' ? renderHorizontal() : renderVertical()}
+              </div>
+            </div>
+          </div>,
+          document.body,
+        )}
 
       {children}
     </ElementWrapper>

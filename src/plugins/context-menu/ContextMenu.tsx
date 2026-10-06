@@ -40,6 +40,16 @@ import {
 import { getLilist, sortLilist } from '@/plugins/lilist';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
 import AlignIndentPanel from '@/components/AlignIndentPanel';
+import {
+  CommentIcon,
+  CopyIcon,
+  DropletIcon,
+  GlobeIcon,
+  IndentAlignIcon,
+  PlusIcon,
+  ScissorsIcon,
+  TrashIcon,
+} from '@/components/icons/lineIcons';
 import styles from './ContextMenu.module.less';
 
 export const ContextMenu = () => {
@@ -804,7 +814,9 @@ export const ContextMenu = () => {
               setHoveringMenu(true);
             }}
           >
-            <span className={styles.actionIcon}>☰</span>
+            <span className={styles.actionIcon}>
+              <IndentAlignIcon size={16} />
+            </span>
             <span>{t('blockMenu.indentAlign')}</span>
             <span className={styles.actionArrow}>{indentOpen ? '⌄' : '›'}</span>
           </button>
@@ -871,7 +883,9 @@ export const ContextMenu = () => {
               setHoveringMenu(true);
             }}
           >
-            <span className={styles.actionIcon}>🎨</span>
+            <span className={styles.actionIcon}>
+              <DropletIcon size={16} />
+            </span>
             <span>{t('blockMenu.color')}</span>
             <span className={styles.actionArrow}>{colorOpen ? '⌄' : '›'}</span>
           </button>
@@ -882,7 +896,9 @@ export const ContextMenu = () => {
           className={styles.btnAction}
           disabled={DISABLED_ACTIONS.includes('comment')}
         >
-          <span className={styles.actionIcon}>💬</span>
+          <span className={styles.actionIcon}>
+            <CommentIcon size={16} />
+          </span>
           <span>{t('blockMenu.comment')}</span>
         </button>
         <button
@@ -890,7 +906,9 @@ export const ContextMenu = () => {
           className={styles.btnAction}
           disabled={DISABLED_ACTIONS.includes('cut')}
         >
-          <span className={styles.actionIcon}>✂</span>
+          <span className={styles.actionIcon}>
+            <ScissorsIcon size={16} />
+          </span>
           <span>{t('blockMenu.cut')}</span>
         </button>
         <button
@@ -898,7 +916,9 @@ export const ContextMenu = () => {
           className={styles.btnAction}
           disabled={DISABLED_ACTIONS.includes('copy')}
         >
-          <span className={styles.actionIcon}>📋</span>
+          <span className={styles.actionIcon}>
+            <CopyIcon size={16} />
+          </span>
           <span>{t('blockMenu.copy')}</span>
         </button>
         <button
@@ -906,7 +926,9 @@ export const ContextMenu = () => {
           className={styles.btnAction}
           disabled={DISABLED_ACTIONS.includes('delete')}
         >
-          <span className={styles.actionIcon}>🗑</span>
+          <span className={styles.actionIcon}>
+            <TrashIcon size={16} />
+          </span>
           <span>{t('blockMenu.delete')}</span>
         </button>
         <div className={styles.divider} />
@@ -921,7 +943,9 @@ export const ContextMenu = () => {
             forceCloseMenu();
           }}
         >
-          <span className={styles.actionIcon}>🌐</span>
+          <span className={styles.actionIcon}>
+            <GlobeIcon size={16} />
+          </span>
           <span>{t('blockPicker.embed')}</span>
         </button>
         {canInsertBelow && (
@@ -955,7 +979,9 @@ export const ContextMenu = () => {
                   setHoveringMenu(true);
                 }}
               >
-                <span className={styles.actionIcon}>＋</span>
+                <span className={styles.actionIcon}>
+                  <PlusIcon size={16} />
+                </span>
                 <span>{t('blockMenu.insertBelow')}</span>
                 <span className={styles.actionArrow}>{insertOpen ? '⌄' : '›'}</span>
               </button>

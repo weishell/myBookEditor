@@ -217,6 +217,7 @@ export default {
     columnCount: '选择栏数',
     columnCountTitle: '{{n}} 列',
     back: '返回',
+    noMatch: '没有匹配的块类型',
   },
   // 块菜单（ContextMenu）行文案
   blockMenu: {
@@ -252,5 +253,48 @@ export default {
     newValue: '新编号为',
     confirm: '确定',
     headingHint: '新编号为本层级序号，父级编号自动继承',
+  },
+  // 公式编辑弹框
+  formula: {
+    placeholder: '输入 LaTeX 公式，如 E=mc^2',
+    previewPlaceholder: '公式预览效果',
+    footerTip: '按 ESC 完成输入，点击其他位置保存',
+    helpDocs: '查看帮助文档',
+  },
+  // 超链接：悬浮层 + 编辑弹框
+  hyperlink: {
+    text: '文本',
+    textPlaceholder: '链接的显示文字',
+    url: '链接地址',
+    edit: '编辑链接',
+    remove: '移除链接',
+    cancel: '取消',
+    save: '保存',
+  },
+  // 时间轴块
+  timeline: {
+    delete: '删除',
+    deleteNode: '删除节点',
+    addNode: '添加节点',
+    insertHere: '在此处插入节点',
+    titlePlaceholder: '输入标题',
+    detailPlaceholder: '输入详情',
+    timePlaceholder: '输入时间',
+    alternate: '交替',
+    sameSide: '同侧',
+    horizontal: '水平排列',
+    vertical: '垂直排列',
+    settings: '设置',
+    fullscreen: '全屏',
+    exitFullscreen: '退出全屏',
+  },
+  // 图片工具栏
+  imageToolbar: {
+    alignLeft: '左对齐',
+    alignCenter: '居中',
+    alignRight: '右对齐',
+    resetSize: '重置尺寸',
+    delete: '删除',
+    uploading: '图片上传中',
   },
 } as const;

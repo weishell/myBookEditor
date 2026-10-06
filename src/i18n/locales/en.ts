@@ -269,6 +269,7 @@ export default {
     columnCount: 'Number of columns',
     columnCountTitle: '{{n}} columns',
     back: 'Back',
+    noMatch: 'No matching block type',
   },
   // Block menu (ContextMenu) rows
   blockMenu: {
@@ -304,5 +305,48 @@ export default {
     newValue: 'New number',
     confirm: 'OK',
     headingHint: 'The new number applies to this level; the parent is inherited automatically',
+  },
+  // Formula editor popover
+  formula: {
+    placeholder: 'Enter a LaTeX formula, e.g. E=mc^2',
+    previewPlaceholder: 'Formula preview',
+    footerTip: 'Press ESC to finish, click elsewhere to save',
+    helpDocs: 'View documentation',
+  },
+  // Hyperlink: hover layer + edit popover
+  hyperlink: {
+    text: 'Text',
+    textPlaceholder: 'Text to display',
+    url: 'Link URL',
+    edit: 'Edit link',
+    remove: 'Remove link',
+    cancel: 'Cancel',
+    save: 'Save',
+  },
+  // Timeline block
+  timeline: {
+    delete: 'Delete',
+    deleteNode: 'Delete node',
+    addNode: 'Add node',
+    insertHere: 'Insert node here',
+    titlePlaceholder: 'Enter a title',
+    detailPlaceholder: 'Enter details',
+    timePlaceholder: 'Enter a time',
+    alternate: 'Alternate',
+    sameSide: 'Same side',
+    horizontal: 'Horizontal',
+    vertical: 'Vertical',
+    settings: 'Settings',
+    fullscreen: 'Fullscreen',
+    exitFullscreen: 'Exit fullscreen',
+  },
+  // Image toolbar
+  imageToolbar: {
+    alignLeft: 'Align left',
+    alignCenter: 'Align center',
+    alignRight: 'Align right',
+    resetSize: 'Reset size',
+    delete: 'Delete',
+    uploading: 'Uploading image',
   },
 } as const;
