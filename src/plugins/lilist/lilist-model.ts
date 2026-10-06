@@ -5,7 +5,7 @@
 //  - list_number: 编号数值，由 sortLilist 回写，渲染直接读取（不现算）
 //  - list_custom: 是否为用户自定义锚点；锚点以 list_number 为起点，
 //                 只影响其后的编号，锚点之前的项仍从组头顺序计数
-import { Editor, Transforms } from 'slate';
+import { Editor, Transforms, type Path } from 'slate';
 import { BlockElementType, LilistType } from '@/enums';
 
 export { LilistType };
@@ -144,6 +144,46 @@ export const getLilistPrefixWidth = (element: any): string => {
 };
 
 /**
+ * 取「本组中、与本项同层级的前一项」的编号（给「修改编号值」做重复保护用）。
+ *
+ * 层级与分组口径完全对齐 sortLilist：段落按 attrs.indent、标题按 attrs.level；
+ * 同组 = 同 list_id + 同列表类型，且**允许不连续**（「继续之前的编号」并入后同组可隔段存在），
+ * 所以向前扫描时要跳过非本组的块，而不是一遇到就停。
+ *
+ * @returns 同层前一项的编号；返回 null 表示本层没有前项
+ *          （本项是该组/该层级的第一项，编号可自由设置）
+ */
+export const getPrevSameLevelListNumber = (editor: Editor, path: Path): number | null => {
+  const children = (editor as any).children as any[];
+  const index = path[path.length - 1];
+  const node = children[index];
+  const lilist = getLilist(node);
+  if (!lilist) return null;
+
+  const isHeading = node?.type === BlockElementType.HEADING;
+  const levelOf = (n: any): number =>
+    isHeading ? (n?.attrs?.level ?? 1) : (n?.attrs?.indent ?? 0);
+  const myLevel = levelOf(node);
+
+  for (let i = index - 1; i >= 0; i--) {
+    const cur = children[i];
+    const curLilist = getLilist(cur);
+    if (
+      !curLilist ||
+      curLilist.list_id !== lilist.list_id ||
+      curLilist.list_type !== lilist.list_type
+    ) {
+      continue; // 非本组块：同组可以不连续，跳过继续往前找
+    }
+    const level = levelOf(cur);
+    if (level > myLevel) continue; // 更深的子项不影响本层计数
+    if (level < myLevel) return null; // 回到更浅层级 → 本层计数器已被清空，本项从 1 重新开始
+    return Math.min(Math.max(curLilist.list_number || 1, 1), MAX_LIST_NUMBER);
+  }
+  return null;
+};
+
+/**
  * 编号回写排序（对齐 template.md 的 olulListSort，但全程同步、无 sleep）
  * 每次结构变更（回车/增删/转换/改编号/缩进）后调用：
  * 按文档顺序遍历同组（同 list_id）块，逐缩进层级顺序编号并写回 list_number。
@@ -238,9 +278,15 @@ export const sortLilist = (
         for (const key of [...counters.keys()]) {
           if (key > indent) counters.delete(key);
         }
-        const number = nodeLilist.list_custom
-          ? Math.min(Math.max(nodeLilist.list_number || 1, 1), MAX_LIST_NUMBER)
-          : (counters.get(indent) ?? 0) + 1;
+        const prevCount = counters.get(indent) ?? 0;
+        // 同一个列表内编号必须严格递增、不出现重复 —— 锚点只允许「往后跳号」：
+        // 锚点值 ≤ 本层已有计数时视为无效，直接按顺序顺延（1,2,2,3,4 → 1,2,3,4,5）。
+        // 顺带取消锚点标记：否则会把顺延后的值固化成新锚点，删掉前面的项后会留下空号。
+        // 想在视觉上出现重复编号，请用「开始新列表」把后段拆成另一个列表（各列表编号独立计数）。
+        const anchorValue = Math.min(Math.max(nodeLilist.list_number || 1, 1), MAX_LIST_NUMBER);
+        const isAnchorValid = !!nodeLilist.list_custom && anchorValue > prevCount;
+        const number = isAnchorValid ? anchorValue : prevCount + 1;
+        const nextCustom = isAnchorValid;
         counters.set(indent, number);
         if (isHeadingGroup) {
           // 层级编号：list_number 存自身所在 level 的序号，list_path 存完整路径（如 1.1），
@@ -251,13 +297,23 @@ export const sortLilist = (
             if (c !== undefined) segments.push(String(c));
           }
           const listPath = segments.join('.');
-          if (nodeLilist.list_number !== number || nodeLilist.list_path !== listPath) {
+          const nextLilist = {
+            ...nodeLilist,
+            list_number: number,
+            list_path: listPath,
+            list_custom: nextCustom,
+          };
+          if (
+            nodeLilist.list_number !== number ||
+            nodeLilist.list_path !== listPath ||
+            nodeLilist.list_custom !== nextCustom
+          ) {
             Transforms.setNodes(
               editor,
               {
                 attrs: {
                   ...(node?.attrs || {}),
-                  lilist: { ...nodeLilist, list_number: number, list_path: listPath },
+                  lilist: nextLilist,
                 },
               } as any,
               { at: [idx] },
@@ -265,13 +321,13 @@ export const sortLilist = (
           }
           return;
         }
-        if (nodeLilist.list_number !== number) {
+        if (nodeLilist.list_number !== number || nodeLilist.list_custom !== nextCustom) {
           Transforms.setNodes(
             editor,
             {
               attrs: {
                 ...(node?.attrs || {}),
-                lilist: { ...nodeLilist, list_number: number },
+                lilist: { ...nodeLilist, list_number: number, list_custom: nextCustom },
               },
             } as any,
             { at: [idx] },

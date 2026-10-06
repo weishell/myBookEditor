@@ -84,15 +84,21 @@ export const sortInnerLilist = (editor: Editor, hintPath: Path): void => {
       for (const key of [...counters.keys()]) {
         if (key > indent) counters.delete(key);
       }
-      const number = lilist.list_custom
-        ? Math.min(Math.max(lilist.list_number || 1, 1), MAX_LIST_NUMBER)
-        : (counters.get(indent) ?? 0) + 1;
+      const prevCount = counters.get(indent) ?? 0;
+      // 与顶层 sortLilist 同一规则：同一列表内编号严格递增，锚点只能往后跳号，
+      // 回头造重复则视为无效、按顺序顺延（并取消锚点标记）
+      const anchorValue = Math.min(Math.max(lilist.list_number || 1, 1), MAX_LIST_NUMBER);
+      const isAnchorValid = !!lilist.list_custom && anchorValue > prevCount;
+      const number = isAnchorValid ? anchorValue : prevCount + 1;
       counters.set(indent, number);
-      if (lilist.list_number !== number) {
+      if (lilist.list_number !== number || lilist.list_custom !== isAnchorValid) {
         Transforms.setNodes(
           editor,
           {
-            attrs: { ...(child.attrs || {}), lilist: { ...lilist, list_number: number } },
+            attrs: {
+              ...(child.attrs || {}),
+              lilist: { ...lilist, list_number: number, list_custom: isAnchorValid },
+            },
           } as any,
           { at: [...hintPath, i] },
         );

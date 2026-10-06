@@ -6,6 +6,7 @@ import { BlockElementType } from '@/enums';
 import { MAX_INDENT, setBlockIndent } from '@/utils/indent';
 import {
   getLilist,
+  getPrevSameLevelListNumber,
   isLilistHost,
   LilistType,
   MAX_LIST_NUMBER,
@@ -279,11 +280,9 @@ export const convertBlockToLilist = (
           const idx = path[path.length - 1];
           const prev = idx > 0 ? (Node.get(editor, [...path.slice(0, -1), idx - 1]) as any) : null;
           const prevL = getLilist(prev);
+          // 与顶层同样：起始数字 > 1 也先承接前方内部列表，避免在容器内造出可见的重复编号
           const connect =
-            prev &&
-            prev.type === BlockElementType.PARAGRAPH &&
-            prevL?.list_type === type &&
-            startNumber === 1
+            prev && prev.type === BlockElementType.PARAGRAPH && prevL?.list_type === type
               ? prevL
               : null;
           const base = { ...(node?.attrs || {}) };
@@ -298,7 +297,7 @@ export const convertBlockToLilist = (
                   list_type: type,
                   list_id: connect ? connect.list_id : uuidv4(),
                   list_number: startNumber,
-                  list_custom: !connect,
+                  list_custom: true,
                 },
               },
             } as any,
@@ -313,18 +312,22 @@ export const convertBlockToLilist = (
 
     // H 标题 OL 走"按 level + 设置状态"的新规则；其余维持旧规则
     const useHeadingRule = shouldUseHeadingLevelRule(type, node);
-    const connectId =
-      startNumber === 1
-        ? useHeadingRule
-          ? getPrevHeadingConnectListId(editor, path, type, node?.attrs?.level ?? 1)
-          : getPrevConnectListId(editor, path, type)
-        : undefined;
+    // 起始数字无论是不是 1，都要先尝试承接相邻列表。
+    // 原实现在 startNumber !== 1 时直接另起新列表 →「列表里已经有 2，再输入 2」会在屏幕上
+    // 出现重复编号（1,2,2,3,4）：数据上是两个列表，用户看到的却是一个连续列表。
+    // 承接之后交给 sortLilist 统一裁决：起始数字比前方计数大就跳号（输入 5 → 5,6,7），
+    // 否则顺延（已有 2 时输入 2 → 本项变 3，后面的项一起顺延成 4,5），列表保持完整。
+    // 刻意要「另起一个从 2 开始的列表」，走编号弹框里的「开始新列表」。
+    const connectId = useHeadingRule
+      ? getPrevHeadingConnectListId(editor, path, type, node?.attrs?.level ?? 1)
+      : getPrevConnectListId(editor, path, type);
 
     setLilist(editor, path, {
       list_type: type,
       list_id: connectId ?? uuidv4(),
       list_number: startNumber,
-      list_custom: connectId === undefined,
+      // 保留锚点标记：是否真的跳号由 sortLilist 判断（值无效时它顺延并清掉标记）
+      list_custom: true,
     });
     // 承接前方列表时需从当前位置起重排前方组；新建组只有一项无需排序
     if (connectId) sortLilist(editor, [connectId], path[path.length - 1]);
@@ -453,11 +456,33 @@ export const restartLilist = (editor: Editor, path: Path) => {
 };
 
 /** 修改编号值：写入自定义锚点（对齐 template 的 btnOlChangeNumber，超限截断到 MAX_LIST_NUMBER） */
+/**
+ * 解析「修改编号值」实际会写入的编号（带重复保护）。
+ *
+ * 默认不允许产生重复编号：输入的编号若 ≤ 同组同层级前一项的编号，
+ * 就顺延成「前一项 + 1」。其后所有项由 sortLilist 顺延重排，
+ * 于是列表保持连续完整（1,2,3,4,5），而不是出现两个相同的号。
+ *
+ * 例：列表 1,2,[2],3,4 里把那个「2」再设成 2 → 该项变 3，后面两项变 4,5。
+ *
+ * 想故意重复（拆成 1,2 | 2,3,4 两个列表）走「开始新列表」：
+ * 那时本项是新组首项，前面没有同组同层的项，不受此约束。
+ */
+export const resolveLilistNumber = (editor: Editor, path: Path, value: number): number => {
+  const safeValue = Math.min(Math.max(Math.floor(value) || 1, 1), MAX_LIST_NUMBER);
+  const prevNumber = getPrevSameLevelListNumber(editor, path);
+  if (prevNumber !== null && safeValue <= prevNumber) {
+    return Math.min(prevNumber + 1, MAX_LIST_NUMBER);
+  }
+  return safeValue;
+};
+
+/** 修改编号值：写入锚点编号，再从本项起顺延重排本组 */
 export const changeLilistNumber = (editor: Editor, path: Path, value: number) => {
   try {
     const lilist = getLilist(Node.get(editor, path));
     if (!lilist) return;
-    const safeValue = Math.min(Math.max(Math.floor(value) || 1, 1), MAX_LIST_NUMBER);
+    const safeValue = resolveLilistNumber(editor, path, value);
     setLilist(editor, path, {
       list_type: lilist.list_type,
       list_id: lilist.list_id,

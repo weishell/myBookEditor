@@ -7,6 +7,7 @@
 //  - 点击弹框以外任意位置关闭
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { Button, InputNumber } from 'antd';
 import { ReactEditor, useSlateStatic } from 'slate-react';
 import type { Path } from 'slate';
@@ -15,6 +16,7 @@ import {
   canContinueLilist,
   changeLilistNumber,
   continueLilist,
+  resolveLilistNumber,
   restartLilist,
 } from './lilist-commands';
 import { getLilist, MAX_LIST_NUMBER } from './lilist-model';
@@ -39,6 +41,7 @@ export const LilistSettingPopover = ({
   onClose,
 }: LilistSettingPopoverProps) => {
   const editor = useSlateStatic();
+  const { t } = useTranslation();
   const popoverRef = useRef<HTMLDivElement>(null);
   // 修改编号值面板：弹框内部切换，正文中不出现输入框
   const [modifyMode, setModifyMode] = useState(false);
@@ -125,10 +128,12 @@ export const LilistSettingPopover = ({
   }, [modifyMode]);
 
   // 确认修改：超限按 MAX_LIST_NUMBER 截断（对齐 template handleConfirmModify）
+  // 比较的是「实际会写入的编号」（含重复保护顺延后的值）——这样「当前显示的 2 再输入 2」
+  // 也会走顺延（变成 3、后面顺延成 4,5）；而纯粹没改动时仍不写，避免把自动编号误固化成锚点。
   const confirmModify = () => {
     if (newValue && newValue > 0 && path) {
       const v = Math.min(newValue, MAX_LIST_NUMBER);
-      if (v !== currentNumber) {
+      if (resolveLilistNumber(editor, path, v) !== currentNumber) {
         changeLilistNumber(editor, path, v);
       }
     }
@@ -151,7 +156,7 @@ export const LilistSettingPopover = ({
           <button
             className={styles.backButton}
             onClick={() => setModifyMode(false)}
-            aria-label="返回"
+            aria-label={t('lilistSetting.back')}
           >
             <svg
               width="14"
@@ -168,7 +173,7 @@ export const LilistSettingPopover = ({
           </button>
           <div className={styles.modifyBody}>
             <div className={styles.modifyRow}>
-              <span className={styles.modifyLabel}>当前编号的值为</span>
+              <span className={styles.modifyLabel}>{t('lilistSetting.currentValue')}</span>
               {currentPathLabel !== undefined ? (
                 <span className={styles.currentPath}>{currentPathLabel}</span>
               ) : (
@@ -181,7 +186,7 @@ export const LilistSettingPopover = ({
               )}
             </div>
             <div className={styles.modifyRow}>
-              <span className={styles.modifyLabel}>新编号为</span>
+              <span className={styles.modifyLabel}>{t('lilistSetting.newValue')}</span>
               <InputNumber
                 ref={inputRef}
                 className={styles.modifyInput}
@@ -194,12 +199,10 @@ export const LilistSettingPopover = ({
                 onPressEnter={confirmModify}
               />
               <Button type="primary" size="small" onClick={confirmModify}>
-                确定
+                {t('lilistSetting.confirm')}
               </Button>
             </div>
-            {isHeading && (
-              <div className={styles.modifyHint}>新编号为本层级序号，父级编号自动继承</div>
-            )}
+            {isHeading && <div className={styles.modifyHint}>{t('lilistSetting.headingHint')}</div>}
           </div>
         </div>
       ) : (
@@ -224,7 +227,7 @@ export const LilistSettingPopover = ({
               <path d="M4 12h12a4 4 0 0 0 0-8h-3" />
               <line x1="4" y1="20" x2="20" y2="20" />
             </svg>
-            继续之前的编号
+            {t('lilistSetting.continuePrev')}
           </button>
           <button
             className={styles.option}
@@ -248,7 +251,7 @@ export const LilistSettingPopover = ({
               <line x1="9" y1="12" x2="20" y2="12" />
               <line x1="9" y1="18" x2="15" y2="18" />
             </svg>
-            开始新列表
+            {t('lilistSetting.startNew')}
           </button>
           <button className={styles.option} disabled={!path} onClick={() => setModifyMode(true)}>
             <svg
@@ -264,7 +267,7 @@ export const LilistSettingPopover = ({
             >
               <path d="M17 3a2.85 2.85 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" />
             </svg>
-            修改编号值
+            {t('lilistSetting.modifyNumber')}
           </button>
         </>
       )}

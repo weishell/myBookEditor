@@ -9,6 +9,7 @@
 
 import { useEffect, useRef, useCallback, useState } from 'react';
 import { createPortal } from 'react-dom';
+import { useTranslation } from 'react-i18next';
 import { useSlateStatic, ReactEditor } from 'slate-react';
 import { Popover } from 'antd';
 import { Editor, Element, Node, Range, Transforms } from 'slate';
@@ -45,6 +46,7 @@ export const ContextMenu = () => {
   // 注意：这里刻意不取 closeMenu —— 它是"延迟 200ms + 仅当鼠标不在菜单上才真关"的
   // 语义，用来做"鼠标移开自动关闭"。点击菜单项一律走 forceCloseMenu（见 closeAfterAction）。
   const { visible, position, forceCloseMenu, setHoveringMenu, targetId } = useMenu();
+  const { t } = useTranslation();
   const menuRef = useRef<HTMLDivElement>(null);
   const editor = useSlateStatic();
   // 行内评论：菜单里的「评论」= 先选中整块文字，再复用 FloatBar 同款的 createFromSelection。
@@ -701,7 +703,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('numbered-list')}
             className={isConvertActive('numbered-list') ? styles.btnPrimary : styles.btnTool}
             disabled={DISABLED_ACTIONS.includes('numbered-list')}
-            title="有序列表"
+            title={t('blockPicker.numberedList')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('numbered');
@@ -712,7 +714,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('bulleted-list')}
             className={isConvertActive('bulleted-list') ? styles.btnPrimary : styles.btnTool}
             disabled={DISABLED_ACTIONS.includes('bulleted-list')}
-            title="无序列表"
+            title={t('blockPicker.bulletedList')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('bulleted');
@@ -726,7 +728,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('checkbox')}
             className={isConvertActive('checkbox') ? styles.btnPrimary : styles.btnTool}
             disabled={DISABLED_ACTIONS.includes('checkbox')}
-            title="任务"
+            title={t('blockMenu.todoTitle')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('todo');
@@ -737,7 +739,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('code-block')}
             className={isConvertActive('code-block') ? styles.btnPrimary : styles.btnToolMono}
             disabled={DISABLED_ACTIONS.includes('code-block')}
-            title="代码块"
+            title={t('blockPicker.codeBlock')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('code-block');
@@ -748,7 +750,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('quote')}
             className={isConvertActive('quote') ? styles.btnPrimary : styles.btnTool}
             disabled={DISABLED_ACTIONS.includes('quote')}
-            title="引用"
+            title={t('blockMenu.quoteTitle')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('quote');
@@ -759,7 +761,7 @@ export const ContextMenu = () => {
             onClick={() => handleMenuClick('hint')}
             className={isConvertActive('hint') ? styles.btnPrimary : styles.btnTool}
             disabled={DISABLED_ACTIONS.includes('hint')}
-            title="提示块"
+            title={t('blockPicker.hintBlock')}
           >
             {(() => {
               const Cmp = blockTypeIconComponent('hint');
@@ -803,7 +805,7 @@ export const ContextMenu = () => {
             }}
           >
             <span className={styles.actionIcon}>☰</span>
-            <span>缩进和对齐</span>
+            <span>{t('blockMenu.indentAlign')}</span>
             <span className={styles.actionArrow}>{indentOpen ? '⌄' : '›'}</span>
           </button>
         </Popover>
@@ -833,7 +835,7 @@ export const ContextMenu = () => {
             }}
           >
             <span className={styles.actionIcon}>Aa</span>
-            <span>字体</span>
+            <span>{t('blockMenu.font')}</span>
             <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
           </button>
         </Popover>
@@ -870,7 +872,7 @@ export const ContextMenu = () => {
             }}
           >
             <span className={styles.actionIcon}>🎨</span>
-            <span>颜色</span>
+            <span>{t('blockMenu.color')}</span>
             <span className={styles.actionArrow}>{colorOpen ? '⌄' : '›'}</span>
           </button>
         </Popover>
@@ -881,7 +883,7 @@ export const ContextMenu = () => {
           disabled={DISABLED_ACTIONS.includes('comment')}
         >
           <span className={styles.actionIcon}>💬</span>
-          <span>评论</span>
+          <span>{t('blockMenu.comment')}</span>
         </button>
         <button
           onClick={() => handleMenuClick('cut')}
@@ -889,7 +891,7 @@ export const ContextMenu = () => {
           disabled={DISABLED_ACTIONS.includes('cut')}
         >
           <span className={styles.actionIcon}>✂</span>
-          <span>剪切</span>
+          <span>{t('blockMenu.cut')}</span>
         </button>
         <button
           onClick={() => handleMenuClick('copy')}
@@ -897,7 +899,7 @@ export const ContextMenu = () => {
           disabled={DISABLED_ACTIONS.includes('copy')}
         >
           <span className={styles.actionIcon}>📋</span>
-          <span>复制</span>
+          <span>{t('blockMenu.copy')}</span>
         </button>
         <button
           onClick={() => handleMenuClick('delete')}
@@ -905,7 +907,7 @@ export const ContextMenu = () => {
           disabled={DISABLED_ACTIONS.includes('delete')}
         >
           <span className={styles.actionIcon}>🗑</span>
-          <span>删除</span>
+          <span>{t('blockMenu.delete')}</span>
         </button>
         <div className={styles.divider} />
         <button
@@ -920,7 +922,7 @@ export const ContextMenu = () => {
           }}
         >
           <span className={styles.actionIcon}>🌐</span>
-          <span>内嵌网页</span>
+          <span>{t('blockPicker.embed')}</span>
         </button>
         {canInsertBelow && (
           <>
@@ -954,7 +956,7 @@ export const ContextMenu = () => {
                 }}
               >
                 <span className={styles.actionIcon}>＋</span>
-                <span>在下方插入</span>
+                <span>{t('blockMenu.insertBelow')}</span>
                 <span className={styles.actionArrow}>{insertOpen ? '⌄' : '›'}</span>
               </button>
             </Popover>

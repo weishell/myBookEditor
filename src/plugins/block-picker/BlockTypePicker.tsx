@@ -1,15 +1,21 @@
 // 块类型选择器 - 供"在下方插入"等场景复用（飞书风格）
 // 基础组：按钮组（与左侧菜单顶部 toolbar 视觉一致）
 // 常用组：列表项，非文本类占位禁用
+//
+// 文案全部走 i18n（blockPicker.*）：labelKey 存 key，渲染时再取词条——
+// 模块级常量里拿不到 useTranslation，所以不能在定义处直接翻。
 import React, { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { BlockElementType } from '@/enums';
 import { blockTypeIcon } from '@/components/FloatBar/blockTypeIcons';
 import type { BlockType } from '@/components/FloatBar/blockType';
+import { headingBlockLabel } from '@/utils/block-label';
 import styles from './BlockTypePicker.module.less';
 
 export interface BlockTypeOption {
   type: BlockElementType;
-  label: string;
+  /** i18n key；标题类会带上层级参数（见 labelOf） */
+  labelKey: string;
   icon: React.ReactNode;
   level?: number;
   disabled?: boolean;
@@ -24,60 +30,84 @@ interface BlockTypePickerProps {
 // 基础组（文本类，可用）：H1-H9 完整展示，与 ContextMenu 块类型区一致。
 // 图标统一从 FloatBar 的 blockTypeIcons 走，跨组件单源（避免再分头维护 SVG）。
 const BASIC_ITEMS: BlockTypeOption[] = [
-  { type: BlockElementType.PARAGRAPH, label: '正文', icon: blockTypeIcon('paragraph') },
+  {
+    type: BlockElementType.PARAGRAPH,
+    labelKey: 'blockPicker.paragraph',
+    icon: blockTypeIcon('paragraph'),
+  },
   ...([1, 2, 3, 4, 5, 6, 7, 8, 9] as const).map<BlockTypeOption>((level) => ({
     type: BlockElementType.HEADING,
-    label: `${toChineseLevel(level)}级标题`,
+    labelKey: 'blockPicker.heading',
     level,
     icon: blockTypeIcon(`h${level}` as BlockType),
   })),
+  // ↓ 后两行的顺序必须与「块菜单」和「FloatBar 合并菜单」完全一致，
+  //   否则同一位置摆的是不同图标，看起来就像"没对齐"：
+  //     有序 → 无序 → 任务 → 代码块 → 引用 → 提示块
+  {
+    type: BlockElementType.NUMBERED_LIST,
+    labelKey: 'blockPicker.numberedList',
+    icon: blockTypeIcon('numbered'),
+  },
   {
     type: BlockElementType.BULLETED_LIST,
-    label: '无序列表',
+    labelKey: 'blockPicker.bulletedList',
     icon: blockTypeIcon('bulleted'),
   },
   {
-    type: BlockElementType.NUMBERED_LIST,
-    label: '有序列表',
-    icon: blockTypeIcon('numbered'),
+    type: BlockElementType.TODO_LIST,
+    labelKey: 'blockPicker.todoList',
+    icon: blockTypeIcon('todo'),
   },
-  { type: BlockElementType.TODO_LIST, label: '待办事项', icon: blockTypeIcon('todo') },
-  { type: BlockElementType.BLOCKQUOTE, label: '引用块', icon: blockTypeIcon('quote') },
-  { type: BlockElementType.HINT_BLOCK, label: '提示块', icon: blockTypeIcon('hint') },
   {
     type: BlockElementType.CODE_BLOCK,
-    label: '代码块',
+    labelKey: 'blockPicker.codeBlock',
     icon: blockTypeIcon('code-block'),
     mono: true,
   },
+  {
+    type: BlockElementType.BLOCKQUOTE,
+    labelKey: 'blockPicker.blockquote',
+    icon: blockTypeIcon('quote'),
+  },
+  {
+    type: BlockElementType.HINT_BLOCK,
+    labelKey: 'blockPicker.hintBlock',
+    icon: blockTypeIcon('hint'),
+  },
 ];
-
-/** 1-9 → 一/二/.../九，10+ 回退到 "N" */
-function toChineseLevel(n: number): string {
-  return ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'][n] || String(n);
-}
 
 // 常用组（非文本类）- 列表项风格
 const COMMON_ITEMS: BlockTypeOption[] = [
-  { type: BlockElementType.IMAGE_BLOCK, label: '图片', icon: '🖼' },
-  { type: BlockElementType.FILE_BLOCK, label: '文件', icon: '📄' },
-  { type: BlockElementType.VIDEO_BLOCK, label: '视频', icon: '🎬' },
-  { type: BlockElementType.TABLE, label: '表格', icon: '⊞' },
-  { type: BlockElementType.COLUMN_GROUP, label: '分栏', icon: '▦', isColumn: true },
-  { type: BlockElementType.COUNTDOWN, label: '倒计时', icon: '⏳' },
-  { type: BlockElementType.CHART, label: '图表', icon: '📊' },
-  { type: BlockElementType.CALENDAR, label: '日历', icon: '📅' },
-  { type: BlockElementType.TIMELINE, label: '时间轴', icon: '📎' },
-  { type: BlockElementType.EMBED, label: '内嵌网页', icon: '🌐' },
-  { type: BlockElementType.DRAWBOARD, label: '画板', icon: '⬚' },
-  { type: BlockElementType.DRAWIO, label: '流程图', icon: '⇄' },
-  { type: BlockElementType.DIVIDER, label: '分隔线', icon: '—' },
+  { type: BlockElementType.IMAGE_BLOCK, labelKey: 'blockPicker.image', icon: '🖼' },
+  { type: BlockElementType.FILE_BLOCK, labelKey: 'blockPicker.file', icon: '📄' },
+  { type: BlockElementType.VIDEO_BLOCK, labelKey: 'blockPicker.video', icon: '🎬' },
+  { type: BlockElementType.TABLE, labelKey: 'blockPicker.table', icon: '⊞' },
+  {
+    type: BlockElementType.COLUMN_GROUP,
+    labelKey: 'blockPicker.columns',
+    icon: '▦',
+    isColumn: true,
+  },
+  { type: BlockElementType.COUNTDOWN, labelKey: 'blockPicker.countdown', icon: '⏳' },
+  { type: BlockElementType.CHART, labelKey: 'blockPicker.chart', icon: '📊' },
+  { type: BlockElementType.CALENDAR, labelKey: 'blockPicker.calendar', icon: '📅' },
+  { type: BlockElementType.TIMELINE, labelKey: 'blockPicker.timeline', icon: '📎' },
+  { type: BlockElementType.EMBED, labelKey: 'blockPicker.embed', icon: '🌐' },
+  { type: BlockElementType.DRAWBOARD, labelKey: 'blockPicker.drawboard', icon: '⬚' },
+  { type: BlockElementType.DRAWIO, labelKey: 'blockPicker.drawio', icon: '⇄' },
+  { type: BlockElementType.DIVIDER, labelKey: 'blockPicker.divider', icon: '—' },
 ];
 
 const COLUMN_PRESETS = [2, 3, 4, 5];
 
 export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) => {
+  const { t } = useTranslation();
   const [showColumnPicker, setShowColumnPicker] = useState(false);
+
+  // 标题类把层级塞进文案：中文「一级标题」，其它语言「Heading 1」（与 FloatBar 共用同一拼装）
+  const labelOf = (item: BlockTypeOption): string =>
+    item.level ? headingBlockLabel(t, item.level) : t(item.labelKey);
 
   const handleItemClick = (item: BlockTypeOption) => {
     if (item.isColumn) {
@@ -95,14 +125,14 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
   if (showColumnPicker) {
     return (
       <div className={styles.picker}>
-        <div className={styles.groupLabel}>选择栏数</div>
+        <div className={styles.groupLabel}>{t('blockPicker.columnCount')}</div>
         <div className={styles.columnPicker}>
           {COLUMN_PRESETS.map((count) => (
             <button
               key={count}
               className={styles.columnPreset}
               onClick={() => handleColumnSelect(count)}
-              title={`${count} 列`}
+              title={t('blockPicker.columnCountTitle', { n: count })}
             >
               <div className={styles.columnPreview}>
                 {Array.from({ length: count }, (_, i) => (
@@ -113,7 +143,7 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
           ))}
         </div>
         <button className={styles.columnBack} onClick={() => setShowColumnPicker(false)}>
-          ← 返回
+          ← {t('blockPicker.back')}
         </button>
       </div>
     );
@@ -121,7 +151,7 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
 
   return (
     <div className={styles.picker}>
-      <div className={styles.groupLabel}>基础</div>
+      <div className={styles.groupLabel}>{t('blockPicker.basic')}</div>
       <div className={styles.toolbar}>
         {BASIC_ITEMS.map((item) => (
           <button
@@ -129,7 +159,7 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
             className={`${styles.btn} ${item.mono ? styles.btnMono : ''} ${
               item.level ? styles.btnBold : ''
             }`}
-            title={item.label}
+            title={labelOf(item)}
             onClick={() => handleItemClick(item)}
           >
             {item.icon}
@@ -137,7 +167,7 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
         ))}
       </div>
       <div className={styles.groupDivider} />
-      <div className={styles.groupLabel}>常用</div>
+      <div className={styles.groupLabel}>{t('blockPicker.common')}</div>
       <div className={styles.group}>
         {COMMON_ITEMS.map((item) => (
           <button
@@ -147,7 +177,7 @@ export const BlockTypePicker: React.FC<BlockTypePickerProps> = ({ onSelect }) =>
             onClick={() => handleItemClick(item)}
           >
             <span className={styles.itemIcon}>{item.icon}</span>
-            <span>{item.label}</span>
+            <span>{labelOf(item)}</span>
           </button>
         ))}
       </div>

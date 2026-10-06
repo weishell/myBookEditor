@@ -1,7 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSlate } from 'slate-react';
+import { useTranslation } from 'react-i18next';
 import { Element } from 'slate';
 import { useInlineComments } from '@/plugins/inline-comment';
+import { headingBlockLabel } from '@/utils/block-label';
 import {
   toggleMark,
   toggleBlock,
@@ -92,6 +94,7 @@ interface BlockTypeDropdownProps {
 }
 
 const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps) => {
+  const { t } = useTranslation();
   const [submenu, setSubmenu] = useState<'more' | null>(null);
 
   const closeSubmenu = () => setSubmenu(null);
@@ -135,10 +138,14 @@ const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps
 
   return (
     <div className={`${styles.dropdown} ${styles.dropdownBlock}`}>
-      <Item Icon={blockTypeIconComponent('paragraph')!} label="正文" target="paragraph" />
-      <Item Icon={blockTypeIconComponent('h1')!} label="一级标题" target="h1" />
-      <Item Icon={blockTypeIconComponent('h2')!} label="二级标题" target="h2" />
-      <Item Icon={blockTypeIconComponent('h3')!} label="三级标题" target="h3" />
+      <Item
+        Icon={blockTypeIconComponent('paragraph')!}
+        label={t('blockPicker.paragraph')}
+        target="paragraph"
+      />
+      <Item Icon={blockTypeIconComponent('h1')!} label={headingBlockLabel(t, 1)} target="h1" />
+      <Item Icon={blockTypeIconComponent('h2')!} label={headingBlockLabel(t, 2)} target="h2" />
+      <Item Icon={blockTypeIconComponent('h3')!} label={headingBlockLabel(t, 3)} target="h3" />
 
       <div
         className={`${styles.menuItemWithSub} ${submenu === 'more' ? styles.open : ''}`}
@@ -150,31 +157,75 @@ const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps
             {/* "Hn" 用文字版（无需独立 SVG），跟其它图标 16px 占位对齐 */}
             <span style={{ fontSize: 11, fontWeight: 'bold', color: 'currentColor' }}>Hn</span>
           </span>
-          <span className={styles.menuItemLabel}>其他标题</span>
+          <span className={styles.menuItemLabel}>{t('blockPicker.moreHeadings')}</span>
           {moreActive && <span className={styles.menuItemCheck}>✓</span>}
           <span className={styles.submenuArrow}>›</span>
         </div>
         {submenu === 'more' && (
           <div className={styles.submenu}>
-            <Item Icon={blockTypeIconComponent('h4')!} label="四级标题" target="h4" />
-            <Item Icon={blockTypeIconComponent('h5')!} label="五级标题" target="h5" />
-            <Item Icon={blockTypeIconComponent('h6')!} label="六级标题" target="h6" />
-            <Item Icon={blockTypeIconComponent('h7')!} label="七级标题" target="h7" />
-            <Item Icon={blockTypeIconComponent('h8')!} label="八级标题" target="h8" />
-            <Item Icon={blockTypeIconComponent('h9')!} label="九级标题" target="h9" />
+            <Item
+              Icon={blockTypeIconComponent('h4')!}
+              label={headingBlockLabel(t, 4)}
+              target="h4"
+            />
+            <Item
+              Icon={blockTypeIconComponent('h5')!}
+              label={headingBlockLabel(t, 5)}
+              target="h5"
+            />
+            <Item
+              Icon={blockTypeIconComponent('h6')!}
+              label={headingBlockLabel(t, 6)}
+              target="h6"
+            />
+            <Item
+              Icon={blockTypeIconComponent('h7')!}
+              label={headingBlockLabel(t, 7)}
+              target="h7"
+            />
+            <Item
+              Icon={blockTypeIconComponent('h8')!}
+              label={headingBlockLabel(t, 8)}
+              target="h8"
+            />
+            <Item
+              Icon={blockTypeIconComponent('h9')!}
+              label={headingBlockLabel(t, 9)}
+              target="h9"
+            />
           </div>
         )}
       </div>
 
       <div className={styles.dividerHorizontal} />
-      <Item Icon={blockTypeIconComponent('numbered')!} label="有序列表" target="numbered" />
-      <Item Icon={blockTypeIconComponent('bulleted')!} label="无序列表" target="bulleted" />
-      <Item Icon={blockTypeIconComponent('todo')!} label="任务" target="todo" />
+      <Item
+        Icon={blockTypeIconComponent('numbered')!}
+        label={t('blockPicker.numberedList')}
+        target="numbered"
+      />
+      <Item
+        Icon={blockTypeIconComponent('bulleted')!}
+        label={t('blockPicker.bulletedList')}
+        target="bulleted"
+      />
+      <Item Icon={blockTypeIconComponent('todo')!} label={t('blockMenu.todoTitle')} target="todo" />
 
       <div className={styles.dividerHorizontal} />
-      <Item Icon={blockTypeIconComponent('code-block')!} label="代码块" target="code-block" />
-      <Item Icon={blockTypeIconComponent('quote')!} label="引用" target="quote" />
-      <Item Icon={blockTypeIconComponent('hint')!} label="提示块" target="hint" />
+      <Item
+        Icon={blockTypeIconComponent('code-block')!}
+        label={t('blockPicker.codeBlock')}
+        target="code-block"
+      />
+      <Item
+        Icon={blockTypeIconComponent('quote')!}
+        label={t('blockMenu.quoteTitle')}
+        target="quote"
+      />
+      <Item
+        Icon={blockTypeIconComponent('hint')!}
+        label={t('blockPicker.hintBlock')}
+        target="hint"
+      />
     </div>
   );
 };

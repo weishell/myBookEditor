@@ -62,6 +62,41 @@ const focusBlockStart = (editor: Editor, path: Path) => {
 };
 
 /**
+ * TODO_LIST（任务列表）回车：
+ *  - 空项（无内容）回车 → 直接转成普通段落，退出任务列表。
+ *    否则会一直往下追加空任务项，永远出不来。
+ *  - 非空项回车 → 拆成两项，且**新项一律未勾选**。
+ *    默认 insertBreak 拆块时会连 attrs 一起继承，把 checked 也带过去，
+ *    于是"在已勾选项后回车"会凭空多出一个已勾选的空项。
+ */
+const handleTodoListEnter = (editor: Editor, node: any, path: Path): boolean => {
+  // 空项 → 退回普通段落（连带清掉 checked，避免残留勾选语义）
+  if (path.length === 1 && Node.string(node).trim() === '') {
+    const nextAttrs = { ...(node?.attrs || {}) };
+    delete nextAttrs.checked;
+    Transforms.setNodes(editor, { type: BlockElementType.PARAGRAPH, attrs: nextAttrs } as any, {
+      at: path,
+    });
+    return true;
+  }
+
+  // 非空 → 拆行；新项显式取消勾选
+  Editor.withoutNormalizing(editor, () => {
+    Transforms.splitNodes(editor, { always: true });
+    const nextPath = Path.next(path);
+    const nextNode = Node.get(editor, nextPath) as any;
+    if (nextNode) {
+      Transforms.setNodes(
+        editor,
+        { attrs: { ...(nextNode?.attrs || {}), checked: false } } as any,
+        { at: nextPath },
+      );
+    }
+  });
+  return true;
+};
+
+/**
  * lilist 列表内回车（折叠光标），按光标位置三分支：
  *  - BOL：空行+无缩进 → 退出列表；空行+有缩进 → 减缩进；非空 → 上方插入空项（锚点跟随上移）
  *  - EOL：标题宿主 → 列表后补普通段落；段落 → 追加空项（缩进跟随下一相邻子列表）
@@ -248,6 +283,13 @@ export const handleEnter = (editor: Editor) => {
       });
       handleLilistEnter(editor, blockNode, blockPath, lilist);
       return;
+    }
+
+    // 任务列表回车：空项退出列表、非空项拆行且新项默认未勾选
+    // （放在提示块分支之后：容器内部行仍走容器自己的规则）
+    if (blockType === BlockElementType.TODO_LIST) {
+      console.log('[todo-list] Enter 已劫持', { path: blockPath });
+      if (handleTodoListEnter(editor, blockNode, blockPath)) return;
     }
   }
 

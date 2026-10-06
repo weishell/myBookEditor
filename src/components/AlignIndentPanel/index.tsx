@@ -7,14 +7,16 @@
 //  - 面板内改完值不自动收起（可连续调整对齐 + 缩进），由外层决定何时关闭；
 //  - 按钮 onMouseDown 一律 preventDefault：FloatBar 场景要靠「不夺焦」保住正文选区，
 //    否则点一下按钮 DOM 选区就没了。preventDefault 不影响 click 触发。
+import { useTranslation } from 'react-i18next';
 import { ALIGN_OPTIONS, type TextAlignValue } from '@/utils/alignment';
 import { MAX_INDENT } from '@/utils/indent';
 import styles from './AlignIndentPanel.module.less';
 
-const alignLabel: Record<string, string> = {
-  left: '左对齐',
-  center: '居中对齐',
-  right: '右对齐',
+// 对齐方式的文案 key（模块级常量拿不到 useTranslation，渲染时再取词条）
+const alignLabelKey: Record<string, string> = {
+  left: 'alignIndent.left',
+  center: 'alignIndent.center',
+  right: 'alignIndent.right',
 };
 
 /** 对齐图标：四行横向线段，按对齐方式改变行的起点/长度（也用于工具条按钮） */
@@ -110,61 +112,65 @@ const AlignIndentPanel = ({
   maxIndent = MAX_INDENT,
   onAlign,
   onIndentChange,
-}: AlignIndentPanelProps) => (
-  <div className={styles.alignPanel}>
-    <div className={styles.alignLabel}>对齐</div>
-    <div className={styles.alignRow}>
-      {ALIGN_OPTIONS.map((a) => {
-        const active = align === a;
-        return (
-          <button
-            key={a}
-            type="button"
-            className={active ? styles.alignBtnActive : styles.alignBtn}
-            disabled={disabled}
-            title={alignLabel[a]}
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={(e) => {
-              e.stopPropagation();
-              onAlign(a);
-            }}
-          >
-            <AlignIcon align={a} active={active} />
-          </button>
-        );
-      })}
+}: AlignIndentPanelProps) => {
+  const { t } = useTranslation();
+
+  return (
+    <div className={styles.alignPanel}>
+      <div className={styles.alignLabel}>{t('alignIndent.align')}</div>
+      <div className={styles.alignRow}>
+        {ALIGN_OPTIONS.map((a) => {
+          const active = align === a;
+          return (
+            <button
+              key={a}
+              type="button"
+              className={active ? styles.alignBtnActive : styles.alignBtn}
+              disabled={disabled}
+              title={t(alignLabelKey[a])}
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                onAlign(a);
+              }}
+            >
+              <AlignIcon align={a} active={active} />
+            </button>
+          );
+        })}
+      </div>
+      <div className={styles.alignDivider} />
+      <div className={styles.alignLabel}>{t('alignIndent.indent')}</div>
+      <div className={styles.alignRow}>
+        <button
+          type="button"
+          className={styles.alignBtn}
+          disabled={disabled || (indentMax ?? indent) >= maxIndent}
+          title={t('alignIndent.increase')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndentChange(1);
+          }}
+        >
+          <IndentIncIcon />
+        </button>
+        <button
+          type="button"
+          className={styles.alignBtn}
+          disabled={disabled || (indentMin ?? indent) <= 0}
+          title={t('alignIndent.decrease')}
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={(e) => {
+            e.stopPropagation();
+            onIndentChange(-1);
+          }}
+        >
+          <IndentDecIcon />
+        </button>
+      </div>
     </div>
-    <div className={styles.alignDivider} />
-    <div className={styles.alignLabel}>缩进</div>
-    <div className={styles.alignRow}>
-      <button
-        type="button"
-        className={styles.alignBtn}
-        disabled={disabled || (indentMax ?? indent) >= maxIndent}
-        title="增加缩进"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onIndentChange(1);
-        }}
-      >
-        <IndentIncIcon />
-      </button>
-      <button
-        type="button"
-        className={styles.alignBtn}
-        disabled={disabled || (indentMin ?? indent) <= 0}
-        title="减少缩进"
-        onMouseDown={(e) => e.preventDefault()}
-        onClick={(e) => {
-          e.stopPropagation();
-          onIndentChange(-1);
-        }}
-      >
-        <IndentDecIcon />
-      </button>
-    </div>
-  </div>
-);
+  );
+};
 
 export default AlignIndentPanel;

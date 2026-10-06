@@ -143,8 +143,17 @@
   }
 }
 
+// 图标列：固定宽 + 居中。
+// 菜单图标是不同字形（☰ / Aa / emoji / ＋），宽度天然不同——不给固定宽度的话，
+// 每行图标中心会抖 ±2px、右侧文字起点最多差 9px（用户反馈"没对齐"）。
+// 固定成 20px 的居中列后，图标中心与标签起点在每一行都严格一致。
 .actionIcon {
+  flex: 0 0 20px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: @font-size-md;
+  line-height: 1;
 }
 
 .actionArrow {

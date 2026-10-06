@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Tooltip } from 'antd';
 import { BlockElementType } from '@/enums';
 import { convertNumber, getLilist, getLilistPrefixWidth, LilistType } from './lilist-model';
@@ -22,6 +23,7 @@ interface PopoverState {
  * 有序编号支持交互：悬浮提示“设置编号”，点击打开编号设置弹框（对齐飞书）。
  */
 export const LilistPrefix = ({ element }: LilistPrefixProps) => {
+  const { t } = useTranslation();
   const [popover, setPopover] = useState<PopoverState | null>(null);
   const lilist = getLilist(element);
   if (!lilist) return null;
@@ -65,7 +67,7 @@ export const LilistPrefix = ({ element }: LilistPrefixProps) => {
   return (
     <>
       {isOl ? (
-        <Tooltip title="设置编号" mouseEnterDelay={0.35}>
+        <Tooltip title={t('lilistSetting.setNumber')} mouseEnterDelay={0.35}>
           {prefixSpan}
         </Tooltip>
       ) : (
