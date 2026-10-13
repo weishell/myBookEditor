@@ -278,6 +278,11 @@ export default {
     preview: '預覽',
     delete: '刪除',
     uploading: '圖片上傳中',
+    zoomIn: '放大',
+    zoomOut: '縮小',
+    fit: '適配視窗',
+    resetView: '重設視圖',
+    close: '關閉',
   },
   // 檔案 / 影片塊
   media: {

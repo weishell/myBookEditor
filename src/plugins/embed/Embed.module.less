@@ -1,10 +1,13 @@
 // 内嵌网页块样式
 
+// 与 column 布局的 toolbar/iframe 共享一列，wrapper iframe 视觉根用 align-self 做水平对齐。
 .wrapper {
   margin: @spacing-sm 0;
   width: 100%;
   position: relative;
   user-select: none;
+  display: flex;
+  flex-direction: column;
 }
 
 .toolbar {
@@ -40,9 +43,27 @@
   }
 }
 
-// 外框：宽度自适应（撑满编辑区），高度由 attrs.height 控制
-.frame {
-  width: 100%;
+.toolbarButtonActive {
+  background-color: @color-primary;
+  color: #fff;
+
+  &:hover {
+    background-color: @color-primary;
+    color: #fff;
+  }
+}
+
+.divider {
+  width: 1px;
+  margin: 4px 2px;
+  background-color: @border-color-light;
+}
+
+// 外框：宽度按内容自适应（撑满编辑区），高度由 attrs.height 控制
+  // 用 align-self 决定水平对齐，所以宽度不能是 100%
+  .frame {
+    width: fit-content;
+    max-width: 100%;
   overflow: hidden;
   border: 1px solid @border-color-light;
   border-radius: @radius-md;

@@ -282,6 +282,11 @@ export default {
     preview: 'Aperçu',
     delete: 'Supprimer',
     uploading: 'Téléversement de l’image',
+    zoomIn: 'Zoomer',
+    zoomOut: 'Dézoomer',
+    fit: 'Ajuster à la fenêtre',
+    resetView: 'Réinitialiser la vue',
+    close: 'Fermer',
   },
   // Bloc fichier / vidéo
   media: {

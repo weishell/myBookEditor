@@ -279,6 +279,11 @@ export default {
     preview: '미리보기',
     delete: '삭제',
     uploading: '이미지 업로드 중',
+    zoomIn: '확대',
+    zoomOut: '축소',
+    fit: '창에 맞추기',
+    resetView: '보기 재설정',
+    close: '닫기',
   },
   // 파일 / 동영상 블록
   media: {

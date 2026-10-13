@@ -12,6 +12,7 @@ import DrawioEditor from './DrawioEditor';
 import DrawioResizeHandle from './DrawioResizeHandle';
 import { lockPageScroll } from '@/utils/scroll-lock';
 import { decodeSvgDataUrl, encodeSvgDataUrl, fitSvgToContent } from './svg-fit';
+import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Drawio.module.less';
 
 interface DrawioAttrs {
@@ -20,6 +21,7 @@ interface DrawioAttrs {
   description?: string;
   width?: number;
   height?: number;
+  align?: 'left' | 'center' | 'right';
 }
 
 interface DrawioProps {
@@ -57,6 +59,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   const containerRef = useRef<HTMLDivElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
   attrsRef.current = attrs;
+  const { align, setAlign } = useBlockAlign({ editor, element, attrsRef });
 
   // 可用宽度（wrapper 宽度），用于动态比例缩放
   const [availableWidth, setAvailableWidth] = useState(0);
@@ -310,6 +313,13 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
+            <BlockAlignButtons
+              align={align}
+              onAlign={setAlign}
+              btnClass={styles.toolbarButton}
+              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+            />
+            <div className={styles.toolbarDivider} />
             <button className={styles.toolbarButton} onClick={handleOpenEditor}>
               <svg
                 width="14"
@@ -347,7 +357,10 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
         )}
 
         {/* 预览区域 - wrapper 包含容器和缩放手柄 */}
-        <div className={styles.drawioBlock}>
+        <div
+          className={styles.drawioBlock}
+          style={{ alignSelf: alignToAlignSelf(align), width: 'fit-content' }}
+        >
           <div
             ref={containerRef}
             data-visual-root

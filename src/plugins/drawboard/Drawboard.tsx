@@ -10,6 +10,7 @@ import DrawboardEditor from './DrawboardEditor';
 import DrawboardPreview from './DrawboardPreview';
 import { type DrawboardAttrs } from './drawboard-utils';
 import type { Shape } from 'drawui-core';
+import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Drawboard.module.less';
 
 interface DrawboardProps {
@@ -24,6 +25,10 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const isSelected = useSelected();
   const { t } = useTranslation();
   const { attrs } = element;
+
+  const attrsRef = useRef(attrs);
+  attrsRef.current = attrs;
+  const { align, setAlign } = useBlockAlign({ editor, element, attrsRef });
 
   const [editing, setEditing] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
@@ -189,6 +194,13 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
+            <BlockAlignButtons
+              align={align}
+              onAlign={setAlign}
+              btnClass={styles.toolbarButton}
+              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+            />
+            <div className={styles.toolbarDivider} />
             <button className={styles.toolbarButton} onClick={openEditor}>
               <svg
                 width="14"
@@ -234,7 +246,11 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
           onClick={handleSelect}
           onDoubleClick={openEditor}
           title={t('drawboard.doubleClickTitle')}
-          style={{ maxWidth: `min(${effW}px, 100%)`, aspectRatio: `${effW} / ${effH}` }}
+          style={{
+            alignSelf: alignToAlignSelf(align),
+            maxWidth: `min(${effW}px, 100%)`,
+            aspectRatio: `${effW} / ${effH}`,
+          }}
         >
           <div className={styles.titleBar}>
             <span className={styles.titleIcon}>

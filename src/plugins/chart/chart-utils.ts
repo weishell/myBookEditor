@@ -44,6 +44,8 @@ export interface ChartAttrs {
   gaugeMax?: number;
   /** 仪表盘：数值单位（如 %、km/h、℃） */
   gaugeUnit?: string;
+  /** 块级对齐（left/center/right），作用于外层 flex wrapper */
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface ChartElement {

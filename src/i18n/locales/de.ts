@@ -280,6 +280,11 @@ export default {
     preview: 'Vorschau',
     delete: 'Löschen',
     uploading: 'Bild wird hochgeladen',
+    zoomIn: 'Vergrößern',
+    zoomOut: 'Verkleinern',
+    fit: 'An Fenster anpassen',
+    resetView: 'Ansicht zurücksetzen',
+    close: 'Schließen',
   },
   // Datei-/Video-Block
   media: {

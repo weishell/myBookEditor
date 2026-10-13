@@ -3,16 +3,18 @@
 .overlay {
   position: fixed;
   inset: 0;
-  // 纯黑半透：够深，确保遮罩外的下拉/侧栏完全不可见
   background-color: rgba(0, 0, 0, 0.92);
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 2147483000; // 接近 z-index 上限，避开几乎所有站内的 modal/dropdown
-  cursor: zoom-out;
+  z-index: 2147483000;
+  cursor: grab;
   user-select: none;
-  // 关键：overlay 自己开一个 stacking context，避开任何 transform 父元素对 fixed 子元素的影响
   isolation: isolate;
+
+  &:active {
+    cursor: grabbing;
+  }
 }
 
 .hint {
@@ -32,17 +34,70 @@
 
 .viewport {
   position: relative;
-  overflow: hidden; // 关键：把"裁剪选区"严格裁到容器尺寸内，挡住选区外的原图
+  overflow: hidden;
   background-color: transparent;
   transform-origin: center center;
   transition: transform 0.06s linear;
-  cursor: grab;
-
-  &:active {
-    cursor: grabbing;
-  }
 }
 
 .image {
   display: block;
+}
+
+.toolbar {
+  position: absolute;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 0;
+  background-color: rgba(28, 28, 32, 0.88);
+  border-radius: 10px;
+  padding: 4px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  z-index: 2;
+}
+
+.toolbarButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: none;
+  background-color: transparent;
+  border-radius: 6px;
+  color: rgba(255, 255, 255, 0.92);
+  cursor: pointer;
+  transition: background-color 0.15s, color 0.15s;
+
+  &:hover {
+    background-color: rgba(255, 255, 255, 0.12);
+  }
+}
+
+.toolbarButtonDanger {
+  &:hover {
+    background-color: rgba(255, 80, 80, 0.25);
+    color: #ff6b6b;
+  }
+}
+
+.divider {
+  width: 1px;
+  height: 18px;
+  background-color: rgba(255, 255, 255, 0.12);
+  margin: 0 4px;
+}
+
+.percent {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  min-width: 44px;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.85);
 }

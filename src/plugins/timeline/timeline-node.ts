@@ -29,6 +29,8 @@ export interface TimelineAttrs {
   direction: TimelineDirection;
   sideMode: TimelineSideMode;
   items: TimelineItem[];
+  /** 块级对齐（left/center/right），作用于外层 flex wrapper */
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface TimelineElement {
@@ -101,6 +103,7 @@ export const normalizeTimelineAttrs = (raw: unknown): TimelineAttrs => {
     sideMode: a.sideMode === 'same' ? 'same' : 'alternate',
     // 不允许空数组，保证至少有一个节点可编辑
     items: items.length ? items : [makeTimelineItem()],
+    align: a.align,
   };
 };
 

@@ -35,6 +35,8 @@ export const withChart = (editor: Editor) => {
         gaugeUnit: a.gaugeUnit,
         width: a.width ?? meta.width,
         height: a.height ?? meta.height,
+        // 块级对齐
+        align: a.align,
       };
       if (JSON.stringify(next) !== JSON.stringify(a)) {
         Transforms.setNodes(editor, { attrs: next } as any, { at: path, voids: true });

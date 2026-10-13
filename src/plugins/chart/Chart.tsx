@@ -10,6 +10,7 @@ import { useTheme } from '@/context/ThemeContext';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { ChartConfigDialog } from './ChartConfigDialog';
 import { buildChartOption, ChartKind, type ChartAttrs } from './chart-utils';
+import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Chart.module.less';
 
 interface ChartProps {
@@ -25,10 +26,49 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
   const { attrs } = element;
   const { isDarkMode, themeColor } = useTheme();
 
+  const attrsRef = useRef(attrs);
+  attrsRef.current = attrs;
+  const { align, setAlign } = useBlockAlign({ editor, element, attrsRef });
+
   const cardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
   const [editing, setEditing] = useState(false);
+  const [showToolbar, setShowToolbar] = useState(false);
+  const hideTimerRef = useRef<number | null>(null);
+  const showTimerRef = useRef<number | null>(null);
+
+  const showToolbarHandler = useCallback(() => {
+    if (hideTimerRef.current) {
+      clearTimeout(hideTimerRef.current);
+      hideTimerRef.current = null;
+    }
+    if (showTimerRef.current) return;
+    showTimerRef.current = window.setTimeout(() => {
+      showTimerRef.current = null;
+      setShowToolbar(true);
+    }, 300);
+  }, []);
+
+  const hideToolbarHandler = useCallback(() => {
+    if (isSelected) return;
+    if (showTimerRef.current) {
+      clearTimeout(showTimerRef.current);
+      showTimerRef.current = null;
+    }
+    hideTimerRef.current = window.setTimeout(() => {
+      hideTimerRef.current = null;
+      setShowToolbar(false);
+    }, 300);
+  }, [isSelected]);
+
+  useEffect(
+    () => () => {
+      if (hideTimerRef.current) window.clearTimeout(hideTimerRef.current);
+      if (showTimerRef.current) window.clearTimeout(showTimerRef.current);
+    },
+    [],
+  );
 
   // 缩放：拖动期间用本地尺寸预览，松开(mouseup)才写回 attrs
   const [dragSize, setDragSize] = useState<{ w: number; h: number } | null>(null);
@@ -150,55 +190,79 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
   return (
     <ElementWrapper type={BlockElementType.CHART} pluginId={pluginId} attributes={attributes}>
       <div
-        ref={cardRef}
-        data-visual-root
-        className={styles.card}
-        style={{
-          width: `min(${effW}px, 100%)`,
-          aspectRatio: `${effW} / ${effH}`,
-          borderColor: isDarkMode ? '#2b3240' : 'rgba(31,35,41,0.14)',
-        }}
-        contentEditable={false}
-        suppressContentEditableWarning={true}
+        className={styles.wrapper}
+        onMouseEnter={showToolbarHandler}
+        onMouseLeave={hideToolbarHandler}
       >
-        <div className={styles.chartBox}>
-          <div ref={canvasRef} className={styles.chartCanvas} />
-        </div>
-        <button
-          className={styles.editBtn}
-          title="编辑图表"
-          onClick={(e) => {
-            e.stopPropagation();
-            setEditing(true);
-          }}
-        >
-          <svg
-            width="15"
-            height="15"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {(showToolbar || isSelected) && (
+          <div
+            className={styles.toolbar}
+            onMouseEnter={showToolbarHandler}
+            onMouseLeave={hideToolbarHandler}
           >
-            <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
-          </svg>
-        </button>
-
-        {/* 选中时显示缩放手柄 */}
-        {isSelected && bounds && (
-          <ResizeHandle
-            bounds={bounds}
-            aspectRatio={effW / effH}
-            initialWidth={effW}
-            initialHeight={effH}
-            onResize={(w, h) => {
-              draggingRef.current = true;
-              setDragSize({ w, h });
-            }}
-          />
+            <BlockAlignButtons
+              align={align}
+              onAlign={setAlign}
+              btnClass={styles.toolbarButton}
+              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+            />
+            <div className={styles.divider} />
+            <button
+              className={styles.toolbarButton}
+              title="编辑图表"
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={(e) => {
+                e.stopPropagation();
+                setEditing(true);
+              }}
+            >
+              <svg
+                width="15"
+                height="15"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
+              </svg>
+            </button>
+          </div>
         )}
+
+        <div
+          ref={cardRef}
+          data-visual-root
+          className={styles.card}
+          style={{
+            alignSelf: alignToAlignSelf(align),
+            width: `min(${effW}px, 100%)`,
+            aspectRatio: `${effW} / ${effH}`,
+            borderColor: isDarkMode ? '#2b3240' : 'rgba(31,35,41,0.14)',
+          }}
+          contentEditable={false}
+          suppressContentEditableWarning={true}
+        >
+          <div className={styles.chartBox}>
+            <div ref={canvasRef} className={styles.chartCanvas} />
+          </div>
+
+          {/* 选中时显示缩放手柄 */}
+          {isSelected && bounds && (
+            <ResizeHandle
+              bounds={bounds}
+              aspectRatio={effW / effH}
+              initialWidth={effW}
+              initialHeight={effH}
+              onResize={(w, h) => {
+                draggingRef.current = true;
+                setDragSize({ w, h });
+              }}
+            />
+          )}
+        </div>
       </div>
 
       {children}

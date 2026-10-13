@@ -6,6 +6,7 @@ import { BlockElementType } from '@/enums';
 import { createPortal } from 'react-dom';
 import { normalizeEmbedAttrs, normalizeEmbedUrl, type EmbedAttrs } from './embed-node';
 import { EmbedSettings } from './EmbedSettings';
+import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Embed.module.less';
 
 interface EmbedProps {
@@ -75,6 +76,7 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
   const dragRef = useRef<{ startY: number; startH: number } | null>(null);
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
+  const { align, setAlign } = useBlockAlign({ editor, element, attrsRef });
 
   const getPath = useCallback(() => {
     try {
@@ -187,6 +189,13 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
+            <BlockAlignButtons
+              align={align}
+              onAlign={setAlign}
+              btnClass={styles.toolbarButton}
+              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+            />
+            <div className={styles.divider} />
             <button
               className={styles.toolbarButton}
               title="编辑网址"
@@ -215,7 +224,7 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
         <div
           data-visual-root
           className={styles.frame}
-          style={{ height }}
+          style={{ height, alignSelf: alignToAlignSelf(align) }}
           contentEditable={false}
           suppressContentEditableWarning={true}
         >

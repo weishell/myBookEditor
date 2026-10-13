@@ -298,6 +298,11 @@ export default {
     preview: '预览',
     delete: '删除',
     uploading: '图片上传中',
+    zoomIn: '放大',
+    zoomOut: '缩小',
+    fit: '适配窗口',
+    resetView: '重置视图',
+    close: '关闭',
   },
   // 文件 / 视频块
   media: {

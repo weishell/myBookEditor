@@ -16,6 +16,8 @@ export interface SvgIconProps {
   /** 笔画颜色；默认 currentColor，跟随外层 CSS 的 color */
   color?: string;
   size?: number;
+  /** 透传给 <svg> 的样式（用来微调，比如翻转某个图标） */
+  style?: React.CSSProperties;
 }
 
 // 通用线性图标样式
@@ -274,15 +276,63 @@ export const ResetIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) =
   </svg>
 );
 
-/** 裁剪：四角 L 形选区（飞书风格）。区别于 ScissorsIcon（剪刀）：本图标强调"选区"。 */
+/** 裁剪：双层方框 + 内框右上 / 左下带斜箭头（飞书风格，含义"把内框裁出来"）。
+ *  视觉上呈两层嵌套方框，对角两端各有一条短斜线指向外框角点。 */
 export const CropIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
-    <path d="M6 2v6H2" />
-    <path d="M18 2v6h4" />
-    <path d="M6 22v-6H2" />
-    <path d="M18 22v-6h4" />
-    <path d="M8 10h8a2 2 0 0 1 2 2v6" />
-    <rect x="8" y="10" width="8" height="8" rx="1" fill="none" />
+    {/* 外框 */}
+    <rect x="3" y="3" width="18" height="18" rx="1.5" />
+    {/* 内框（被裁出的部分） */}
+    <rect x="8" y="8" width="8" height="8" rx="1" />
+    {/* 内框右上 → 外框右上：斜线 + 端点小方块 */}
+    <line x1="16" y1="8" x2="21" y2="3" />
+    <rect x="20" y="2" width="2" height="2" fill={color} stroke="none" />
+    {/* 内框左下 → 外框左下：斜线 + 端点小方块 */}
+    <line x1="8" y1="16" x2="3" y2="21" />
+    <rect x="2" y="20" width="2" height="2" fill={color} stroke="none" />
+  </svg>
+);
+
+/** 向左旋转：上半弧 + 左端箭头（弧顶在右上，箭头在左下，明确表达"逆时针"）。 */
+export const RotateLeftIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M3 12a9 9 0 1 0 3.2-6.9" />
+    <polyline points="3 4 3 9 8 9" />
+  </svg>
+);
+
+/** 向右旋转：上半弧 + 右端箭头（弧顶在左上，箭头在右下，明确表达"顺时针"）。 */
+export const RotateRightIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M21 12a9 9 0 1 1-3.2-6.9" />
+    <polyline points="21 4 21 9 16 9" />
+  </svg>
+);
+
+/** 关闭：× */
+export const CloseIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <line x1="6" y1="6" x2="18" y2="18" />
+    <line x1="18" y1="6" x2="6" y2="18" />
+  </svg>
+);
+
+/** 放大：放大镜 + 加号（飞书同款，识别度最高） */
+export const ZoomInIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <line x1="15.2" y1="15.2" x2="20" y2="20" />
+    <line x1="7.5" y1="10.5" x2="13.5" y2="10.5" />
+    <line x1="10.5" y1="7.5" x2="10.5" y2="13.5" />
+  </svg>
+);
+
+/** 缩小：放大镜 + 减号 */
+export const ZoomOutIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <circle cx="10.5" cy="10.5" r="6.5" />
+    <line x1="15.2" y1="15.2" x2="20" y2="20" />
+    <line x1="7.5" y1="10.5" x2="13.5" y2="10.5" />
   </svg>
 );
 

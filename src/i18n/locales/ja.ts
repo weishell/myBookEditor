@@ -279,6 +279,11 @@ export default {
     preview: 'プレビュー',
     delete: '削除',
     uploading: '画像をアップロード中',
+    zoomIn: '拡大',
+    zoomOut: '縮小',
+    fit: 'ウィンドウに合わせる',
+    resetView: 'ビューをリセット',
+    close: '閉じる',
   },
   // ファイル / 動画ブロック
   media: {

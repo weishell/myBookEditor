@@ -9,6 +9,8 @@ export interface EmbedAttrs {
   url: string;
   /** iframe 高度（px），默认 400，可拖拽调整 */
   height: number;
+  /** 块级对齐（left/center/right），作用于外层 flex wrapper */
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface EmbedElement {
@@ -44,9 +46,12 @@ export const normalizeEmbedAttrs = (raw: unknown): EmbedAttrs => {
   const height = Number.isFinite(a.height)
     ? Math.min(MAX_EMBED_HEIGHT, Math.max(MIN_EMBED_HEIGHT, Number(a.height)))
     : DEFAULT_EMBED_HEIGHT;
+  const align =
+    a.align === 'left' || a.align === 'center' || a.align === 'right' ? a.align : undefined;
   return {
     url: typeof a.url === 'string' ? a.url : '',
     height,
+    align,
   };
 };
 

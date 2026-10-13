@@ -117,13 +117,15 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
                 : undefined
             }
           >
-            <input
-              type="radio"
-              name="cd-mode"
-              checked={mode === 'duration'}
-              onChange={() => setMode('duration')}
-            />
-            <span className={styles.modeTitle}>{t('countdown.durationMode')}</span>
+            <div className={styles.modeHeaderRow}>
+              <input
+                type="radio"
+                name="cd-mode"
+                checked={mode === 'duration'}
+                onChange={() => setMode('duration')}
+              />
+              <span className={styles.modeTitle}>{t('countdown.durationMode')}</span>
+            </div>
 
             <div className={styles.durationRow}>
               {(
@@ -158,13 +160,15 @@ export const CountdownSettings: React.FC<CountdownSettingsProps> = ({
                 : undefined
             }
           >
-            <input
-              type="radio"
-              name="cd-mode"
-              checked={mode === 'datetime'}
-              onChange={() => setMode('datetime')}
-            />
-            <span className={styles.modeTitle}>{t('countdown.dateMode')}</span>
+            <div className={styles.modeHeaderRow}>
+              <input
+                type="radio"
+                name="cd-mode"
+                checked={mode === 'datetime'}
+                onChange={() => setMode('datetime')}
+              />
+              <span className={styles.modeTitle}>{t('countdown.dateMode')}</span>
+            </div>
 
             <input
               type="datetime-local"

@@ -2,9 +2,11 @@
 
 .wrapper {
   margin: @spacing-sm 0;
-  position: relative;
+  display: flex;
+  flex-direction: column;
   user-select: none;
   width: 100%;
+  position: relative;
 }
 
 .card {
@@ -129,6 +131,16 @@
 
   &:hover {
     background-color: @bg-hover;
+  }
+}
+
+.toolbarButtonActive {
+  background-color: @color-primary;
+  color: #fff;
+
+  &:hover {
+    background-color: @color-primary;
+    color: #fff;
   }
 }
 

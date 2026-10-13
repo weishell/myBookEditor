@@ -7,6 +7,7 @@ import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
 import { lockPageScroll } from '@/utils/scroll-lock';
 import ResizeHandle from '../resize-handle/ResizeHandle';
+import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Timeline.module.less';
 import {
   insertTimelineItemAt,
@@ -224,6 +225,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
   const settingsRef = useRef<HTMLDivElement>(null);
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
+  const { align, setAlign } = useBlockAlign({ editor, element, attrsRef });
 
   const width = attrs.width || DEFAULT_WIDTH;
   const height = attrs.height || DEFAULT_HEIGHT;
@@ -502,6 +504,13 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
+            <BlockAlignButtons
+              align={align}
+              onAlign={setAlign}
+              btnClass={styles.toolbarButton}
+              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+              size={14}
+            />
             <button
               onClick={handleRemove}
               className={styles.toolbarButton}
@@ -573,6 +582,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
             className={styles.container}
             contentEditable={false}
             suppressContentEditableWarning={true}
+            style={{ alignSelf: alignToAlignSelf(align) }}
           >
             {/* 时间轴内容 */}
             {direction === 'horizontal' ? renderHorizontal() : renderVertical()}

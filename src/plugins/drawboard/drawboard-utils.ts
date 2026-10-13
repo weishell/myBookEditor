@@ -12,6 +12,8 @@ export interface DrawboardAttrs {
   data?: Shape[];
   /** 预留：后续接入外部画布数据时，用该引用定位画布内容 */
   ref?: string;
+  /** 块级对齐（left/center/right），作用于外层 flex wrapper */
+  align?: 'left' | 'center' | 'right';
 }
 
 export interface DrawboardElement {

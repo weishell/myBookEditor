@@ -340,7 +340,7 @@ export default {
     fullscreen: 'Fullscreen',
     exitFullscreen: 'Exit fullscreen',
   },
-  // 图片工具栏
+  // Image toolbar
   imageToolbar: {
     alignLeft: 'Align left',
     alignCenter: 'Align center',
@@ -350,6 +350,11 @@ export default {
     preview: 'Preview',
     delete: 'Delete',
     uploading: 'Uploading image',
+    zoomIn: 'Zoom in',
+    zoomOut: 'Zoom out',
+    fit: 'Fit to window',
+    resetView: 'Reset view',
+    close: 'Close',
   },
   // File / video block
   media: {
