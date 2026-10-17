@@ -82,6 +82,35 @@
     border: 1px solid @border-color-light;
   border-radius: @radius-md;
   background-color: var(--lw-paper, @bg-base);
+  /* 自定义滚动条：轨道透明（纹理壁纸下白轨道很扎眼），滑块浅灰 */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.25) transparent;
+
+  &::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.38);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+
+  &::-webkit-scrollbar-corner {
+    background: transparent;
+  }
 }
 
 // ===== 右上角操作栏（fixed 在 frame 内，不随 container 滚动）=====

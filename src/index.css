@@ -144,9 +144,10 @@ textarea,
 
 /* ================== 代码块内 antd Select 全局样式 ================== */
 
-/* 默认模式：边框和文字跟随主题色 */
+/* 默认模式：边框和文字跟随主题色；底色透明，跟随代码块工具条的 --lw-chrome 底色 */
 .codeblock-select .ant-select-selector {
   border-color: color-mix(in srgb, var(--theme-primary) 55%, #d9d9d9) !important;
+  background-color: transparent !important;
 }
 
 .codeblock-select .ant-select-selection-item {

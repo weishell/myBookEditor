@@ -17,12 +17,13 @@
   padding: @spacing-xs @spacing-md;
   transition: opacity 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
   user-select: none;
-  background-color: var(--lw-paper, @bg-base);
+  /* 部件底色：纹理壁纸下 paper 是透明，工具条用偏灰的 --lw-chrome 打底 */
+  background-color: var(--lw-chrome, var(--lw-paper, @bg-base));
   border-bottom: 1px solid transparent;
 }
 
 .toolbarVisible {
-  background-color: var(--lw-paper, @bg-base);
+  background-color: var(--lw-chrome, var(--lw-paper, @bg-base));
   border-bottom-color: @border-color-light;
 }
 
@@ -37,7 +38,7 @@
   font-size: @font-size-sm;
   padding: 2px 6px;
   border-radius: 3px;
-  background-color: @bg-base;
+  background-color: var(--lw-chrome, @bg-base);
   border: 1px solid @border-color-light;
   color: @text-secondary;
 }

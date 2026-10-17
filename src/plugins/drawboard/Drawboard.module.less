@@ -32,7 +32,8 @@
   align-items: center;
   gap: @spacing-xs;
   padding: @spacing-xs @spacing-md;
-  background: @bg-subtle;
+  /* 部件底色：纹理壁纸下用偏灰的 --lw-chrome 打底 */
+  background: var(--lw-chrome, @bg-subtle);
   border-bottom: 1px solid @border-color-lighter;
   font-size: @font-size-sm;
   color: @text-secondary;

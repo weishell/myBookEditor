@@ -62,7 +62,7 @@
   padding: 0 10px;
   border: 1px solid #dee0e3;
   border-radius: 4px;
-  background: #fff;
+  background: var(--lw-chrome, #fff);
   font-size: 12px;
   color: #1f2329;
   cursor: var(--cursor-pointer);
@@ -159,7 +159,8 @@
 
 // 非本月补白
 .cellPad {
-  background: #fafbfc;
+  /* 部件底色：纹理壁纸下用偏灰的 --lw-chrome，避免白得刺眼 */
+  background: var(--lw-chrome, #fafbfc);
 
   .dayNum {
     color: #c3c7cd;
@@ -172,11 +173,11 @@
 
 // 周末底色
 .cellWeekend {
-  background: #fcfcfd;
+  background: var(--lw-chrome, #fcfcfd);
 }
 
 .cellPad.cellWeekend {
-  background: #f7f8fa;
+  background: var(--lw-chrome, #f7f8fa);
 }
 
 .cellHead {

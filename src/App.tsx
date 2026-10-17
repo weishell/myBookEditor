@@ -71,10 +71,8 @@ function AppLayout() {
           <Link to="/" className={styles.logo}>
             MyBook Editor
           </Link>
-          <div className={styles.headerCenter}>
-            <HeaderSearch />
-          </div>
           <div className={styles.controls}>
+            <HeaderSearch />
             <SettingsSwitcher />
           </div>
         </header>

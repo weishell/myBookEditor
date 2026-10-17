@@ -19,19 +19,25 @@ export default function WallpaperHost() {
   // 选中的壁纸必须匹配当前模式，否则视为无壁纸（避免切主题时残留另一侧的壁纸）
   const modeOk = preset ? (isDarkMode ? preset.mode !== 'light' : preset.mode === 'light') : false;
 
-  // 浅色壁纸的染色变量（容器/纸面用）；无有效壁纸时清理
+  // 浅色壁纸的染色变量（容器/纸面/部件用）；无有效壁纸时清理
   useEffect(() => {
     const htmlEl = document.documentElement;
     if (!isDarkMode && modeOk && preset?.tint) {
       htmlEl.classList.add('light-wallpaper');
       htmlEl.style.setProperty('--lw-tint', preset.tint);
       htmlEl.style.setProperty('--lw-paper', preset.paper || 'rgba(255,255,255,0.92)');
+      // 部件底色：优先用壁纸自带 chrome；否则退回 paper（普通壁纸部件与纸面同色即可）
+      htmlEl.style.setProperty(
+        '--lw-chrome',
+        preset.chrome || preset.paper || 'rgba(255,255,255,0.92)',
+      );
     } else {
       htmlEl.classList.remove('light-wallpaper');
       htmlEl.style.removeProperty('--lw-tint');
       htmlEl.style.removeProperty('--lw-paper');
+      htmlEl.style.removeProperty('--lw-chrome');
     }
-  }, [isDarkMode, modeOk, preset?.tint, preset?.paper]);
+  }, [isDarkMode, modeOk, preset?.tint, preset?.paper, preset?.chrome]);
 
   if (!preset || !modeOk) return null;
 

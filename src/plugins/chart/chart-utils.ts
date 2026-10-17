@@ -227,7 +227,7 @@ export const buildChartOption = (
     case ChartKind.WORDCLOUD:
       return buildWordCloudOption(attrs, palette, textColor);
     case ChartKind.GAUGE:
-      return buildGaugeOption(attrs, subTextColor);
+      return buildGaugeOption(attrs, subTextColor, textColor, opts.isDarkMode);
     case ChartKind.BAR:
       return buildBarOption(attrs, palette, textColor, subTextColor);
     default:
@@ -365,7 +365,9 @@ const buildPieOption = (
         roseType: isRose ? 'radius' : undefined,
         center: ['36%', '54%'],
         itemStyle: { borderColor: 'transparent', borderWidth: 1 },
-        label: { color: isDonut ? '#fff' : textColor, fontSize: 12 },
+        // 环形/玫瑰图的标签在图外（浮在纸面背景上），白色会看不见 → 跟随主题文字色；
+        // 普通饼图标签在色块内部，白字反而清晰
+        label: { color: isDonut || isRose ? textColor : '#fff', fontSize: 12 },
         labelLine: { length: 12, length2: 10 },
         data: rows.map((r, i) => ({
           name: r.name,
@@ -402,16 +404,25 @@ const buildWordCloudOption = (
 };
 
 /**
- * 仪表盘：半圆弧 + 三色刻度段 + 白色指针 + 数字。value 用 detail 同步修改，
+ * 仪表盘：半圆弧 + 三色刻度段 + 指针 + 数字。value 用 detail 同步修改，
  * 指针与数字默认带补间动画（初始从起点滑到目标；改数值后平滑移动而非跳变）。
+ * 指针/锚点/刻度数字/当前值在浅色模式下用深灰（默认白色只适合深色弧面，
+ * 在浅色纸面背景上会看不清），暗黑模式保持白色。
  */
-const buildGaugeOption = (attrs: ChartAttrs, subTextColor: string): echarts.EChartsOption => {
+const buildGaugeOption = (
+  attrs: ChartAttrs,
+  subTextColor: string,
+  textColor: string,
+  isDarkMode: boolean,
+): echarts.EChartsOption => {
   const min = attrs.gaugeMin ?? 0;
   const max = attrs.gaugeMax ?? 100;
   const unit = attrs.gaugeUnit ?? '%';
   let value = attrs.gaugeValue ?? 0;
   if (Number.isNaN(value)) value = 0;
   value = Math.min(Math.max(value, min), max);
+  // 浅色模式下指针/数字用深灰，暗黑模式用白色
+  const needleColor = isDarkMode ? '#ffffff' : '#4b5563';
 
   // 色段按占比划分：0~40% 蓝（安全）、40~80% 青（注意）、80~100% 红（危险）
   const zones =
@@ -447,14 +458,14 @@ const buildGaugeOption = (attrs: ChartAttrs, subTextColor: string): echarts.ECha
           icon: 'arrow',
           length: '60%',
           width: 5,
-          itemStyle: { color: '#ffffff', shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 6 },
+          itemStyle: { color: needleColor, shadowColor: 'rgba(0,0,0,0.25)', shadowBlur: 6 },
         },
         anchor: {
           show: true,
           size: 8,
           itemStyle: {
-            color: '#ffffff',
-            borderColor: subTextColor,
+            color: needleColor,
+            borderColor: isDarkMode ? subTextColor : '#ffffff',
             borderWidth: 1,
             shadowColor: 'rgba(0,0,0,0.3)',
             shadowBlur: 6,
@@ -473,7 +484,8 @@ const buildGaugeOption = (attrs: ChartAttrs, subTextColor: string): echarts.ECha
         },
         axisLabel: {
           distance: 16,
-          color: subTextColor,
+          // 浅色模式下浅灰 #9ca3af 在浅色纸面上看不清 → 用主题文字色
+          color: isDarkMode ? subTextColor : textColor,
           fontSize: 11,
         },
         progress: { show: false },
@@ -482,7 +494,7 @@ const buildGaugeOption = (attrs: ChartAttrs, subTextColor: string): echarts.ECha
           valueAnimation: true,
           offsetCenter: [0, '26%'],
           formatter: (v: unknown) => `${Math.round(Number(v))}${unit}`,
-          color: '#ffffff',
+          color: needleColor,
           fontSize: 26,
           fontWeight: 700,
         },

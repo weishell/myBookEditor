@@ -50,6 +50,10 @@ export interface WallpaperPreset {
    *  ⚠️ 不要在纸面上用 backdrop-filter：它会让纸面成为 position:fixed 子元素的
    *     包含块，导致图片选中框 / 缩放手柄脱离图片本体。 */
   paper?: string;
+  /** 浅色壁纸：UI 部件底色（CSS 变量 --lw-chrome），供代码块工具条、日历补白格、
+   *  画板标题栏等"浮在纸面上的部件"打底。纹理壁纸的 paper 是 transparent，
+   *  部件若也透明会显得发白发飘，所以给它们一层偏灰的半透明底。 */
+  chrome?: string;
   /** 选择弹框里的缩略图背景（任意 CSS background 值） */
   thumbCss?: string;
   /** kind='image'：覆盖在照片上的柔化遮罩（任意 CSS background 值）。
@@ -211,7 +215,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '米白亚麻布经纬交织，温和素雅',
     tint: '#ece4d2',
-    paper: 'rgba(251,248,242,0.6)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'repeating-linear-gradient(0deg, rgba(122,100,68,0.09) 0 1px, transparent 1px 3px),' +
       'repeating-linear-gradient(90deg, rgba(122,100,68,0.09) 0 1px, transparent 1px 3px),' +
@@ -226,7 +231,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '暖米色旧纸，细腻的纸张颗粒',
     tint: '#eee4d0',
-    paper: 'rgba(250,245,235,0.58)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'repeating-radial-gradient(circle at 30% 30%, rgba(150,120,80,0.05) 0 1px, transparent 1px 3px),' +
       'linear-gradient(180deg, #f7f1e5 0%, #eaddc6 100%)',
@@ -240,7 +246,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '冷白底浅蓝灰点阵，安静干净',
     tint: '#dde6ee',
-    paper: 'rgba(248,251,253,0.6)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'radial-gradient(rgba(86,108,130,0.18) 1px, transparent 1.4px) 0 0 / 10px 10px repeat,' +
       'linear-gradient(180deg, #f7fafc 0%, #e7edf4 100%)',
@@ -254,7 +261,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '淡青白底浅绿方格，笔记本内页',
     tint: '#dcebe0',
-    paper: 'rgba(248,252,249,0.6)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'repeating-linear-gradient(0deg, rgba(96,142,118,0.14) 0 1px, transparent 1px 12px),' +
       'repeating-linear-gradient(90deg, rgba(96,142,118,0.14) 0 1px, transparent 1px 12px),' +
@@ -269,7 +277,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '淡青底极细帘纹，传统帘纹纸',
     tint: '#d9e8e3',
-    paper: 'rgba(247,251,250,0.58)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'repeating-linear-gradient(0deg, rgba(74,112,106,0.1) 0 1px, transparent 1px 4px),' +
       'linear-gradient(180deg, #f0f6f4 0%, #ddeae6 100%)',
@@ -283,7 +292,8 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     group: '质感纸纹',
     description: '淡粉紫织物斜纹，温柔耐看',
     tint: '#ecdfe8',
-    paper: 'rgba(251,247,249,0.6)',
+    paper: 'transparent', // 纹理壁纸：纸面全透明，让底纹直接透到正文/目录
+    chrome: 'rgba(238,240,243,0.88)', // 部件底色：偏灰半透明，让工具条/补白格在纹理上有层次
     thumbCss:
       'repeating-linear-gradient(45deg, rgba(146,106,132,0.1) 0 2px, transparent 2px 6px),' +
       'linear-gradient(180deg, #f9f1f5 0%, #ecdee8 100%)',
