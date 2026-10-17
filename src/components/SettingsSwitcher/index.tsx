@@ -72,11 +72,11 @@ export default function SettingsSwitcher() {
   const currentWallpaper = wallpaper ? getWallpaperById(wallpaper) : undefined;
   const currentLightWallpaper = lightWallpaper ? getWallpaperById(lightWallpaper) : undefined;
 
-  // 壁纸分两组展示：浅色（柔和护眼/风景/萌宠）与暗黑，点哪组自动切到对应模式
+  // 壁纸分两组展示：浅色（柔和护眼/质感纸纹/风景）与暗黑，点哪组自动切到对应模式
   const lightPresets = getWallpapersByMode('light');
   const darkPresets = getWallpapersByMode('dark');
 
-  // 浅色壁纸再按 group 分子组，避免一长条：柔和护眼（渐变）/ 风景照片 / 萌宠
+  // 浅色壁纸再按 group 分子组，避免一长条：柔和护眼（渐变）/ 质感纸纹 / 风景照片
   const lightGroups = (() => {
     const order: string[] = [];
     const map = new Map<string, typeof lightPresets>();

@@ -18,6 +18,14 @@ import {
   LakeMorningWallpaper,
   SnowPeakWallpaper,
 } from './light-tints';
+import {
+  LinenWeaveWallpaper,
+  PaperGrainWallpaper,
+  DotGridWallpaper,
+  GridPaperWallpaper,
+  LaidPaperWallpaper,
+  TwillWallpaper,
+} from './textures';
 
 export type WallpaperKind = 'svg' | 'image';
 export type WallpaperMode = 'dark' | 'light';
@@ -49,7 +57,7 @@ export interface WallpaperPreset {
   veil?: string;
   /** kind='image'：照片轻微模糊（px），边缘更柔，进一步降低干扰 */
   blur?: number;
-  /** 浅色壁纸在设置面板里的分组标题（柔和护眼 / 风景照片 / 萌宠） */
+  /** 浅色壁纸在设置面板里的分组标题（柔和护眼 / 质感纸纹 / 风景照片） */
   group?: string;
   /** 素材来源（免费商用图库）标注，仅作注释 */
   source?: string;
@@ -191,62 +199,94 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     thumbCss: 'linear-gradient(180deg, #eaf2f9 0%, #e0ebf4 55%, rgba(178,200,220,0.55) 100%)',
   },
 
-  /* ---------------- 浅色模式 · 萌宠照片（真实照片，来自免费商用图库 Pixabay） ---------------- */
+  /* ---------------- 浅色模式 · 质感纸纹（纯 CSS/SVG 绘制，零图片资源） ----------------
+     纸纹类壁纸的 paper 给较低不透明度，让底纹能透到正文纸面和目录面板上（有道云纸纹的效果）；
+     纹理本身对比度极低，不影响正文阅读 */
   {
-    id: 'photo-cat-01',
-    name: '白毯猫咪',
-    kind: 'image',
+    id: 'texture-linen',
+    name: '亚麻织纹',
+    kind: 'svg',
     mode: 'light',
-    imageUrl: '/wallpapers/cat-01.jpg',
-    group: '萌宠',
-    description: '白毯上打滚的虎斑猫，明亮柔和',
-    tint: '#ece4dc',
-    paper: 'rgba(252,249,246,0.7)',
-    veil: 'linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.3) 45%, rgba(255,255,255,0.46) 100%)',
-    blur: 12,
-    source: 'Pixabay (免费商用，免署名)',
+    component: LinenWeaveWallpaper,
+    group: '质感纸纹',
+    description: '米白亚麻布经纬交织，温和素雅',
+    tint: '#ece4d2',
+    paper: 'rgba(251,248,242,0.6)',
+    thumbCss:
+      'repeating-linear-gradient(0deg, rgba(122,100,68,0.09) 0 1px, transparent 1px 3px),' +
+      'repeating-linear-gradient(90deg, rgba(122,100,68,0.09) 0 1px, transparent 1px 3px),' +
+      'linear-gradient(180deg, #f8f4ec 0%, #ece4d3 100%)',
   },
   {
-    id: 'photo-cat-03',
-    name: '灰白猫咪',
-    kind: 'image',
+    id: 'texture-grain',
+    name: '宣纸颗粒',
+    kind: 'svg',
     mode: 'light',
-    imageUrl: '/wallpapers/cat-03.jpg',
-    group: '萌宠',
-    description: '亮底上的灰白猫，干净通透',
-    tint: '#e6e8e6',
-    paper: 'rgba(250,251,250,0.7)',
-    veil: 'linear-gradient(180deg, rgba(255,255,255,0.44) 0%, rgba(255,255,255,0.26) 45%, rgba(255,255,255,0.42) 100%)',
-    blur: 12,
-    source: 'Pixabay (免费商用，免署名)',
+    component: PaperGrainWallpaper,
+    group: '质感纸纹',
+    description: '暖米色旧纸，细腻的纸张颗粒',
+    tint: '#eee4d0',
+    paper: 'rgba(250,245,235,0.58)',
+    thumbCss:
+      'repeating-radial-gradient(circle at 30% 30%, rgba(150,120,80,0.05) 0 1px, transparent 1px 3px),' +
+      'linear-gradient(180deg, #f7f1e5 0%, #eaddc6 100%)',
   },
   {
-    id: 'photo-dog-01',
-    name: '草地小狗',
-    kind: 'image',
+    id: 'texture-dot-grid',
+    name: '云白点阵',
+    kind: 'svg',
     mode: 'light',
-    imageUrl: '/wallpapers/dog-01.jpg',
-    group: '萌宠',
-    description: '阳光草地上爬台阶的小白狗',
-    tint: '#dfe8d2',
-    paper: 'rgba(250,252,244,0.7)',
-    veil: 'linear-gradient(180deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.44) 100%)',
-    blur: 12,
-    source: 'Pixabay (免费商用，免署名)',
+    component: DotGridWallpaper,
+    group: '质感纸纹',
+    description: '冷白底浅蓝灰点阵，安静干净',
+    tint: '#dde6ee',
+    paper: 'rgba(248,251,253,0.6)',
+    thumbCss:
+      'radial-gradient(rgba(86,108,130,0.18) 1px, transparent 1.4px) 0 0 / 10px 10px repeat,' +
+      'linear-gradient(180deg, #f7fafc 0%, #e7edf4 100%)',
   },
   {
-    id: 'photo-dog-02',
-    name: '木台小狗',
-    kind: 'image',
+    id: 'texture-grid',
+    name: '手账方格',
+    kind: 'svg',
     mode: 'light',
-    imageUrl: '/wallpapers/dog-02.jpg',
-    group: '萌宠',
-    description: '木板台上趴着的小白狗',
-    tint: '#eae2d6',
-    paper: 'rgba(252,249,243,0.7)',
-    veil: 'linear-gradient(180deg, rgba(255,255,255,0.46) 0%, rgba(255,255,255,0.28) 45%, rgba(255,255,255,0.44) 100%)',
-    blur: 12,
-    source: 'Pixabay (免费商用，免署名)',
+    component: GridPaperWallpaper,
+    group: '质感纸纹',
+    description: '淡青白底浅绿方格，笔记本内页',
+    tint: '#dcebe0',
+    paper: 'rgba(248,252,249,0.6)',
+    thumbCss:
+      'repeating-linear-gradient(0deg, rgba(96,142,118,0.14) 0 1px, transparent 1px 12px),' +
+      'repeating-linear-gradient(90deg, rgba(96,142,118,0.14) 0 1px, transparent 1px 12px),' +
+      'linear-gradient(180deg, #f4faf6 0%, #e3efe7 100%)',
+  },
+  {
+    id: 'texture-laid',
+    name: '青瓷横纹',
+    kind: 'svg',
+    mode: 'light',
+    component: LaidPaperWallpaper,
+    group: '质感纸纹',
+    description: '淡青底极细帘纹，传统帘纹纸',
+    tint: '#d9e8e3',
+    paper: 'rgba(247,251,250,0.58)',
+    thumbCss:
+      'repeating-linear-gradient(0deg, rgba(74,112,106,0.1) 0 1px, transparent 1px 4px),' +
+      'linear-gradient(180deg, #f0f6f4 0%, #ddeae6 100%)',
+  },
+  {
+    id: 'texture-twill',
+    name: '藕荷斜纹',
+    kind: 'svg',
+    mode: 'light',
+    component: TwillWallpaper,
+    group: '质感纸纹',
+    description: '淡粉紫织物斜纹，温柔耐看',
+    tint: '#ecdfe8',
+    paper: 'rgba(251,247,249,0.6)',
+    thumbCss:
+      'repeating-linear-gradient(45deg, rgba(146,106,132,0.1) 0 2px, transparent 2px 6px),' +
+      'linear-gradient(180deg, #f9f1f5 0%, #ecdee8 100%)',
   },
 
   /* ---------------- 浅色模式 · 风景照片（复用项目内 public/covers 免费素材） ---------------- */
