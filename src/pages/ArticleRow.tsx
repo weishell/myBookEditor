@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { getCategory, getTag, type Article } from '@/data/articles';
+import { getCategory, getTag, type ArticleIndex } from '@/data/articles';
 import styles from './ArticleRow.module.less';
 
-export default function ArticleRow({ article }: { article: Article }) {
+export default function ArticleRow({ article }: { article: ArticleIndex }) {
   const cat = getCategory(article.category);
   return (
     <Link to={`/article/${article.id}`} className={styles.row}>

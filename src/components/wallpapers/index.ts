@@ -384,6 +384,39 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     blur: 12,
     source: 'Picsum (Unsplash 来源)',
   },
+
+  /* ---------------- 浅色模式 · 插画底图（中国风手绘背景，自带留白构图） ----------------
+     插画类底图本身就是为"上面排文字"设计的，大片区域是留白，
+     所以 veil 给得比照片类更轻、blur 更小，尽量保留原画面的氛围与细节 */
+  {
+    id: 'art-laba-warm',
+    name: '腊八暖红',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-laba-warm.jpg',
+    group: '插画底图',
+    description: '红梅祥云暖米纸纹，节日氛围（中上部留白）',
+    tint: '#f2d8cc',
+    paper: 'rgba(253,248,243,0.3)',
+    // 纸面调薄后，工具条/补白格等部件要保持可读，单独给一层稍厚的底
+    chrome: 'rgba(252,247,242,0.62)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.24) 0%, rgba(255,255,255,0.12) 45%, rgba(255,255,255,0.22) 100%)',
+    blur: 2,
+  },
+  {
+    id: 'art-green-landscape',
+    name: '青绿山水',
+    kind: 'image',
+    mode: 'light',
+    imageUrl: '/covers/cover-green-landscape.png',
+    group: '插画底图',
+    description: '水墨远山飞鸟柳枝，清雅文艺（右侧天空留白）',
+    tint: '#cfe4de',
+    paper: 'rgba(243,250,248,0.3)',
+    chrome: 'rgba(243,249,247,0.62)',
+    veil: 'linear-gradient(180deg, rgba(255,255,255,0.22) 0%, rgba(255,255,255,0.1) 45%, rgba(255,255,255,0.2) 100%)',
+    blur: 2,
+  },
 ];
 
 export function getWallpaperById(id: string): WallpaperPreset | undefined {

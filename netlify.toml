@@ -1,0 +1,29 @@
+# Netlify 部署配置
+# 关键点：SPA 回退（否则 /article/xxx、/demo 直接 404）+ 数据快照的缓存策略
+
+[build]
+  # 先导出静态数据，再类型检查 + 打包（.mjs 脚本不进 tsc，不影响检查范围）
+  command = "pnpm build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# 所有未命中静态文件的前端路由，回退到 index.html
+# 注意：已存在的文件（如 /data/articles.json）会优先命中，不受这条影响
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+# 数据快照：文件名固定，必须短缓存 + 重验证，否则发新文章后用户还看旧列表
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+# 带 hash 的构建资源：可以长缓存
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"

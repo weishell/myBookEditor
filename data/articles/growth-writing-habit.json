@@ -1,0 +1,73 @@
+{
+  "id": "growth-writing-habit",
+  "title": "把写作变成可以坚持的事",
+  "summary": "降低启动成本、固定收尾动作，比意志力可靠得多。",
+  "categoryId": "growth",
+  "tagIds": ["growth", "notes"],
+  "createdAt": "2026-10-12T09:00:00.000Z",
+  "reads": 0,
+  "status": "published",
+  "updatedAt": "2026-10-12T09:00:00.000Z",
+  "content": [
+    {
+      "type": "paragraph",
+      "id": "b0932dc9-07f4-4dfb-af5f-69d70f315fa5",
+      "children": [
+        {
+          "text": "写作最难的不是写，是开始。把启动成本降到「打开就能写」，比每天给自己打气有效得多。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "8ae5a020-c94b-44a5-9a7f-bbfb4ca3b387",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "降低启动成本"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "802228d9-b91b-4534-bc6e-308bf07b747d",
+      "children": [
+        {
+          "text": "别从空白页开始。留一句上次没写完的话，或者一个待回答的问题，第二天打开就有抓手。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "208ef5e4-84ab-4fbc-ba6e-9c88d5b56767",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "固定收尾动作"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "f8b5fb87-d25b-440c-9b38-f9240500258f",
+      "children": [
+        {
+          "text": "每次停笔前，写一行「下次从这里继续」。这行字是给未来的自己留的钩子，比任何计划表都管用。"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "ca2c0b23-cec4-4148-9b62-0eef2248653a",
+      "children": [
+        {
+          "text": "最后一条：允许自己写得很烂。烂稿可以改，空白改不了。"
+        }
+      ]
+    }
+  ]
+}

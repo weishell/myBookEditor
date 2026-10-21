@@ -66,6 +66,8 @@ interface EditorProps {
   initialValue?: Descendant[];
   /** 文档自动保存用的本地存储 key；传空字符串则关闭持久化 */
   persistKey?: string;
+  /** 防抖后的保存回调（如提交到后端）。与 persistKey 可同时使用 */
+  onSave?: (value: Descendant[]) => void;
 }
 
 // 文档正文持久化：评论锚点（comments 标记）就写在文档数据里，若不落盘，
@@ -87,6 +89,7 @@ export default function BookEditor({
   readOnly = false,
   initialValue = demoInitialValue,
   persistKey = DOC_PERSIST_KEY,
+  onSave,
 }: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
   const { isDarkMode } = useTheme();
@@ -180,21 +183,50 @@ export default function BookEditor({
     [editor, readOnly],
   );
   // onChange 不再打印 editor 数据；需要看数据结构时控制台直接打 window.editor。
-  // 有持久化 key 时，节流把最新文档（含评论标记）落盘，刷新后恢复。
+  // 落盘与上报统一走 400ms 防抖：persistKey 存在写 localStorage，onSave 存在提交给调用方。
   const saveTimer = useRef<number | null>(null);
+  const latestValue = useRef<Descendant[] | null>(null);
+  // 用 ref 存回调：卸载时 flush 才能拿到最新值，而不是首次渲染的闭包
+  const persistKeyRef = useRef(persistKey);
+  const onSaveRef = useRef(onSave);
+  persistKeyRef.current = persistKey;
+  onSaveRef.current = onSave;
+
+  const flush = useCallback((value: Descendant[]) => {
+    const key = persistKeyRef.current;
+    if (key) {
+      try {
+        localStorage.setItem(key, JSON.stringify(value));
+      } catch {
+        /* 忽略存储异常 */
+      }
+    }
+    onSaveRef.current?.(value);
+  }, []);
+
   const handleChange = useCallback(
     (value: Descendant[]) => {
-      if (!persistKey) return;
+      latestValue.current = value;
+      if (!persistKey && !onSave) return;
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {
-        try {
-          localStorage.setItem(persistKey, JSON.stringify(value));
-        } catch {
-          /* 忽略存储异常 */
-        }
+        saveTimer.current = null;
+        flush(value);
       }, 400);
     },
-    [persistKey],
+    [persistKey, onSave, flush],
+  );
+
+  // 卸载时补交一次：打完字立刻切页，不会丢掉还没到防抖时间的那次改动
+  useEffect(
+    () => () => {
+      if (saveTimer.current !== null) {
+        window.clearTimeout(saveTimer.current);
+        saveTimer.current = null;
+        if (latestValue.current) flush(latestValue.current);
+      }
+    },
+    [flush],
   );
 
   // 合并代码高亮 + 查找高亮两种装饰（行内评论高亮由 renderLeaf 直接读叶子数据渲染，不走这里）

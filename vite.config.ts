@@ -4,6 +4,13 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [react()],
+  server: {
+    // 本地后端（pnpm dev:server）：前端仍走同源 /api，省掉 CORS
+    proxy: {
+      '/api': 'http://localhost:3001',
+      '/media': 'http://localhost:3001',
+    },
+  },
   build: {
     rollupOptions: {
       output: {

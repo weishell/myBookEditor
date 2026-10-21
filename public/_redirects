@@ -1,0 +1,4 @@
+# SPA 回退：所有未命中静态文件的前端路由都回到 index.html
+# netlify.toml 里有同样的规则；这份是给「直接拖拽 dist 目录」部署准备的
+# （拖拽部署不会读仓库根的 netlify.toml，但会读站点根目录里的 _redirects）
+/*  /index.html  200

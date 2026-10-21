@@ -1,0 +1,85 @@
+{
+  "id": "design-reading-rhythm",
+  "title": "长文的阅读节奏怎么调",
+  "summary": "行宽、行高、段间距与留白：让眼睛愿意往下走的那些数值。",
+  "categoryId": "design",
+  "tagIds": ["design", "viz"],
+  "createdAt": "2026-10-13T09:00:00.000Z",
+  "reads": 0,
+  "status": "published",
+  "updatedAt": "2026-10-13T09:00:00.000Z",
+  "content": [
+    {
+      "type": "paragraph",
+      "id": "815544c2-b2fb-48b5-bbb2-ecf9b2e90e7f",
+      "children": [
+        {
+          "text": "长文读不下去，往往不是内容问题，而是节奏问题。眼睛需要落脚点，段落需要呼吸。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "6700b376-a9a7-41f3-9665-eacfdef4b267",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "行宽"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "7ea673ab-fee6-4112-9019-6081036ac89e",
+      "children": [
+        {
+          "text": "中文正文一行 30~40 字比较舒服。太宽时视线回扫会丢行，太窄则频繁换行打断思路。项目里正文最大宽度 760px 就是按这个经验定的。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "17136c86-02fe-4822-bb9f-634ccac083f5",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "行高与段距"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "3646cf15-0b03-4d9b-9780-0ac0d4f41b37",
+      "children": [
+        {
+          "text": "行高 1.8 左右，段间距明显大于行距，读者才能一眼分清「换行」和「换段」。标题上方留白要大于下方，视觉上才会和下文归组。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "0b44799e-51e3-4770-b3ba-a5a56b973e66",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "对比度不必拉满"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "b3226522-c4fb-40fa-bec2-231846b0a75e",
+      "children": [
+        {
+          "text": "正文纯黑配纯白反而刺眼。深灰文字配略微偏暖的纸面，长时间阅读更轻松——这也是最近给壁纸加纸纹的出发点。"
+        }
+      ]
+    }
+  ]
+}

@@ -2,7 +2,8 @@
 
 ## 构建 / 校验（重要）
 
-- build script = **`tsc -b && vite build`**（Netlify 也用它）。**tsc 有报错 → 部署直接失败。**
+- build script = **`node scripts/export-static-data.mjs && tsc -b && vite build`**（Netlify 也用它）。
+  **tsc 有报错 → 部署直接失败。** 导出脚本 `data/` 缺文件时只告警、不失败（前端会回退内置示例数据）。
 - 交付前**必须**跑 `tsc -b`，不能只跑 `vite build`（vite/esbuild 不做类型检查，会漏）。
   - 本地跑法（pnpm shim 在本机 Git Bash 里路径会坏，直接用 node 调 tsc）：
     `node node_modules/typescript/bin/tsc -b` → 看 EXIT 与报错。
@@ -108,3 +109,39 @@
 - `attrs.label` 是**持久化**字段：用户自定义过（或旧文档）存的是当时的默认中文。
   显示逻辑 = `attrs.label || t('hintBlock.labels.'+type)`——只有「从未自定义」才跟随语言；
   切类型时同样 `currentAttrs.label || t(...)` 存入。别改成无脑 t()，会覆盖用户自定义。
+
+## 数据层约定（2026-10-17 定的架构，别倒退）
+
+- **文件是唯一真相，SQLite 只是索引**：`data/articles/<id>.json` 一篇一个文件（元数据 + Slate 正文，进 git）；
+  `data/index.db`（`node:sqlite`，gitignore）启动时由文件**全量重建**，丢了不影响数据。
+  索引只存 title/summary/category_id/rel_path/时间/reads/status + `article_tag` 关联表，**正文永不入库**。
+- 目录分开存：`data/articles` / `data/drawboards` / `data/media/{images,files,videos}`，
+  库与文档里**只存相对地址**（`articles/<id>.json`、`media/images/x.png`），换域名/迁 CDN 只改前缀。
+- 本地后端在 `server/`，**零依赖**（`node:http` + `node:sqlite`），不要为了路由再引 express：
+  `router.mjs` 支持 `:param`，要换框架只改这一层。端口 3001，`vite.config.ts` 已代理 `/api` 与 `/media`。
+- **删除必须走 `rename` 到 `data/.trash/`，不要 `unlink`**：本机会被安全删除 shim 拦截（EPERM / trash aborted）。
+  写文件用 `.tmp` + `rename` 原子替换。
+- 前端：`src/data/{types,store,demo-data,bootstrap,articles}.ts`。`main.tsx` 先 `bootstrapData()` 再 render，
+  页面继续用同步选择器；`canWrite()` = 数据源为 api，线上（static）自动只读。
+- 文章页 `persistKey=""` 关掉 localStorage，正文只走服务端；`/demo` 仍用 localStorage。
+- 导出：`pnpm export:data` 生成 `public/data/{meta.json,articles.json,articles/<id>.json}`（列表不含正文），
+  只导 `status='published'`；`public/data`、`public/media` 是产物，gitignore。
+- Netlify：必须有 `/* → /index.html 200`（`netlify.toml` 已加），否则 `/article/xxx`、`/demo` 直接 404；
+  `/data/*` 必须短缓存，否则发新文章后仍看旧列表。
+- 本地起服务：`pnpm dev:server` + `pnpm dev` 两条命令；`pnpm seed` 仅在 `data/articles` 为空时写起始文档。
+
+## 分类 / 标签（2026-10-17 起可编辑）
+
+- 真相在 `data/meta.json`（`categories[]` + `tags[]`），写操作走 `server/meta.mjs`：名称唯一（忽略大小写/多余空格）、
+  被文章引用时禁止删除（409 带篇数）。文章按 `category_id` / `tag_id` 关联，**改名不影响引用**。
+- 分类封面：`POST /api/categories/:id/cover`（原始字节流 + `X-Filename`），落 `data/media/images/covers/`，
+  meta 里存相对地址 `media/images/covers/x.jpg`。没封面时前端用 `/covers/category-default.svg`。
+  拼前缀统一走 `src/data/assets.ts` 的 `assetUrl()`，以后换 CDN 只改这里。
+- 写接口一律返回**完整 meta**，前端 `applyTaxonomy` 直接覆盖 store，避免增量更新漏字段。
+- 入口在首页「管理分类 / 标签」（`canWrite()` 才显示），面板 `src/components/TaxonomyManager` 就地编辑。
+- ⚠️ 该面板的 `onChanged` 由 Home 用内联箭头传入 → 组件内必须用 ref 持有回调、`refresh` 保持稳定，
+  否则 effect 依赖每次变化会 **refresh ↔ setState 死循环**。
+- `public/_redirects`（`/* /index.html 200`）与 `netlify.toml` 里的 redirect 是**两份、用途不同**：
+  前者随构建进 `dist/_redirects`，给「拖拽 dist 部署」用（拖拽不读仓库根的 netlify.toml）。改回退规则时两处一起改。
+- `npm run build` 与 `pnpm build` 等价（脚本相同），产物 `dist/` 直接可部署：
+  `dist/{index.html,assets,data,media,_redirects,covers}`。`data/` 缺文件时导出只告警不失败 → 线上会回退内置示例数据。

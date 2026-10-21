@@ -1,0 +1,85 @@
+{
+  "id": "ai-writing-workflow",
+  "title": "把 AI 放进写作流程的三个位置",
+  "summary": "不是让模型替你写，而是让它在你卡住的地方接一手。",
+  "categoryId": "ai",
+  "tagIds": ["ai", "notes"],
+  "createdAt": "2026-10-14T09:00:00.000Z",
+  "reads": 0,
+  "status": "published",
+  "updatedAt": "2026-10-14T09:00:00.000Z",
+  "content": [
+    {
+      "type": "paragraph",
+      "id": "9b403cc5-2a30-4241-b6e7-353dccbf2d2a",
+      "children": [
+        {
+          "text": "常见的误区是把整篇稿子丢给模型生成，结果拿到一篇通顺但没有观点的文字。更实用的做法是把它放在三个具体位置。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "83093691-3a84-41c1-9115-d6815c567483",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "一、开头卡住时"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "c3da420e-05ce-462e-b67f-76059b63bb10",
+      "children": [
+        {
+          "text": "先写三句你想说但没说清的话，让模型帮你整理成段落骨架——它负责结构，你负责判断哪句是真的。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "b4c47f5e-403a-4500-93f8-b0cb5318b79c",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "二、中途查证时"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "2d73ae0c-8436-48db-acd4-7aacf44a3da9",
+      "children": [
+        {
+          "text": "遇到记不清的 API 行为、版本差异，让模型给出「可能的三个答案」，然后自己去源码或文档里确认。把它当成提出假设的助手，而不是结论来源。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "c4f61171-2141-4742-94a6-d521bcf7e7bf",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "三、收尾校对时"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "0314be67-8331-4d7f-95ef-3efbe22d2e23",
+      "children": [
+        {
+          "text": "让它只做一件事：指出你反复使用的词和过长句子。不要让它「润色全文」，那会把你的语气抹平。"
+        }
+      ]
+    }
+  ]
+}

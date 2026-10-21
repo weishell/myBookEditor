@@ -84,6 +84,95 @@
   box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
 }
 
+/* 主操作（新建文档）：只在本地可写模式出现 */
+.heroBtnPrimary {
+  display: inline-block;
+  padding: 9px 22px;
+  border: none;
+  border-radius: 999px;
+  background: #fff;
+  color: #2f6fed;
+  font-size: 14px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: var(--cursor-pointer, pointer);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
+}
+
+.heroBtnPrimary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.22);
+}
+
+/* 次级操作（管理分类/标签）：白描边，不抢主按钮 */
+.heroBtnGhost {
+  display: inline-block;
+  padding: 8px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  border-radius: 999px;
+  background: transparent;
+  color: #fff;
+  font-size: 13.5px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: var(--cursor-pointer, pointer);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.heroBtnGhost:hover {
+  background: rgba(255, 255, 255, 0.14);
+  border-color: #fff;
+}
+
+/* 最近更新列表 */
+.latestList {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.06);
+}
+
+.latestRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 18px;
+  color: #1f2329;
+  text-decoration: none;
+  border-bottom: 1px solid #f2f4f7;
+  transition: background-color 0.15s ease;
+
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &:hover {
+    background: #f6f8fb;
+  }
+}
+
+.latestTitle {
+  font-size: 14.5px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.latestDate {
+  flex-shrink: 0;
+  font-size: 12.5px;
+  color: #8f959e;
+}
+
 .heroHint {
   font-size: 12.5px;
   opacity: 0.85;
@@ -130,8 +219,7 @@
   --card-color: #2f6fed;
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 18px 18px 14px;
+  overflow: hidden;
   border-radius: 12px;
   border: 1px solid color-mix(in srgb, var(--card-color) 26%, transparent);
   background: color-mix(in srgb, var(--card-color) 9%, transparent);
@@ -146,6 +234,23 @@
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--card-color) 55%, transparent);
   box-shadow: 0 10px 22px color-mix(in srgb, var(--card-color) 18%, transparent);
+}
+
+/* 分类封面：没上传时用默认封面（构建进 public/covers/category-default.svg） */
+.categoryCover {
+  display: block;
+  height: 96px;
+  background-color: color-mix(in srgb, var(--card-color) 12%, #fff);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.categoryBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px 16px 13px;
 }
 
 .categoryIcon {

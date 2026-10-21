@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pagination } from 'antd';
-import { ARTICLE_PAGE_SIZE, ARTICLES, getCategory, getTag } from '@/data/articles';
+import { ARTICLE_PAGE_SIZE, getAllArticles, getCategory, getTag } from '@/data/articles';
 import ArticleRow from './ArticleRow';
 import styles from './Search.module.less';
 
@@ -13,7 +13,7 @@ export default function Search() {
   const results = useMemo(() => {
     if (!q) return [];
     const needle = q.toLowerCase();
-    return ARTICLES.filter((a) => {
+    return getAllArticles().filter((a) => {
       if (a.title.toLowerCase().includes(needle)) return true;
       if (a.summary.toLowerCase().includes(needle)) return true;
       const cat = getCategory(a.category);

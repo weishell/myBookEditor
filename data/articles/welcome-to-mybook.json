@@ -1,0 +1,76 @@
+{
+  "id": "welcome-to-mybook",
+  "title": "从这里开始：MyBook 写作台",
+  "summary": "一份说明：本地怎么存、线上怎么读，以及为什么数据是文件而不是数据库。",
+  "categoryId": "tools",
+  "tagIds": ["notes", "tools"],
+  "createdAt": "2026-10-17T09:00:00.000Z",
+  "reads": 0,
+  "status": "published",
+  "updatedAt": "2026-10-17T09:00:00.000Z",
+  "content": [
+    {
+      "type": "heading",
+      "id": "690e4e54-59c2-4403-995f-d8ba9aece0f1",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "这套东西怎么运作"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "d2e65f94-19cf-40ac-97fc-c4fa8977b683",
+      "children": [
+        {
+          "text": "正文一篇一个 JSON 文件，放在 data/articles/ 下；SQLite 里只有标题、类型、标签、时间和文件相对地址。索引库删了也能从文件重建，所以永远不会出现「数据库里有、文件没了」的悬空记录。"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "e50327ad-7f28-4524-a569-01f70cb3a61e",
+      "children": [
+        {
+          "text": "本地开发走 Node 起的 API，增删改查都是真写文件；发布到 Netlify 时前端直接读构建出来的同一批 JSON，既不需要服务器，也不需要 WASM。"
+        }
+      ]
+    },
+    {
+      "type": "blockquote",
+      "id": "c5631c2d-e1af-4ce5-9b9a-f624786da05b",
+      "attrs": {
+        "type": "info"
+      },
+      "children": [
+        {
+          "text": "一句话：文件负责内容，数据库负责查询，静态托管负责公开阅读。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "fa2191b5-374b-4991-968d-a46995977292",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "你可以马上试试"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "b502b039-4959-4355-a29c-46a150ab8ba9",
+      "children": [
+        {
+          "text": "在首页点「新建文档」，填标题选类型就能开一篇；正文改完会自动保存，刷新不会丢。删除入口在文章页右上角。"
+        }
+      ]
+    }
+  ]
+}

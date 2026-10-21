@@ -1,0 +1,76 @@
+{
+  "id": "backend-file-first",
+  "title": "文件是真相，数据库只是索引",
+  "summary": "为什么把正文留在 JSON、只用 SQLite 存元数据，以及这样做换来的是什么。",
+  "categoryId": "backend",
+  "tagIds": ["backend", "notes"],
+  "createdAt": "2026-10-15T09:00:00.000Z",
+  "reads": 0,
+  "status": "published",
+  "updatedAt": "2026-10-15T09:00:00.000Z",
+  "content": [
+    {
+      "type": "paragraph",
+      "id": "a19b73fe-a715-4c16-90fb-a35224abdd23",
+      "children": [
+        {
+          "text": "大多数内容站的默认选择是「数据库存一切」，但这套工具只有一个作者、几百篇文档，把正文塞进数据库反而增加负担。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "0a775948-9bec-4adc-a4fc-d791f4ab65ac",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "为什么正文不进库"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "575925c1-62fe-4195-91c4-74c2df9e64d6",
+      "children": [
+        {
+          "text": "正文是嵌套的 Slate JSON，几十 KB 到几百 KB 不等。放进 SQLite 后，每次读取都要反序列化，diff 也变成二进制。放在文件里，编辑器改动直接落到文件，git 能看、能回滚、能迁走。"
+        }
+      ]
+    },
+    {
+      "type": "heading",
+      "id": "f80b866a-51e2-489f-9834-ea1fa38a7d0e",
+      "attrs": {
+        "level": 2
+      },
+      "children": [
+        {
+          "text": "索引库换来什么"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "3aac6baf-21fc-464c-b503-91645f4ee1b0",
+      "children": [
+        {
+          "text": "SQL 处理筛选和排序比在内存里 filter 更省事：按分类、按标签、按关键词都能一句 SQL 解决，将来数据涨到几千篇也不用改前端。"
+        }
+      ]
+    },
+    {
+      "type": "blockquote",
+      "id": "0c58c55c-ab1e-46c1-99ff-eaec76515fec",
+      "attrs": {
+        "type": "info"
+      },
+      "children": [
+        {
+          "text": "库是可丢弃的缓存，文件是不可丢的资产。这个关系定下来，很多一致性问题就消失了。"
+        }
+      ]
+    }
+  ]
+}

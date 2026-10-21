@@ -1,0 +1,108 @@
+{
+  "categories": [
+    {
+      "id": "frontend",
+      "name": "前端开发",
+      "color": "#2f6fed",
+      "icon": "🖥️",
+      "desc": "框架、工程化与浏览器技术"
+    },
+    {
+      "id": "backend",
+      "name": "后端架构",
+      "color": "#00a66c",
+      "icon": "⚙️",
+      "desc": "服务端、数据库与分布式"
+    },
+    {
+      "id": "ai",
+      "name": "人工智能",
+      "color": "#7c3aed",
+      "icon": "🤖",
+      "desc": "模型应用与大模型实践"
+    },
+    {
+      "id": "design",
+      "name": "设计创意",
+      "color": "#e05b3f",
+      "icon": "🎨",
+      "desc": "视觉、交互与产品设计"
+    },
+    {
+      "id": "tools",
+      "name": "效率工具",
+      "color": "#d4a017",
+      "icon": "🧰",
+      "desc": "软件工具与工作流搭建"
+    },
+    {
+      "id": "growth",
+      "name": "职场成长",
+      "color": "#c026a5",
+      "icon": "🌱",
+      "desc": "方法论、沟通与职业发展"
+    }
+  ],
+  "tags": [
+    {
+      "id": "frontend",
+      "name": "前端",
+      "color": "#2f6fed"
+    },
+    {
+      "id": "backend",
+      "name": "后端",
+      "color": "#00a66c"
+    },
+    {
+      "id": "ai",
+      "name": "人工智能",
+      "color": "#7c3aed"
+    },
+    {
+      "id": "design",
+      "name": "设计",
+      "color": "#e05b3f"
+    },
+    {
+      "id": "tools",
+      "name": "效率工具",
+      "color": "#d4a017"
+    },
+    {
+      "id": "growth",
+      "name": "职场",
+      "color": "#c026a5"
+    },
+    {
+      "id": "react",
+      "name": "React",
+      "color": "#0ea5e9"
+    },
+    {
+      "id": "ts",
+      "name": "TypeScript",
+      "color": "#3178c6"
+    },
+    {
+      "id": "perf",
+      "name": "性能优化",
+      "color": "#f59e0b"
+    },
+    {
+      "id": "viz",
+      "name": "数据可视化",
+      "color": "#14b8a6"
+    },
+    {
+      "id": "oss",
+      "name": "开源项目",
+      "color": "#6366f1"
+    },
+    {
+      "id": "notes",
+      "name": "学习笔记",
+      "color": "#94a3b8"
+    }
+  ]
+}
