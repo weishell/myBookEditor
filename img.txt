@@ -1,0 +1,2839 @@
+import React, { useMemo } from 'react'
+import { Editor, Transforms, Node, Path } from 'slate'
+import { HistoryEditor } from 'slate-history'
+import isHotkey from 'is-hotkey'
+import { v4 } from 'uuid'
+import { message } from 'antd'
+import { useMemoizedFn } from 'ahooks'
+import { isObject } from '@/utils/data-type'
+import { getBlockNode, getPathByBlockId } from '@/utils/slate-get-node'
+import { CommandFn } from '@/utils/slate-command'
+import { setBlockNode, setUnBlockNode } from '@/utils/slate-set-node'
+import { SlateCommands } from '@/utils/slate-command'
+// import { focusSelection } from '@/utils/slate-handle-type'
+import {
+  isFocusLineEnd,
+  isCollapsed,
+  isSlateElement,
+  isWrappedNode
+} from '@/utils/slate-handle-type'
+import { insertEmptyParagraph } from '@/utils/slate-set-node'
+import { getImageSize } from '@/utils/image'
+import {
+  UPLOAD_ACCEPT_ALL_IMG_ACCEPT,
+  UPLOAD_ACCEPT_ALL_IMG_TYPE,
+  isFileNameValid,
+  isValidType,
+  isvalidateFileName
+} from '@/constant/index'
+import {
+  // AdvancedRenderElement,
+  EDITOR_ELEMENT_TYPE,
+  KEYBOARD_EVENT,
+  ElementPlugin
+} from '@/constant/interfaces'
+// import { KEYBOARD } from '@/constant/interfaces/keyboard-mouse'
+import { ELTYPE, ELTYPE_NUM } from '@/constant/enums/eltype'
+import {
+  handleClickForEmptyParagraph,
+  handleUploadFile,
+  updateFileHistory,
+  uploadFileChunk
+} from '../common/handleFile/index'
+// import { DocImage } from './doc-image'
+import style from './style.module.less'
+import { DocImage } from './doc-image'
+import { getElementStyle } from '@/utils/getStyle'
+import { FILE_CHUNK_SIZE, FILE_STATUS, FILE_TYPE, ILEVEL_POSTION, NON_INIT_FILE_STATUS, MAX_UPLOAD_IMAGE_COUNT } from '@/constant/enums/file'
+import store from '@/store'
+import { updateprogressBar, removeProgressBar } from '@/store/features/progressBarSlice'
+import i18n from '@/languages/i18n'
+import { fileUploadQueue } from '../common/handleFile/uploadQueue'
+import { compressImage } from './doc-image/utils'
+// 上传图片所需参数
+interface IImgParams {
+  editor: HistoryEditor
+  block_id: string
+  path: number[]
+  width: number
+  height: number
+  src: string
+  status: FILE_STATUS //图片状态
+  position?: ILEVEL_POSTION // 图片位置
+  file_sign?: string //图片签名
+  compressed_size?: number 
+  fileType?: string // 图片 MIME 类型，如 image/jpeg，供后端解析转发使用
+}
+// 隐藏的图片上传的 input dom id
+const IMAGE_INPUT_DOM_ID = 'app-image-upload-input'
+/**
+ * 计算图片的渲染宽度
+ */
+const calcImgeWidthandHeight = async url => {
+  try {
+    // @ts-ignore
+    const { width, height } = await getImageSize(url)
+    return {
+      width,
+      height
+    }
+  } catch (error) {
+    return {
+      width: '100%',
+      height: 'auto'
+    }
+  }
+}
+/**
+ * 设置新的图片节点
+ * @param val 设置新的图片元素所需的参数
+ */
+const isValidPath = (editor: Editor, path: Path): boolean => {
+  try {
+    Node.get(editor, path)
+    return true
+  } catch (e) {
+    return false
+  }
+}
+const setImageNodes = (val: IImgParams) => {
+  const { width, height, src, status, path, editor, block_id, file_sign = '',fileType = '', compressed_size = 0 } = val
+  const editorUserId = store.getState().editor?.editorUserId
+  // 对于非 PENDING 状态，需要先检查路径是否有效
+  if (NON_INIT_FILE_STATUS.includes(status)) {
+    if (!isValidPath(editor, path)) {
+      // 路径已无效，可能是节点已被删除（如用户撤销操作）
+      return
+    }
+  }
+  const data = {
+    block_id,
+    block_type: ELTYPE_NUM.IMAGE, // 图片
+    block_type_string: ELTYPE.IMAGE,
+    style: {
+      align: 2, // 1左对齐，2居中，3右对齐
+      folded: false, // 是否折叠
+      done: false, // 是否打钩完成，如 todo list
+      indent: 0 // 缩进
+    },
+    property: {
+      description: '', //图片描述
+      status, // 图片加载状态：loading success fail
+      offsetx: 0, //图片在x轴方向偏移量
+      offsety: 0, //图片在y轴方向偏移量
+      wrap_width: width, //裁剪后裁剪盒子宽度
+      wrap_height: height, //裁剪后裁剪盒子高度
+      url: src,
+      preview_url: src,
+      width,
+      height,
+      type: fileType, // 图片 MIME 类型，如 image/jpeg，供后端解析转发使用
+      file_sign,
+      editorUserId,
+      compressed_size,
+    },
+    children: [
+      {
+        text: ''
+        // bold: false,
+        // inline_code: false,
+        // italic: false,
+        // strikethrough: false,
+        // underline: false,
+        // text_color: '' // 直接颜色即可，不用枚举
+      }
+    ]
+  }
+  // 初始化节点
+  if ([FILE_STATUS.PENDING].includes(status)) {
+    // Transforms.removeNodes(editor, { at: path })
+    Transforms.insertNodes(editor, data, {
+      at: path,
+      select: false
+    })
+  }
+  // 如果已经存在，更新属性
+  else if (NON_INIT_FILE_STATUS.includes(status)) {
+    setBlockNode(
+      editor,
+      {
+        property: {
+          description: '',
+          status,
+          offsetx: 0,
+          offsety: 0,
+          wrap_width: width,
+          wrap_height: height,
+          url: src,
+          preview_url: src,
+          width,
+          height,
+          type: fileType,
+          file_sign,
+          editorUserId,
+          compressed_size,
+        }
+      },
+      {
+        at: path
+      }
+    )
+  }
+}
+/**
+ * 上传辅助函数
+ * @param {Array} files 文件列表
+ * @param {Object} editor 编辑器
+ * @param {Array} path 节点位置
+ */
+export const uploadImage = async (files: FileList, editor, path) => {
+  try {
+    // const newfiles = Array.from(files).reverse() as unknown as Array
+    // 文件列表
+    const allFiles = Array.from(files)
+    // 检查文件数量限制
+    if (allFiles.length > MAX_UPLOAD_IMAGE_COUNT) {
+      message.warning(`一次最多只能上传 ${MAX_UPLOAD_IMAGE_COUNT} 张图片`)
+    }
+    const newfiles = allFiles.slice(0, MAX_UPLOAD_IMAGE_COUNT)
+    const filesLen = newfiles.length
+    // 如果当前插入的是最后一行需要额外往下增加一个空行
+    let isAddEmptyLine = false
+    let arrLen = editor?.children?.length ?? -1
+    // let atPathNum = editor.selection.focus.path[0]
+    let position = ILEVEL_POSTION.OUT
+    let lastPathNum = path[path.length - 1]
+    let innerArr = path.slice(0, path.length - 1)
+    if (path.length > 1) {
+      position = ILEVEL_POSTION.IN
+    }
+    let atPathNum = path[0]
+    if (arrLen !== -1 && arrLen <= atPathNum) {
+      isAddEmptyLine = true
+    }
+    // 如果上传多张，就循环上传
+    newfiles.forEach(async (_file, index) => {
+      try {
+        // console.log('file', file)
+        if (!isFileNameValid(_file.name)) {
+          const mes = i18n.t('fileonlydot')
+          message.error(`${_file?.name}:${mes}`)
+          return
+        }
+        if (!isvalidateFileName(_file.name)) {
+          const mes = i18n.t('filespecialchar')
+          message.error(`${_file?.name}:${mes}`)
+          return
+        }
+        if (!isValidType(_file.name, UPLOAD_ACCEPT_ALL_IMG_TYPE)) {
+          const mes = i18n.t('fileformaterr')
+          message.error(`${_file?.name}:${mes}`)
+          return
+        }
+        const UPLOAD_LIMIT_IMAGE = Number(process.env?.REACT_APP_UPLOAD_LIMIT_IMAGE)
+        if (_file.size > UPLOAD_LIMIT_IMAGE * 1024 * 1024 ) {
+          const mes = i18n.t('fileover')
+          message.error(`${_file?.name}:${mes}${UPLOAD_LIMIT_IMAGE}MB`)
+          return
+        }
+        const blobSRC = window.URL.createObjectURL(_file)
+        const { width, height } = await calcImgeWidthandHeight(blobSRC)
+        // console.log(width, height)
+        let currentWidth = width
+        let currentHeight = height
+        if (width >= height && width < 50) {
+          let ratio = 50 / height
+          currentHeight = 50
+          currentWidth = ratio * width
+        } else if (height >= width && height < 50) {
+          let ratio = 50 / width
+          currentWidth = 50
+          currentHeight = ratio * height
+        }
+        const isMock = process.env.REACT_APP_IS_MOCK === 'yes'
+        const block_id = v4()
+        // HistoryEditor.withoutSaving(editor, () => {
+        setImageNodes({
+          editor,
+          block_id,
+          width: currentWidth,
+          height: currentHeight,
+          status: FILE_STATUS.PENDING,
+          src: blobSRC,
+          fileType: _file.type,
+          position,
+          path: position === ILEVEL_POSTION.OUT ? [atPathNum] : [...innerArr, lastPathNum]
+        })
+        // })
+        HistoryEditor.withoutSaving(editor, () => {
+          setImageNodes({
+            editor,
+            block_id,
+            width: currentWidth,
+            height: currentHeight,
+            status: FILE_STATUS.LOADING,
+            src: blobSRC,
+            fileType: _file.type,
+            position,
+            path: position === ILEVEL_POSTION.OUT ? [atPathNum] : [...innerArr, lastPathNum]
+          })
+        })
+        const file = await compressImage(_file)
+        // 外层需要增加当前段落的path
+        if (position === ILEVEL_POSTION.OUT) {
+          atPathNum += 1
+        } else {
+          // 内层增加最后一位的path
+          lastPathNum += 1
+        }
+        // 根据文件增加新的空行，防止超出边界，如果是最后一个文件就不用走这个操作了
+        // if (filesLen - 1 > index) {
+        //   // 插入一个空白块，用于下一张图
+        //   if (position === ILEVEL_POSTION.OUT) {
+        //     insertEmptyParagraph(editor, [atPathNum])
+        //   } else {
+        //     // 分栏等操作适用
+        //     insertEmptyParagraph(editor, [...innerArr, lastPathNum])
+        //   }
+        // }
+        const fun = (v: number) => {
+          store.dispatch(updateprogressBar({ id: block_id, value: v }))
+        }
+        if (!isMock) {
+          const thenFn = res => {
+            if (!res.fileURI) return
+            // 这里需要更新本地路径为服务器的路径
+            // TODO 因为目前的限制，图片比较小，所以线上可能需要换个方案 实现平滑过渡图片路径
+            const path = getPathByBlockId(editor, block_id)
+            if (!path || !isValidPath(editor, path)) {
+              console.warn('❌ path 已无效，block_id:', block_id)
+              // 节点已失效(如同步块刷新导致)，清理进度条防止卡99%
+              store.dispatch(removeProgressBar(block_id))
+              return
+            }
+            // console.log(editor.history)
+            // 存在加载过程中已经删除了当前的图片
+            if (path?.[0]) {
+              const atPathNum = path[0]
+              // 一种优化思路
+              // 调整插入的image的历史数据
+              // const lastUndos = JSON.parse(JSON.stringify(editor.history.undos[editor.history.undos.length - 1]))
+              // if (lastUndos[0].node.block_type_string === ELTYPE.IMAGE) {
+              //   try {
+              //     lastUndos[0].node.property.url = res.fileURI
+              //     lastUndos[0].node.property.preview_url = res.fileURI
+              //     lastUndos[0].node.property.status = FILE_STATUS.SUCCESS
+              //     lastUndos[0].node.property.path = position === ILEVEL_POSTION.OUT ? [atPathNum] : path
+              //     editor.history.undos[editor.history.undos.length - 1] =  lastUndos
+              //   } catch (error) {
+              //     console.log('error',error)
+              //   }
+              // }
+              updateFileHistory(editor, {
+                url: res.fileURI,
+                block_id,
+                status: FILE_STATUS.SUCCESS,
+                fileSign: res.fileSign,
+                fileType: file.type,
+                compressedSize: res.fileSize || 0,
+              })
+              // HistoryEditor.withoutSaving(editor, () => {
+              //   Transforms.removeNodes(editor, {
+              //     at: position === ILEVEL_POSTION.OUT ? [atPathNum] : path
+              //   })
+              // })
+              HistoryEditor.withoutSaving(editor, () => {
+                setImageNodes({
+                  editor,
+                  block_id,
+                  width: currentWidth,
+                  height: currentHeight,
+                  status: FILE_STATUS.SUCCESS,
+                  src: res.fileURI,
+                  file_sign: res.fileSign,
+                  fileType: file.type,
+                  position,
+                  path: position === ILEVEL_POSTION.OUT ? [atPathNum] : path,
+                  compressed_size: res.fileSize || 0,
+                })
+              })
+            }
+          }
+          const catchFn = error => {
+            const path = getPathByBlockId(editor, block_id)
+            if (!path || !isValidPath(editor, path)) {
+              console.warn('❌ path 已无效，block_id:', block_id)
+              // 节点已失效(如同步块刷新导致)，清理进度条防止卡99%
+              store.dispatch(removeProgressBar(block_id))
+              return
+            }
+            if (path?.[0]) {
+              // HistoryEditor.withoutSaving(editor, () => {
+              //   Transforms.removeNodes(editor, {
+              //     at: position === ILEVEL_POSTION.OUT ? [path[0]] : path
+              //   })
+              // })
+              updateFileHistory(editor, {
+                url: '',
+                block_id,
+                status: FILE_STATUS.FAIL,
+                fileSign: ''
+              })
+              HistoryEditor.withoutSaving(editor, () => {
+                setImageNodes({
+                  editor,
+                  block_id,
+                  width: currentWidth,
+                  height: currentHeight,
+                  status: FILE_STATUS.FAIL,
+                  src: blobSRC,
+                  fileType: file.type,
+                  path: position === ILEVEL_POSTION.OUT ? [path[0]] : path
+                })
+              })
+            }
+            // message.error('图片上传异常:', error)
+          }
+          fileUploadQueue.addTask({
+            filename: file.name,
+            fileSize: file.size,
+            file,
+            originFile: _file,
+            fileType: FILE_TYPE.IMAGE,
+            callback: fun,
+            onSuccess: thenFn,
+            onError: catchFn
+          })
+          // // 增加文件大小判断
+          // if (file.size > FILE_CHUNK_SIZE) {
+          //   // 大于10M走上传大文件的接口
+          //   uploadFileChunk(file.name, file.size, file, FILE_TYPE.IMAGE, fun)
+          //     .then(res => {
+          //       thenFn(res)
+          //     })
+          //     .catch(error => {
+          //       catchFn(error)
+          //     })
+          //   return
+          // }
+          // // 上传图片
+          // handleUploadFile(file.name, file.size, file, FILE_TYPE.IMAGE, fun)
+          //   .then((res: any) => {
+          //     thenFn(res)
+          //   })
+          //   .catch(error => {
+          //     catchFn(error)
+          //   })
+        }
+      } catch (error) {
+        console.log(error)
+      }
+    })
+    // 在当前插入是在页面最后没有其他节点
+    // if (isAddEmptyLine) {
+    //   insertEmptyParagraph(editor, [atPathNum])
+    // }
+  } catch (error) {
+    console.log(error)
+  }
+}
+/**
+ * 复制数据
+ */
+export const copyData = element => {
+  try {
+    // if (navigator.clipboard) {
+    //   // 无法支持  e.clipboardData.setData('application/m-slate-fragment', encodeELeStr)
+    //   navigator.clipboard.writeText(text).then(
+    //     function () {
+    //       console.log('Async: Copying to clipboard was successful!')
+    //     },
+    //     function (err) {
+    //       console.error('Async: Could not copy text: ', err)
+    //     }
+    //   )
+    // }
+    const input = document.createElement('input')
+    input.oncopy = function (e) {
+      e.preventDefault()
+      const eleStr = JSON.stringify(element)
+      const encodeELeStr = window.btoa(encodeURIComponent(eleStr))
+      // e.clipboardData.setData('text/plain', '' + element.block_id)
+      e.clipboardData.setData('application/m-slate-fragment', encodeELeStr)
+    }
+    document.body.appendChild(input)
+    input.select()
+    document.execCommand('copy')
+    // document.body.removeChild(input)
+    if (document.body.contains(input) && input?.parentNode === document.body) {
+      // 删除之前判断节点是否存在
+      document.body.removeChild(input)
+    }
+  } catch (error) {
+    console.error('copyData error,', error)
+  }
+}
+/**
+ * file 上传
+ */
+export const imageCommand: CommandFn = (editor, key, data) => {
+  // console.log(data)
+  if (!isObject(data)) return
+  if (!data.path) return
+  let imageInput = document.getElementById(IMAGE_INPUT_DOM_ID)
+  if (!imageInput) {
+    // console.log('UPLOAD_ACCEPT_ALL_IMG_ACCEPT', UPLOAD_ACCEPT_ALL_IMG_ACCEPT)
+    imageInput = document.createElement('input')
+    imageInput.style.width = '0px'
+    imageInput.style.height = '0px'
+    imageInput.style.visibility = 'hidden'
+    imageInput.setAttribute('type', 'file')
+    imageInput.setAttribute('id', IMAGE_INPUT_DOM_ID)
+    imageInput.setAttribute('accept', UPLOAD_ACCEPT_ALL_IMG_ACCEPT)
+    imageInput.setAttribute('multiple', 'true')
+    document.body.append(imageInput)
+  }
+  imageInput.onchange = e => {
+    try {
+      const target = e.target as HTMLInputElement
+      const files = target.files
+      // focusSelection(editor, data?.path)
+      files && uploadImage(files, editor, data?.path)
+      // document.body.removeChild(imageInput)
+      if (document.body.contains(imageInput) && imageInput?.parentNode === document.body) {
+        // 删除之前判断节点是否存在
+        document.body.removeChild(imageInput)
+      }
+    } catch (error) {
+      console.error('[图片]', error)
+      // document.body.removeChild(imageInput)
+      if (document.body.contains(imageInput) && imageInput?.parentNode === document.body) {
+        // 删除之前判断节点是否存在
+        document.body.removeChild(imageInput)
+      }
+    }
+  }
+  imageInput.click()
+}
+/**
+ * Image 插件渲染组件
+ * 独立为函数组件，以便在 render.tsx 中以 JSX 方式调用（RenderLine 是普通函数调用，不能直接使用 hooks）
+ */
+const ImageRenderLine: React.FC<{
+  editor: Editor
+  element: any
+  children: any
+  readonly: boolean
+  commands: SlateCommands
+}> = ({ editor, element, children, readonly, commands }) => {
+  const clickEmptyAddParagraph = useMemoizedFn(() => {
+    handleClickForEmptyParagraph(editor, element.block_id)
+  })
+  const attr = {
+    style: getElementStyle(element),
+    ['data-slate-id']: element.block_id
+  } as unknown as any
+  try {
+    return (
+      <section className='app-image-container' {...attr}>
+        {/* 点击空白区，点了之后，新增一个空行 */}
+        <div
+          contentEditable={false}
+          style={{
+            height: 10,
+            background: 'transparent',
+            userSelect: 'none',
+            position: 'absolute',
+            cursor: 'text',
+            top: '-10px',
+            zIndex: 1,
+            left: 0,
+            width: '100%'
+          }}
+          onClick={() => {
+            if (readonly) return
+            clickEmptyAddParagraph()
+          }}
+        />
+        {/* 不能使用display: none ，否则 slateJS 计算的位置信息全部为 0 ，导致错误滚动 (特别在表格横向滚动中) */}
+        *
+
+*{children}**
+        
+      
+    )
+  } catch (error) {
+    return  pluginDom fail: {JSON.stringify(error)}
+  }
+}
+/**
+ * plugin 的入口
+ */
+export const ImagePlugin = (
+  editor: Editor,
+  readonly: boolean,
+  commands: SlateCommands
+): ElementPlugin => {
+  return {
+    key: ELTYPE.IMAGE,
+    type: EDITOR_ELEMENT_TYPE.BLOCK,
+    MatchLine: context => {
+      // console.log(context)
+      return context?.element?.block_type_string === ELTYPE.IMAGE
+    },
+    /* eslint-disable */
+    RenderLine: context => {
+      const { children, element, attributes } = context || {}
+      return (
+        
+      )
+    },
+    /* eslint-enable */
+    command: (editor, key, data) => {
+      imageCommand(editor, key, data)
+    },
+    onKeyDown: event => {}
+  }
+}
+.app-image {
+  // margin: 0 0 10px 0;
+  position: relative;
+  .app-image-wrapper {
+    position: relative;
+    img {
+      display: block;
+      // max-width: 100%;
+      // object-fit: contain;
+     
+    }
+    .app-image-box-four-point {
+      cursor: pointer;
+      position: relative;
+     
+      &::after {
+        content: '';
+        pointer-events: none;
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        border: 1px solid rgb(64, 128, 255, 1);
+        opacity: 0.6;
+        background-color: transparent;
+      }
+    }
+    .app-image-box-can-preview {
+      cursor: zoom-in;
+    }
+  }
+  .app-image-crop-img {
+    display: block;
+  }
+  .app-image-out-crop {
+    cursor: pointer;
+    position: absolute;
+    top: -35px;
+    left: 50%;
+    transform: translate(-50%, 0);
+    z-index: 100;
+  }
+}
+.app-image-description-input{
+  text-align: center;
+  border: none;
+  // border-bottom: 1px solid #646A73;
+  color: #646A73;
+  padding: 0 0 5px;
+  background:transparent;
+  text-overflow:  ellipsis;
+  overflow:hidden;
+  white-space:nowrap;
+}
+.app-image-description-readonly{
+  text-align: center;
+  border: none;
+  color: #646A73;
+  padding: 0 0 5px;
+}
+.app-image-rate{
+  position: absolute;
+  top:5px;
+  right:5px;
+  background: rgb(72,88,91);
+  color:#FFF;
+  padding:4px;
+  // width:40px;
+  height:24px;
+  line-height:17px;
+  text-align: center;
+  border-radius: 2px;
+}
+.app-image-float-toolbar {
+  background-color: rgb(255, 255, 255);
+  box-sizing: border-box;
+  box-shadow: 0px 4px 8px rgb(31 35 41 / 10%);
+  border-radius: 6px;
+  font-weight: 400;
+  font-size: 14px;
+  border: 1px solid rgb(222, 224, 227);
+  height: 40px;
+  padding: 8px 10px;
+  .all-btn {
+    display: flex;
+    .btn-box {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-width: 24px;
+      height: 24px;
+      line-height: 24px;
+      overflow: hidden;
+      border-radius: 4px;
+      cursor: pointer;
+      padding: 0 5px;
+      &:not(:first-child) {
+        margin-left: 8px;
+      }
+      &:hover {
+        background-color: rgb(31 35 41 / 10%);
+      }
+    }
+    .btn-box-active {
+      background-color: rgb(224, 233, 255);
+      &:hover {
+        background-color: rgb(224, 233, 255);
+      }
+    }
+    .btn-line {
+      margin-left: 8px;
+      border-right: 1px solid rgb(31 35 41 / 10%);
+      &:last-child {
+        display: none;
+      }
+    }
+    .btn-line-all {
+      margin-left: 8px;
+      position: relative;
+      width: 1px;
+      &::after {
+        content: '';
+        position: absolute;
+        top: -8px;
+        width: 1px;
+        height: 40px;
+        background-color: rgb(31 35 41 / 10%);
+      }
+    }
+  }
+}
+.app-img-custom-spin {
+  display: none !important; 
+  .ant-spin-dot-item{
+  display: none !important; 
+  }
+  .ant-spin-nested-loading .ant-spin-container::after{
+    background: none !important;
+  }
+}
+.app-img-error-wrapper{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 5px;
+  border: 1px solid #ccc;
+  // background: #F2F3F5;
+  border-radius: 5px;
+  .app-img-error-title{
+    text-align: center;
+    font-size:12px;
+    color:rgb(100,106,115)
+  }
+  .app-img-error-default{
+    max-width: 80%;
+    display: block;
+    margin: 0 auto;
+  }
+}
+.app-image-block-comment{
+  &::after{
+    content: '';
+    position: absolute;
+    width: calc(100% + 2px);
+    height:calc(100% + 2px);
+    left: -1px;
+    top: -1px;
+    border-radius: 4px;
+    border: 5px solid #fcdf7e !important;
+  }
+}
+
+import style from '../../style.module.less'
+import { FC, useEffect, useMemo, useRef, useState } from 'react'
+import { Element, Editor, Transforms } from 'slate'
+import { Image } from '@arco-design/web-react'
+import { cx } from '@emotion/css'
+import { useClickAway } from 'ahooks'
+import { css } from '@emotion/css'
+import { setBlockNode } from '@/utils/slate-set-node'
+import { focusSelection } from '@/utils/slate-handle-type'
+import { AdvancedRenderElement } from '@/constant/interfaces'
+import { ELTYPE } from '@/constant/enums/eltype'
+import { HistoryEditor } from 'slate-history'
+import { Drag } from '@/plugins/common/handleFile/index'
+import { useDispatch } from 'react-redux'
+import { getSearchObjFromUrl } from '@/utils/url-parse'
+import { t } from 'i18next'
+import { extractImageData } from '../utils'
+import { setPreviewImageUrlList, setPreviewImageIndex } from '@/store/features/editorSlice'
+import { ReactEditor } from 'slate-react'
+import { checkDevice } from '@/utils/check-device'
+import { getEncodeURIByUpload } from '@/utils/ua-parser'
+// UI 库的预览组件
+const Preview = Image.Preview
+export const ImageWrapper: FC<{
+  editor: Editor
+  element: AdvancedRenderElement
+  readonly: boolean
+  src: string
+  children: any
+  selected: boolean
+  blockId: string
+  path: any
+  resetImgStatus: boolean
+  setChangeBorder: any
+  imageClick: (e) => void
+}> = props => {
+  // try {
+  const token = getSearchObjFromUrl()?.token || ''
+  const { isMobile } = checkDevice()
+  // 图片链接
+  const [src, setSrc] = useState('')
+  // 图片链接
+  const [srcList, setSrcList] = useState([])
+  // 图片链接
+  const [srcIndex, setSrcIndex] = useState(0)
+  // 鼠标移入，则出现四个小点
+  const [showFourPoint, setShowFourPoint] = useState(false)
+  // 点击之后，可以再次点击预览
+  const [canPreview, setCanPreview] = useState(false)
+  // wrapper 引用
+  const wrapperRef = useRef(null)
+  // 图片盒子 引用
+  const ref = useRef(null)
+  // element 元素 id
+  const blockId = props.blockId
+  // 预览控制器
+  const previewController = useRef(false)
+  const rememberPreview = useRef(false)
+  const path = props.path
+  const dispatch = useDispatch()
+  const zoomFun = (temWidth: number, zoom: number) => {
+    const {
+      width = 0,
+      height = 0,
+      wrap_height = 0,
+      offsetx = 0,
+      offsety = 0
+    } = props?.element?.property
+    function setSize(val: string | number) {
+      if (val === 'auto') return 'auto'
+      return (val as number) * zoom
+    }
+    // console.log(props)
+    if (!props?.element?.property || !path) return
+    setBlockNode(
+      props.editor,
+      {
+        ...props.element,
+        property: {
+          ...props.element.property,
+          width: setSize(width),
+          height: setSize(height),
+          wrap_height: setSize(wrap_height),
+          wrap_width: temWidth,
+          offsetx: setSize(offsetx),
+          offsety: setSize(offsety)
+        }
+      },
+      {
+        at: path
+      }
+    )
+  }
+  useEffect(() => {
+    setCanPreview(false)
+  }, [props.resetImgStatus])
+  // console.log('path111', path)
+  /**
+   * 点击其他区域
+   */
+  useClickAway(() => {
+    if (previewController.current) {
+      previewController.current = false
+      rememberPreview.current = true
+    } else {
+      setShowFourPoint(false)
+      setCanPreview(false)
+      rememberPreview.current = false
+    }
+  }, wrapperRef)
+  useClickAway(() => {
+    props.setChangeBorder(false)
+  }, ref)
+  const previewRef = useRef(null)
+  const customActions = useMemo(
+    () => [
+      {
+        key: 'prev-image',
+        name: t('previous'),
+        className: 'arco-image-preview-toolbar-action',
+        content: '<',
+        onClick: () => {
+          previewRef?.current?.reset()
+          setSrcIndex(prev => --prev)
+          // setCurrentImageIndex(prev => (prev === 0 ? imageUrls.length - 1 : prev - 1))
+        },
+        disabled: srcIndex <= 0
+      },
+      {
+        key: 'image-index',
+        className: 'arco-image-preview-toolbar-action arco-image-preview-index',
+        content: `${srcIndex + 1}/${srcList.length}`,
+        onClick: () => {
+          // setCurrentImageIndex(prev => (prev === imageUrls.length - 1 ? 0 : prev + 1))
+        }
+        // disabled: imageUrls.length <= 1
+      },
+      {
+        key: 'next-image',
+        name: t('next'),
+        className: 'arco-image-preview-toolbar-action',
+        content: '>',
+        onClick: () => {
+          previewRef?.current?.reset()
+          setSrcIndex(prev => {
+            console.log('prevprev', prev)
+            return ++prev
+          })
+          // setCurrentImageIndex(prev => (prev === imageUrls.length - 1 ? 0 : prev + 1))
+        },
+        disabled: srcIndex >= srcList.length - 1
+      }
+    ],
+    [srcIndex, srcList, setSrcIndex]
+  )
+  useEffect(() => {
+    console.log('srcIndex', srcIndex)
+  }, [srcIndex])
+  return (
+    <section
+      ref={wrapperRef}
+      className={style['app-image-wrapper']}
+      // 鼠标移入移出，显示四个点
+      onMouseEnter={() => {
+        setShowFourPoint(true)
+      }}
+      onMouseLeave={() => {
+        setShowFourPoint(false)
+      }}
+    >
+      {/* 四周的四个点 */}
+      {!props.readonly && (
+        <Drag {...props} propref={ref} showFourPoint={showFourPoint} callback={zoomFun} />
+      )}
+      {/* 图片元素本身盒子 */}
+      <div
+        ref={ref}
+        onClick={(e) => {
+          focusSelection(props.editor, path)
+          setCanPreview(true)
+          props.imageClick(e)
+          // setImgSelection()
+          // 第 1 次点击的时候，canPreview 从 false 变为 true，但是此时，canPreview 还是 false，因为是异步的
+          // 所以 if 进不来，但是再次点击的时候，canPreview 是 true，此时 if 可以进来，就可以预览了
+          // 这样就实现了个效果：第 1 次点击，变为可预览，第 2 次点击，就真正预览了
+          if (canPreview || rememberPreview.current) {
+            const src = props?.element?.property?.preview_url + `?token=${token}`
+            // console.log('props.editor.children', JSON.stringify(props.editor.children))
+            const urlList = extractImageData(props.editor.children)
+            console.log('urlList', urlList)
+           
+            urlList.forEach(n => (n.preview_url = getEncodeURIByUpload(n.preview_url,token)))
+            const imageIndex = urlList.findIndex(n => n.block_id === props?.element?.block_id)
+            setSrcIndex(imageIndex)
+            setSrcList(urlList)
+            dispatch(setPreviewImageUrlList(urlList))
+            dispatch(setPreviewImageIndex(imageIndex))
+            setSrc(src || '')
+            ReactEditor.blur(props.editor)
+            Transforms.deselect(props.editor)
+          } else {
+            // 移动端点击不需要聚焦，防止弹出软键盘
+            if (isMobile) {
+              ReactEditor.blur(props.editor)
+            }
+          }
+        }}
+        className={cx(
+          showFourPoint && style['app-image-box-four-point'],
+          canPreview && style['app-image-box-can-preview']
+        )}
+      >
+        {props.children}
+      
+    
+  )
+  // } catch (error) {
+  //   console.error('image-wrapper', error)
+  //   return null
+  // }
+}
+import styles from '../style.module.less'
+import { css, cx } from '@emotion/css'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { ReactEditor, useSelected } from 'slate-react'
+import { Editor, Path, Node as SlateNode, Transforms } from 'slate'
+import { useMemoizedFn, useClickAway } from 'ahooks'
+import { throttle } from 'lodash-es'
+import { AdvancedRenderElement } from '@/constant/interfaces'
+import { message, Popover, Spin, Tooltip } from 'antd'
+import { debounce } from 'lodash-es'
+import { ImageWrapper } from './image-wrapper'
+import { insertEmptyParagraph, setBlockNode } from '@/utils/slate-set-node'
+import {
+  getCropDomClass,
+  getErrorDomClass,
+  isDoubleTapByTouchEnd,
+  getJustifyContent,
+  getNoCropDomClass,
+  getPopOverClass,
+  getPopOverContent,
+  getWrapDomClass
+} from './utils'
+import 'cropperjs/dist/cropper.css'
+import Cropper from 'cropperjs'
+import { useSelector } from 'react-redux'
+import { useTranslation } from 'react-i18next'
+import { handleDescription, handleUploadFile } from '@/plugins/common/handleFile'
+import { sleep } from '@/utils/sleep'
+import { base64ToFile } from '@/utils/image'
+import { HistoryEditor } from 'slate-history'
+import { FILE_STATUS, FILE_TYPE } from '@/constant/enums/file'
+import { LoadingOutlined } from '@ant-design/icons'
+import { ErrorImg } from './error-img'
+import { focusSelection } from '@/utils/slate-handle-type'
+import { SlateCommands } from '@/utils/slate-command'
+import { getSearchObjFromUrl } from '@/utils/url-parse'
+import loadingImg from '@/assets/imgs/imgloading'
+import { EditorState } from '@/store/features/editorSlice'
+import { composeRefs, useCommentMark } from '@/plugins/inline-comment/comment-mark'
+import { getEncodeURIByUpload } from '@/utils/ua-parser'
+interface ICropImg extends Cropper.CropBoxData {
+  offsetx: number
+  offsety: number
+}
+export const DocImage: React.FC<{
+  element: AdvancedRenderElement
+  readonly: boolean
+  editor: Editor
+  // children: any
+  commands: SlateCommands
+}> = props => {
+  // try {
+  const token = getSearchObjFromUrl()?.token || ''
+  const { t } = useTranslation()
+  const { element, editor, readonly } = props
+  const inputRef = useRef(null)
+  const cursorInputRef = useRef(false)
+  // 处理按钮点击事件的函数
+  const handleToggle = async () => {
+    setIsDes(true)
+    // isVisibleRef.current = false
+    setIsVisibleRef(false)
+    cursorInputRef.current = true
+    if (inputRef.current) {
+      handleDescription(inputRef.current)
+    }
+  }
+  const selected = useSelected()
+  // console.log('props.editor==', props.editor)
+  // element 元素 id
+  const block_id = props?.element?.block_id
+  // 是否是小的裁剪框
+  const [isSmallCropBox, setIsSmallCropBox] = useState(false)
+  // 记住的裁剪框的大小和位置
+  const [initCropBox, setInitCropBox] = useState(null)
+  // 是否展示图片描述
+  const [isDes, setIsDes] = useState(!!props?.element?.property?.description)
+  // 图片描述
+  const [desText, setDesText] = useState(props?.element?.property?.description)
+  // 节点的 path
+  // @ts-ignore
+  // const path = [props.editor.children.findIndex(item => item.block_id === block_id) || 0]
+  // const isVisibleRef = useRef(false)
+  const [isVisibleRef, setIsVisibleRef] = useState(false)
+  const path =
+    (props?.editor && props?.element && ReactEditor.findPath(props.editor, props.element)) || null
+  const [visibleRate, setVisibleRate] = useState(
+    props?.element?.property?.status === FILE_STATUS.LOADING
+  )
+  // 裁剪对象
+  const cropper = useRef<null | HTMLDivElement>(null)
+  // 最原始的图片地址
+  // useRef 能保持第一次渲染的时候的值
+  const originSrc = useRef(element?.property?.url)
+  // console.log('originSrc', originSrc)
+  // 目前的图片地址 提供给预览单独使用
+  const [imgSrc, setImgSrc] = useState(element?.property?.url)
+  // 是否处于裁剪中
+  const [isCroping, setIsCroping] = useState(false)
+  // 裁剪了几次了
+  const [cropNum, setCropNum] = useState(0)
+  // 展示的宽和高 ，
+  // const maxWidth = useSelector((store: any) => store.mainContent?.width) // 不使用的状态订阅需要注释
+  // 获取当前客户端唯一标识id
+  const editorUserId = useSelector((store: any) => store.editor?.editorUserId)
+  // 判断是否是自己操作的上传
+  const [isMyself, setIsMySelf] = useState(true)
+  useEffect(() => {
+    if (
+      element?.property?.editorUserId !== editorUserId &&
+      element?.property?.status !== FILE_STATUS.SUCCESS
+    ) {
+      setIsMySelf(false)
+    } else {
+      setIsMySelf(true)
+    }
+  }, [editorUserId, element?.property?.editorUserId, element?.property?.status])
+  const [imgLoad, setImgLoad] = useState(true)
+  const changeLoad = useMemoizedFn(() => {
+    setImgLoad(false)
+  })
+  //进度条合集
+  const progressBarObj = useSelector((store: any) => store.progressBar)
+  const [ischangeBorder, setChangeBorder] = useState(false)
+  // 初始化进度条
+  const [progress, setProgress] = useState('')
+  const docConfig = useSelector((state: any) => state.editor.docConfig) as EditorState['docConfig']
+  useEffect(() => {
+    //更新进度条
+    if (progressBarObj[element?.block_id]) {
+      setProgress(progressBarObj[element.block_id] + '%')
+    } else if (progress) {
+      // 进度条state被清除(上传完成或节点失效)，重置显示
+      setProgress('')
+    }
+  }, [progressBarObj])
+  // wrapper 引用
+  const wrapperRef = useRef(null)
+  const wrapperNodeRef = useRef(null)
+  const [limitWidth, setLimitWidth] = useState(0)
+  const [buleborder, setBlueBorder] = useState(false)
+  // useEffect(() => {
+  //   if (wrapperNodeRef.current) {
+  //     setLimitWidth(wrapperNodeRef.current.offsetWidth)
+  //   } else if (wrapperRef.current) {
+  //     setLimitWidth(wrapperRef.current.offsetWidth)
+  //   }
+  // }, [wrapperNodeRef.current, wrapperRef.current, imgLoad, element.property.status])
+  // 在组件外部定义节流函数（避免重复创建）
+  const throttledSetWidth = throttle((node, setLimitWidth) => {
+    setLimitWidth(node.offsetWidth)
+  }, 200)
+  useEffect(() => {
+    let isMounted = true
+    const wrapperNode = wrapperNodeRef.current || wrapperRef.current
+    if (!wrapperNode) return
+    setLimitWidth(wrapperNode.offsetWidth)
+    // 封装观察者回调
+    const handleResize = () => {
+      if (!isMounted) return
+      const node = wrapperNodeRef.current || wrapperRef.current
+      if (!node) return
+      throttledSetWidth(wrapperNode, setLimitWidth)
+    }
+    const observer = new ResizeObserver(handleResize)
+    observer.observe(wrapperNode)
+    // 清理函数：断开观察并取消节流
+    return () => {
+      isMounted = false
+      observer.disconnect()
+      throttledSetWidth?.cancel()
+    }
+  }, [wrapperNodeRef.current, wrapperRef.current, imgLoad, element?.property?.status])
+  // 是否发生了裁剪行为
+  const [hasmove, setHasMove] = useState(false)
+  const imgRef = useRef(null)
+  // 裁剪态图片ref，避免同步块场景下block_id重复导致getElementById取到错误元素
+  const cropImgRef = useRef<HTMLImageElement | null>(null)
+  const imgwrapRef = useRef<null | HTMLDivElement>(null)
+  // 触摸设备双击兜底：部分浏览器（如 Pad Edge）不会稳定派发 dblclick
+  const lastTouchEndTimeRef = useRef(0)
+  const [isLoaded, setIsLoaded] = useState(false)
+  // 进度条消失
+  const changeVisible = useCallback(async () => {
+    await sleep(300)
+    setVisibleRate(false)
+  }, [])
+  useEffect(() => {
+    if (props?.element?.property?.status === FILE_STATUS.SUCCESS) {
+      changeVisible()
+    }
+  }, [props?.element?.property?.status])
+  useEffect(() => {
+    // 检查 imgRef.current 是否存在
+    // console.log(imgRef.current)
+    if (imgRef.current) {
+      // 设置 onload 事件监听器
+      imgRef.current.onload = () => {
+        // console.log('Image loaded!')
+        setIsLoaded(true)
+        // 这里可以添加逻辑来处理图片加载完成后的操作
+      }
+      // 设置 onerror 事件监听器（可选）
+      imgRef.current.onerror = () => {
+        // console.log('Image failed to load!')
+        // 这里可以添加逻辑来处理图片加载失败的操作
+      }
+      return () => {
+        if (imgRef.current) {
+          imgRef.current.onload = null
+          imgRef.current.onerror = null
+        }
+      }
+    }
+  }, [element?.property?.url, isCroping])
+  /**
+   * 适配图片展示区域过大边界值处理
+   */
+  const imgRatio = useMemo(() => {
+    let ratio = 1
+    if (element?.property?.wrap_width > limitWidth) {
+      ratio = limitWidth / element.property.wrap_width
+    }
+    return ratio
+  }, [element?.property?.wrap_width, limitWidth])
+  /**
+   * 适配图片裁剪时过大时的边界值处理
+   */
+  const cropperImgRatio = useMemo(() => {
+    let ratio = 1
+    if (element?.property?.width > limitWidth) {
+      ratio = limitWidth / element.property.width
+    }
+    // console.log(ratio)
+    return ratio
+  }, [element?.property?.width, limitWidth])
+  /**
+   * 点击其他区域
+   */
+  useClickAway(() => {
+    closeCrop()
+    setBlueBorder(false)
+    setChangeBorder(false)
+  }, wrapperRef)
+  useClickAway(() => {
+    cursorInputRef.current = false
+  }, inputRef)
+  /**
+   * 监听是否是裁剪中，对裁剪的盒子进行初始化
+   */
+  useEffect(() => {
+    if (!isCroping) return
+    // 通过ref获取当前组件实例的图片元素，避免同步块复制后block_id相同导致getElementById命中上方同步块的图片
+    const image = cropImgRef.current
+    if (!image) return
+    // @ts-ignore
+    cropper.current = new Cropper(image, {
+      // 避免重复请求，如果不设置，url会添加时间戳再请求一次
+      //参考 croppejs中的clone()
+      // image.src = crossOriginUrl || url;
+      checkCrossOrigin: false,
+      dragMode: 'none',
+      // initialAspectRatio: 1,
+      zoomOnWheel: false,
+      // aspectRatio: 1 / 1, // 剪裁框的宽高比例
+      autoCropArea: 1, // 自动剪裁区域的大小，相对于原始图片
+      viewMode: 1, // 显示模式：0-剪裁框不可移动，1-剪裁框可移动，2-剪裁框自由移动
+      movable: true, // 是否允许剪裁框移动
+      zoomable: true, // 是否允许缩放图片
+      rotatable: true, // 是否允许旋转图片
+      guides: true, // 是否显示剪裁框虚线
+      background: true, // 是否显示背景网格
+      cropBoxMovable: true, // 是否允许剪裁框拖动
+      cropBoxResizable: true, // 是否允许剪裁框缩放
+      // 展示预览图的容器
+      // preview: '.show-img',
+      minCropBoxWidth: 50, // 剪裁框的最小宽度
+      minCropBoxHeight: 50, // 剪裁框的最小高度
+      minContainerWidth: 50, // 容器的最小宽度
+      minContainerHeight: 50, // 容器的最小高度
+      ready(e) {
+        judgeIsSmallCropBox()
+        if (cropper.current?.initialCropBoxData) {
+          const { left, top } = cropper.current.initialCropBoxData
+          cropper.current?.setCropBoxData({
+            left: left + (element?.property?.offsetx ?? 0) * cropperImgRatio,
+            top: top + (element?.property?.offsety ?? 0) * cropperImgRatio,
+            width: (element?.property?.wrap_width ?? 0) * cropperImgRatio,
+            height: (element?.property?.wrap_height ?? 0) * cropperImgRatio
+          })
+        }
+      },
+      // crop(){},
+      // cropend(e) {},
+      // zoom(e) {
+      // 缩放完成时执行的操作
+      //   console.log(e)
+      // }
+      cropmove(e) {
+        setHasMove(true)
+        judgeIsSmallCropBox()
+      }
+    })
+    return () => {
+      if (cropper?.current) {
+        cropper.current?.destroy()
+        cropper.current = null
+      }
+    }
+  }, [isCroping])
+  /**
+   * 判断是否是小裁剪框，从而影响部分边界
+   */
+  const judgeIsSmallCropBox = useMemoizedFn(
+    debounce(() => {
+      try {
+        const cropBox = document.querySelector('.cropper-view-box')
+        if (cropBox.clientHeight < 150 || cropBox.clientWidth < 150) {
+          setIsSmallCropBox(true)
+        } else {
+          setIsSmallCropBox(false)
+        }
+      } catch (error) {
+        setIsSmallCropBox(true)
+      }
+    }, 200)
+  )
+  /**
+   * 开启裁剪
+   */
+  const openCrop = useMemoizedFn(() => {
+    setIsCroping(true)
+  })
+  /**
+   * 开启调用AI
+   */
+  const openAI = useMemoizedFn(() => {
+    window.dispatchEvent(
+      new CustomEvent('sideAISendMermaid', {
+        detail: { type: 3, imgUrl: getEncodeURIByUpload(element?.property?.url, token) }
+      })
+    )
+  })
+  /**
+   * 关闭裁剪
+   */
+  const closeCrop = useMemoizedFn(() => {
+    try {
+      setIsCroping(false)
+      if (!cropper.current) return
+      // 未发生实质性裁剪直接返回
+      if (hasmove) {
+        setHasMove(false)
+      } else {
+        cropper.current?.destroy()
+        cropper.current = null
+        return
+      }
+      if (!element?.property || !path) return
+      setCropNum(cropNum => cropNum + 1)
+      console.time('cropper耗时')
+      const imgSrc = cropper.current
+        // @ts-ignore
+        .getCroppedCanvas({
+          // imageSmoothingQuality: 'high'
+        })
+        .toDataURL('image/jpeg', 0.9)
+      const file = base64ToFile(imgSrc, 'crop.jpeg')
+      // @ts-ignore
+      const { width, height, left, top } = cropper.current.getCropBoxData()
+      // @ts-ignore
+      const { left: initLeft, top: initTop } = cropper.current?.initialCropBoxData
+      setInitCropBox({
+        width,
+        height,
+        left,
+        top,
+        offsetx: left - initLeft,
+        offsety: top - initTop
+      })
+      // console.log(left, top, left - initLeft, top - initTop)
+      console.timeEnd('cropper耗时')
+      // console.log(element)
+      const { width: currentWidth, height: currentHeight } = cropper.current.getCanvasData()
+      let imgWidth = (element.property?.width ?? 0) * cropperImgRatio
+      let imgHeight = (element.property?.height ?? 0) * cropperImgRatio
+      // cropjs创建的画布在某些时刻存在和实际渲染相差微小像素差异，这里只是基本处理
+      if (width === currentWidth) {
+        imgWidth = width
+      }
+      if (height === currentHeight) {
+        imgHeight = height
+      }
+      // HistoryEditor.withoutSaving(editor as unknown as HistoryEditor, () => {
+      setBlockNode(
+        props.editor,
+        {
+          ...element,
+          property: {
+            ...element.property,
+            wrap_width: width,
+            wrap_height: height,
+            offsetx: left - initLeft,
+            offsety: top - initTop,
+            width: imgWidth,
+            height: imgHeight
+          }
+        },
+        {
+          at: path
+        }
+      )
+      // })
+      handleUploadFile('crop.jpeg', file.size, file, FILE_TYPE.IMAGE).then((res: any) => {
+        // console.log(res)
+        setBlockNode(
+          props.editor,
+          {
+            ...element,
+            property: {
+              ...element.property,
+              wrap_width: width,
+              wrap_height: height,
+              offsetx: left - initLeft,
+              offsety: top - initTop,
+              width: imgWidth,
+              preview_url: res.fileURI,
+              height: imgHeight
+            }
+          },
+          {
+            at: path
+          }
+        )
+      })
+      cropper.current?.destroy()
+      cropper.current = null
+      // @ts-ignore
+      // 获取裁剪框数据
+      // cropper.current.getCropBoxData()
+      // 设置裁剪框数据
+      // cropper.current.setCropBoxData()
+      // 获取图片数据
+      // cropper.current.getCanvasData()
+      // 设置图片数据
+      // cropper.current.setCanvasData()
+    } catch (error) {}
+  })
+  /**
+   * 重置原图
+   */
+  const reset = useMemoizedFn(() => {
+    setCropNum(0)
+    if (!props?.element?.property || !path) return
+    // setImgSrc(originSrc.current)
+    setBlockNode(
+      props.editor,
+      {
+        ...props.element,
+        property: {
+          ...props.element.property,
+          wrap_width: props.element.property?.width,
+          wrap_height: props.element.property?.height,
+          offsetx: 0,
+          offsety: 0,
+          preview_url: props.element.property?.url
+        }
+      },
+      {
+        at: path
+      }
+    )
+  })
+  /**
+   * 设置描述
+   */
+  const setDes = useMemoizedFn(() => {
+    // setIsDes(true)
+    setDesText(props?.element?.property?.description)
+  })
+  useEffect(() => {
+    let element
+    // 约定两次 touchend 间隔 <= 320ms 视为双击（double tap）
+    const DOUBLE_TAP_INTERVAL = 320
+    const handleClick = event => {
+      // 非裁剪框内点击 结束当前裁剪
+      // if (event.target?.className?.includes('cropper-modal')) {
+      closeCrop()
+      // }
+    }
+    const handleTouchEnd = () => {
+      const now = Date.now()
+      // 触摸端双击判定成功时，与桌面端 dblclick 保持同一行为：结束裁剪
+      if (isDoubleTapByTouchEnd(lastTouchEndTimeRef.current, now, DOUBLE_TAP_INTERVAL)) {
+        closeCrop()
+      }
+      lastTouchEndTimeRef.current = now
+    }
+    if (isCroping && wrapperRef.current) {
+      element = wrapperRef.current
+      // 桌面端鼠标双击
+      element.addEventListener('dblclick', handleClick)
+      // 触摸端双击（double tap）兜底
+      element.addEventListener('touchend', handleTouchEnd, { passive: true })
+    }
+    return () => {
+      if (element) {
+        element.removeEventListener('dblclick', handleClick)
+        element.removeEventListener('touchend', handleTouchEnd)
+      }
+      lastTouchEndTimeRef.current = 0
+    }
+  }, [wrapperRef.current, isCroping])
+  /**
+   * 保存描述标题
+   */
+  const saveTitle = useCallback(() => {
+    if (!desText) {
+      setIsDes(false)
+    }
+    cursorInputRef.current = false
+    setBlockNode(
+      props.editor,
+      {
+        ...(props?.element || {}),
+        property: {
+          ...(props?.element?.property || {}),
+          description: desText
+        }
+      },
+      {
+        at: path
+      }
+    )
+  }, [path, desText])
+  /**
+   * enter键失焦
+   */
+  const handleKeyDown = useMemoizedFn(e => {
+    try {
+      if (e.key === 'Enter' && path) {
+        cursorInputRef.current = false
+        // 当按下 Enter 键时，触发失焦事件
+        const newPath = [...path]
+        const lastIndex = newPath[newPath.length - 1]
+        newPath[newPath.length - 1] = lastIndex + 1
+        insertEmptyParagraph(editor, newPath)
+      }
+    } catch (error) {
+      console.log('[图片]', '图片描述失焦方法报错:', error)
+    }
+  })
+  let [resetImgStatus, setResetImgStatus] = useState(false)
+  const resetImgPreview = useMemoizedFn(() => {
+    // 通知子组件发生了按钮交互不应该触发预览
+    setResetImgStatus(prevResetNumber => !prevResetNumber)
+  })
+  // 评论处理
+  const { hasComment, isTempOrActive, commentClassNames, onCommentClick, commentRef } =
+    useCommentMark({
+      commentIds: element?.comment_ids || [],
+      node: element
+    })
+  const composedRef = useMemo(() => composeRefs(wrapperRef, commentRef), [])
+  // 手动关闭悬浮工具栏
+  const closeBar = useMemoizedFn(() => {
+    // isVisibleRef.current = false
+    setIsVisibleRef(false)
+  })
+  //检测鼠标进入
+  const [isEnter, setIsEnter] = useState(false)
+  if (isCroping)
+    return (
+      <section
+        ref={composedRef}
+        // style={{ caretColor: 'red' }}
+        contentEditable={false}
+        style={{
+          caretColor: 'transparent',
+          width: '100%',
+          marginBottom: '5px'
+          // border: '3px solid transparent'
+          // border: activeBlockId === block_id ? '3px solid #fcdf7e' : 'none'
+        }}
+        className={cx(
+          getCropDomClass(props, isSmallCropBox, cropperImgRatio),
+          `${commentClassNames}`
+        )}
+        onPointerEnter={() => {
+          setIsEnter(true)
+        }}
+        onPointerLeave={() => {
+          setIsEnter(false)
+        }}
+      >
+        <img
+          ref={cropImgRef}
+          className={styles['app-image-crop-img']}
+          id={block_id}
+          src={getEncodeURIByUpload(element?.property?.url, token)}
+          width={(element?.property?.width ?? 0) * cropperImgRatio}
+          height={(element?.property?.height ?? 0) * cropperImgRatio}
+          crossOrigin='anonymous'
+        />
+        {/* <div style={{ display: 'none' }}>{children} */}
+      
+    )
+  return (
+    <div contentEditable={false} className={commentClassNames} ref={commentRef}
+        onPointerEnter={() => {
+          setIsEnter(true)
+        }}
+        onPointerLeave={() => {
+          setIsEnter(false)
+        }}>
+      {props?.element?.property?.status !== FILE_STATUS.FAIL && imgLoad ? (
+        <>
+          <section
+            style={{
+              caretColor: 'red',
+              width: '100%'
+              // marginBottom: '5px'
+            }}
+            ref={wrapperNodeRef}
+            // style={{ caretColor: 'transparent' }}
+            contentEditable={false}
+            className={cx(getNoCropDomClass(props, imgRatio), `${commentClassNames}`)}
+            onMouseEnter={() => {
+              if (!cursorInputRef.current) {
+                // isVisibleRef.current = true
+                setIsVisibleRef(true)
+                // setIsVisibleBar(true)
+              }
+            }}
+          >
+            <Spin
+              spinning={props?.element?.property?.status === FILE_STATUS.LOADING}
+              className={styles['app-img-custom-spin']}
+            >
+              <ImageWrapper
+                editor={props.editor}
+                element={props.element}
+                readonly={props.readonly}
+                src={imgSrc}
+                selected={selected}
+                path={path}
+                blockId={block_id}
+                resetImgStatus={resetImgStatus}
+                setChangeBorder={setChangeBorder}
+                imageClick={(e)=>onCommentClick(e)}
+              >
+                <Popover
+                  rootClassName={getPopOverClass(
+                    isVisibleRef && !(readonly && !(docConfig?.enableComment ?? true))
+                  )}
+                  // popupVisible={true}
+                  content={getPopOverContent(
+                    path,
+                    openCrop,
+                    reset,
+                    setDes,
+                    resetImgPreview,
+                    cropNum,
+                    handleToggle,
+                    props,
+                    imgRatio,
+                    isVisibleRef && !(readonly && !(docConfig?.enableComment ?? true)),
+                    closeBar,
+                    openAI
+                  )}
+                  mouseLeaveDelay={0.5}
+                  zIndex={999}
+                >
+                  {/* 外层盒子用来控制页面图片显示的大小 */}
+                  <div
+                    ref={imgwrapRef}
+                    className={getWrapDomClass(
+                      element,
+                      imgRatio,
+                      isCroping,
+                      isTempOrActive,
+                      hasComment
+                    )}
+                  >
+                    {/* 内层图片通过计算展示局部位置 */}
+                    {!isMyself && (
+                      <img
+                        src={loadingImg}
+                        width={(element?.property?.width ?? 0) * imgRatio}
+                        height={(element?.property?.height ?? 0) * imgRatio}
+                      />
+                    )}
+                    {isMyself && (
+                      <img
+                        id={element.block_id}
+                        draggable={false}
+                        ref={imgRef}
+                        // 懒加载标识class
+                        className='lazyload'
+                        // 目标图片地址
+                        data-src={
+                          getEncodeURIByUpload(element?.property?.url, token, element?.property?.status)
+                        }
+                        data-compressedsize={element?.property?.compressed_size || 0}
+                        // 懒加载占位图地址
+                        src={loadingImg}
+                        width={(element?.property?.width ?? 0) * imgRatio}
+                        height={(element?.property?.height ?? 0) * imgRatio}
+                        crossOrigin='anonymous'
+                        onError={changeLoad}
+                        style={{
+                          transform: `translate(-${                             (element?.property?.offsetx ?? 0) * imgRatio                           }px, -${(element?.property?.offsety ?? 0) * imgRatio}px)`
+                        }}
+                      />
+                    )}
+                  
+                  {visibleRate && (
+                    <div className={styles['app-image-rate']}>
+                      <LoadingOutlined style={{ fontSize: 14 }} />
+                      {progress}
+                    
+                  )}
+                
+                {/* 这是最原始的 children */}
+                {/* <div style={{ display: 'none' }}>{children} */}
+              
+            
+          
+          {/* 描述 */}
+          <div
+            style={{
+              display: isDes ? 'flex' : 'none',
+              justifyContent: `${getJustifyContent(props?.element?.style?.align)}`,
+              marginTop: '5px'
+            }}
+            contentEditable={false}
+          >
+            
+              <input
+                value={desText}
+                className={styles['app-image-description-input']}
+                ref={inputRef}
+                style={{
+                  width: (element?.property?.wrap_width ?? 0) * imgRatio
+                }}
+                placeholder={t('writecaption')}
+                onChange={e => {
+                  // setDesText(e.target.value)
+                  if (e.target.value?.length > 20) {
+                    message.warning(t('descriptionlimit'))
+                  } else {
+                    setDesText(e.target.value)
+                  }
+                }}
+                onBlur={saveTitle}
+                onFocus={() => {
+                  cursorInputRef.current = true
+                }}
+                onKeyDown={handleKeyDown}
+                disabled={props.readonly}
+              />
+            
+          
+        </>
+      ) : (
+        <div
+          ref={wrapperRef}
+          style={{
+            display: 'flex',
+            justifyContent: 'center'
+          }}
+          onClick={() => {
+            setBlueBorder(true)
+            focusSelection(props.editor, path)
+          }}
+        >
+          <div
+            className={getErrorDomClass(props.element, isTempOrActive, hasComment)}
+            onClick={onCommentClick}
+          >
+            <ErrorImg
+              width={(element?.property?.width ?? 0) * cropperImgRatio}
+              height={(element?.property?.height ?? 0) * cropperImgRatio}
+              status={props?.element?.property?.status}
+              border={buleborder ? '1px solid #336df4' : '1px solid #dee0e3'}
+            />
+          
+          {/* <div style={{ display: 'none' }}>{props.children} */}
+        
+      )}
+    
+  )
+  // } catch (error) {
+  //   console.error('image plugin DocImage===', error)
+  //   return null
+  // }
+}
+import styles from '../style.module.less'
+import { css, cx } from '@emotion/css'
+import { CaiJianCodeBtn } from './handle-buttons/cai-jian-code-btn'
+import { LeftBtn } from './handle-buttons/left-btn'
+import { CenterBtn } from './handle-buttons/center-btn'
+import { RightBtn } from './handle-buttons/right-btn'
+import { ShareBtn } from './handle-buttons/share-btn'
+import { CommentBtn } from './handle-buttons/comment-btn'
+import { AIBtn } from './handle-buttons/ai'
+import { ResetBtn } from './handle-buttons/reset-btn'
+import { DescriptionBtn } from './handle-buttons/description-btn'
+import { cloneDeep } from 'lodash-es'
+import { isTempUniqueBlock } from '@/plugins/inline-comment/utils'
+import { CommentMark } from '@/plugins/inline-comment/interfaces'
+import { isInSyncBlock } from '@/utils/slate-sync-block'
+import { SOURCE_TYPE } from '@/constant/enums/eltype'
+import store from '@/store'
+import Compressor from 'compressorjs';
+/**
+ * 根据 align 获取 justifyContent
+ */
+export const getJustifyContent = align => {
+  if (align === 2) {
+    return 'center'
+  } else if (align === 1) {
+    return 'flex-start'
+  } else if (align === 3) {
+    return 'flex-end'
+  }
+  return 'center'
+}
+/**
+ * 对图片外框样式处理
+ * @param element
+ * @param imgRatio
+ * @param isCroping
+ * @param isTempOrActive 是否被临时评论或激活评论挂载
+ * @param hasComment 是否有评论
+ * @returns
+ */
+export const getWrapDomClass = (
+  element: any,
+  imgRatio: number,
+  isCroping: boolean,
+  isTempOrActive: boolean,
+  hasComment: boolean
+) => {
+  let isSelected = isTempOrActive
+  return css`     width: ${(element?.property?.wrap_width ?? 0) * imgRatio}px;     height: ${(element?.property?.wrap_height ?? 0) * imgRatio}px;     overflow: ${isCroping ? 'visible' : 'hidden'};     position: relative;     /* border: 3px solid transparent; */     ${isSelected &&     css`
+      &::after {
+        content: '';
+        position: absolute;
+        width: calc(100% + 2px);
+        height: calc(100% + 2px);
+        left: -1px;
+        top: -1px;
+        border-radius: 4px;
+        border: 5px solid #fcdf7e !important;
+      }
+    `}     ${!isSelected &&     hasComment &&     css`
+      /* border-bottom-color: rgb(255, 198, 10);
+      border-bottom-width: 2px;
+      padding-bottom: 1px; */
+      &::after {
+        content: '';
+        position: absolute;
+        width: calc(100% + 2px);
+        height: calc(100% + 2px);
+        left: -1px;
+        top: -1px;
+        border-bottom: 5px solid rgb(255, 198, 10) !important;
+      }
+    `}   `
+}
+/**
+ * 对错误图片外框样式处理
+ * @param element
+ * @param isTempOrActive 是否被临时评论或激活评论挂载
+ * @param hasComment 是否有评论
+ * @returns
+ */
+export const getErrorDomClass = (element: any, isTempOrActive: boolean, hasComment: boolean) => {
+  let isSelected = isTempOrActive
+  return css`     position: relative;     /* border: 3px solid transparent; */     ${isSelected &&     css`
+      &::after {
+        content: '';
+        position: absolute;
+        width: calc(100% + 2px);
+        height: calc(100% + -1px);
+        left: -1px;
+        top: 2px;
+        border-radius: 4px;
+        border: 3px solid #fcdf7e !important;
+      }
+    `}     ${!isSelected &&     hasComment &&     css`
+      /* border-bottom-color: rgb(255, 198, 10);
+      border-bottom-width: 2px;
+      padding-bottom: 1px; */
+      &::after {
+        content: '';
+        position: absolute;
+        width: calc(100% + 2px);
+        height: calc(100% + 2px);
+        left: -1px;
+        top: -1px;
+        border-bottom: 3px solid rgb(255, 198, 10) !important;
+      }
+    `}   `
+}
+export const getCropDomClass = (props: any, isSmallCropBox: boolean, cropperImgRatio: number) => {
+  return cx(
+    styles['app-image'],
+    css`      display: flex;       justify-content: ${getJustifyContent(props?.element?.style?.align)};       // 之前这里加了10px，但是会对渲染计算有影响       height: ${(props?.element?.property?.height ?? 0) * cropperImgRatio}px;       .cropper-bg {         background-image: none;         .cropper-modal {           background: transparent;           opacity: 1;         }       }       .cropper-view-box {         outline: 1px dashed #fff;         outline-color: #fff;       }       .cropper-line {         background-color: transparent;       }       .cropper-point {         background-color: #191c24;         border: 1px solid #fff;         &.point-e,         &.point-n,         &.point-w,         &.point-s {           display: ${isSmallCropBox ? 'none' : 'block'};         }         &.point-e {           width: 5px;           height: 30px;           right: -1px;         }         &.point-n {           width: 30px;           height: 5px;           top: -1px;         }         &.point-w {           width: 5px;           height: 30px;           left: -1px;         }         &.point-s {           width: 30px;           height: 5px;           bottom: -1px;         }         &.point-nw {           width: 30px;           height: 5px;           top: -1px;           left: -1px;           &::after {             content: '';             position: absolute;             width: 30px;             height: 5px;             background-color: #191c24;             border: 1px solid #fff;             transform: rotate(-90deg);             left: -13px;             top: 12px;           }         }         &.point-ne {           width: 30px;           height: 5px;           top: -1px;           right: 0px;           &::after {             content: '';             position: absolute;             width: 30px;             height: 5px;             background-color: #191c24;             border: 1px solid #fff;             transform: rotate(-90deg);             right: -14px;             top: 12px;           }         }         &.point-sw {           width: 30px;           height: 5px;           bottom: 0px;           left: 0px;           &::after {             content: '';             position: absolute;             width: 30px;             height: 5px;             background-color: #191c24;             border: 1px solid #fff;             transform: rotate(-90deg);             left: -14px;             top: -14px;           }         }         &.point-se {           width: 30px;           height: 5px;           bottom: 0px;           right: 0px;           &::after {             content: '';             position: absolute;             width: 30px;             height: 5px;             background-color: #191c24;             border: 1px solid #fff;             transform: rotate(-90deg);             right: -14px;             top: -14px;           }         }       }    `
+  )
+}
+export const getNoCropDomClass = (props: any, imgRatio: number) => {
+  return cx(
+    styles['app-image'],
+    css`      display: flex;       justify-content: ${getJustifyContent(props?.element?.style?.align)};       // 之前这里加了10px，但是会对渲染计算有影响       height: ${(props?.element?.property?.wrap_height ?? 0) * imgRatio}px;    `
+  )
+}
+export const getPopOverClass = isVisibleBar => css`  .ant-popover-content {     .ant-popover-inner {       padding: 0px;       background-color: transparent;       .ant-popover-inner-content {         word-break: break-all;         background-color: transparent;       }     }   }   .ant-popover-arrow {     display: ${isVisibleBar ? 'block' : 'none'};   }`
+export const getPopOverContent = (
+  path,
+  openCrop,
+  reset,
+  setDes,
+  resetImgPreview,
+  cropNum,
+  handleToggle,
+  props,
+  imgRatio,
+  isVisibleBar,
+  closeBar,
+  openAI
+) => {
+  const { url, preview_url, source } = props?.element?.property
+  const inSyncBlock = isInSyncBlock(props.editor, path)
+  const isSorOperationMode = store.getState()?.editor?.isSorOperationMode
+  // 是否在 SOR 实例模板模式下，且当前元素来自类模板或在同步块中
+  const isSorOperationWithClassTemplate = isSorOperationMode && (source === SOURCE_TYPE.CLASS_TEMPLATE || inSyncBlock)
+  // 只读且在同步块中或当前元素来自类模板或同步块，不显示悬浮工具栏
+  if ((props.readonly && inSyncBlock) || isSorOperationWithClassTemplate) {
+    return null
+  }
+  return (
+    isVisibleBar && (
+      <section
+        className={styles['app-image-float-toolbar']}
+        onClick={event => {
+          event.stopPropagation()
+          event.preventDefault()
+        }}
+      >
+        <section className={styles['all-btn']}>
+          {/* 只读或当前元素来自类模板时，只显示评论按钮 */}
+          {(props.readonly || isSorOperationWithClassTemplate) ? (
+            /* 评论处理 */
+            <CommentBtn
+              path={path}
+              resetImgPreview={resetImgPreview}
+              {...props}
+              closeBar={closeBar}
+            />
+          ) : (
+            <>
+              {/* 裁剪 */}
+              <CaiJianCodeBtn
+                path={path}
+                openCrop={openCrop}
+                resetImgPreview={resetImgPreview}
+                imgRatio={imgRatio}
+                {...props}
+              />
+              {/* AI */}
+              <AIBtn path={path} openAI={openAI} {...props} />
+              {/* 添加描述 */}
+              <DescriptionBtn
+                path={path}
+                setDes={setDes}
+                resetImgPreview={resetImgPreview}
+                {...props}
+                handleToggle={handleToggle}
+              />
+              {/* 重置为原图 */}
+              {url === preview_url ? null : (
+                <ResetBtn path={path} reset={reset} resetImgPreview={resetImgPreview} {...props} />
+              )}
+              <div className={styles['btn-line']} />
+              {/* 居左 */}
+              <LeftBtn path={path} resetImgPreview={resetImgPreview} {...props} />
+              {/* 居中 */}
+              <CenterBtn path={path} resetImgPreview={resetImgPreview} {...props} />
+              {/* 居右 */}
+              <RightBtn path={path} resetImgPreview={resetImgPreview} {...props} />
+              {/* 评论处理，同步块内不显示评论按钮 */}
+              {!inSyncBlock ? (
+                <CommentBtn
+                  path={path}
+                  resetImgPreview={resetImgPreview}
+                  {...props}
+                  closeBar={closeBar}
+                />
+              ) : null}
+            </>
+          )}
+        
+      
+    )
+  )
+}
+/**
+ * 递归提取所有图片块的block_id和preview_url
+ * @param {Array} data - 原始数据数组
+ * @returns {Array} 包含{block_id, preview_url}的数组
+ */
+export const extractImageData = data => {
+  // 存储结果的数组
+  const result = []
+  // 递归处理函数
+  function traverse(item) {
+    // 如果是数组，遍历每个元素
+    if (Array.isArray(item)) {
+      item.forEach(child => traverse(child))
+      return
+    }
+    // 如果是对象，检查是否为图片类型
+    if (typeof item === 'object' && item !== null) {
+      // 图片类型的block_type为16
+      if (item.block_type === 16 && item.property?.preview_url) {
+        // 提取需要的字段
+        result.push({
+          block_id: item.block_id,
+          preview_url: item.property.preview_url
+        })
+      }
+      // 递归处理children属性（如果存在）
+      if (item.children) {
+        traverse(item.children)
+      }
+    }
+  }
+  // 开始遍历原始数据
+  traverse(data)
+  return result
+}
+/**
+ * 通过 touchend 时间间隔判断是否为双击（double tap）
+ * @param lastTouchEndTime 上一次 touchend 时间戳
+ * @param currentTime 当前时间戳
+ * @param interval 判定双击的最大间隔（ms）
+ */
+export const isDoubleTapByTouchEnd = (
+  lastTouchEndTime: number,
+  currentTime: number,
+  interval = 320
+) => {
+  return currentTime - lastTouchEndTime <= interval
+}
+// 文件类型跳过压缩
+const SKIP_TYPES = [
+  'image/gif',
+  'image/webp',
+  'image/avif'
+]
+// 最小压缩大小（100KB）
+const MIN_COMPRESS_SIZE = 100 * 1024
+/**
+ * 压缩图片
+ * @param file 图片文件
+ * @returns 压缩后的图片文件
+ */
+export const compressImage = async (
+  file: File
+): Promise => {
+  // 跳过不处理的格式
+  if (SKIP_TYPES.includes(file.type)) {
+    return file
+  }
+  // 小图不压缩
+  if (file.size < MIN_COMPRESS_SIZE) {
+    return file
+  }
+  return new Promise((resolve) => {
+    try {
+      new Compressor(file, {
+        quality: 0.8,
+        mimeType: 'image/webp',
+        convertSize: Infinity,
+        maxWidth: 5120,
+        maxHeight: 5120,
+        success(result) {
+          const compressedFile = new File(
+            [result],
+            file.name.replace(/.\w+$/, '.webp'),
+            {
+              type: 'image/webp',
+              lastModified: Date.now()
+            }
+          )
+          resolve(compressedFile)
+        },
+        error(err) {
+          console.error('压缩图片失败', err)
+          resolve(file)
+        }
+      })
+    } catch (err) {
+      console.error('压缩图片失败', err)
+      resolve(file)
+    }
+  })
+} 
+import { ELTYPE, CONVERT_CARD_TYPES, SOURCE_TYPE, TO_EDITOR_MODE } from '@/constant/enums/eltype'
+import { getPathByBlockId } from '@/utils/slate-get-node'
+import { insertEmptyParagraph } from '@/utils/slate-set-node'
+import { cx } from '@emotion/css'
+import style from './style.module.less'
+import { sleep } from '@/utils/sleep'
+import { getSearchObjFromUrl } from '@/utils/url-parse'
+import { serviceApi } from '@/service/api'
+import { message } from 'antd'
+import {
+  FILE_TYPE,
+  STORAGE_TYPE,
+  FILE_STATUS,
+  FILE_CHUNK_SIZE,
+  FILE_MAX_RETRIES
+} from '@/constant/enums/file'
+import i18n from '@/languages/i18n'
+import { cloneDeep, throttle } from 'lodash-es'
+import { useMemoizedFn } from 'ahooks'
+import { Editor, Path, Node } from 'slate'
+import { calculateHash } from './hash'
+import { checkDevice } from '@/utils/check-device'
+import store from '@/store'
+interface ChunkStatus {
+  chunk: Blob
+  chunkNumber: number
+  retries: number
+  uploaded: boolean
+  size: number
+}
+// 可拖拽插件集合
+const dragArr = [
+  ELTYPE.IMAGE,
+  ELTYPE.FILE,
+  ELTYPE.VIDEO,
+  ELTYPE.FLOW_CHART,
+  ELTYPE.EXCALIDRAW,
+  ELTYPE.UML
+]
+// 文件类型展示插件结合
+const fileArr = [
+  ...dragArr,
+  ELTYPE.HIGHLIGHT,
+  ELTYPE.COLUMNS,
+  ELTYPE.TABLE,
+  ELTYPE.CODE_BLOCK,
+  ELTYPE.CARD,
+  ELTYPE.INFO_COLLECTION,
+  ELTYPE.SPREADSHEET,
+  ELTYPE.DRAWNIX,
+  ELTYPE.SYNC_BLOCK_REF
+]
+/**
+ * 点击两个图片/文件/视频间的空白，增加一个空行
+ * @param editor
+ * @param id
+ * @returns
+ */
+export const handleClickForEmptyParagraph = (editor, id: string) => {
+  try {
+    let path = getPathByBlockId(editor, id)
+    if (!Editor.hasPath(editor, path)) return null
+    const [nodeParent] = Editor.node(editor, path) as any
+    if (CONVERT_CARD_TYPES.includes(nodeParent.block_type_string)) {
+      path = path.slice(0, path.length - 1)
+    }
+    const atPathNum = path[path.length - 1]
+    if (atPathNum === 0) return
+    const previousPath = Path.previous(path) // 获取前驱路径
+    if (!Editor.hasPath(editor, previousPath)) return null
+    const [node] = Editor.node(editor, previousPath) as any
+    const beforeBlockType = node.block_type_string
+    if (fileArr.includes(beforeBlockType)) {
+      insertEmptyParagraph(editor, path)
+    }
+    // const atPathNum = path[0]
+    // if (atPathNum === 0) return
+    // // @ts-ignore
+    // const beforeBlockType = editor.children[atPathNum - 1].block_type_string
+    // if (fileArr.includes(beforeBlockType)) {
+    //   insertEmptyParagraph(editor, [atPathNum])
+    // }
+  } catch (error) {
+    console.log('[common上传]添加空白行报错：', error)
+  }
+}
+export const useClickEmptyAddParagraph = (editor, blockId) => {
+  const clickEmptyAddParagraph = useMemoizedFn(() => {
+    handleClickForEmptyParagraph(editor, blockId)
+  })
+  return clickEmptyAddParagraph
+}
+/**
+ * 检测当前元素是否在视口内
+ *
+ * @param el   - 需要检测的 DOM 元素
+ * @param axis - 检测轴向：
+ *               'both'（默认）同时检测 X 轴和 Y 轴，即元素完全在视口内才返回 true；
+ *               'y' 仅检测垂直方向（适用于纵向滚动场景，如文档评论锚点定位）；
+ *               'x' 仅检测水平方向（适用于横向滚动场景）。
+ */
+export const isElementInViewport = (el: Element, axis: 'x' | 'y' | 'both' = 'both') => {
+  try {
+    const rect = el.getBoundingClientRect()
+    // 垂直方向：元素顶部不超出视口上边界，底部不超出视口下边界
+    const inY =
+      rect.top >= 0 &&
+      rect.bottom <= (window.innerHeight || document.documentElement.clientHeight)
+    // 水平方向：元素左边不超出视口左边界，右边不超出视口右边界
+    const inX =
+      rect.left >= 0 &&
+      rect.right <= (window.innerWidth || document.documentElement.clientWidth)
+    if (axis === 'y') return inY
+    if (axis === 'x') return inX
+    return inY && inX
+  } catch (error) {
+    return false
+  }
+}
+/**
+ * 处理描述按钮点击事件
+ * 1.光标定位
+ * 2.不在可视区添加滚动到可视区的逻辑
+ */
+export const handleDescription = async el => {
+  try {
+    if (el) {
+      const res = isElementInViewport(el)
+      // 不在视口内，才需要滚动位置
+      if (!res) {
+        el.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+          inline: 'center'
+        })
+      }
+      // 光标闪烁消失防止被覆盖延迟
+      await sleep(500)
+      el.focus()
+    }
+  } catch (error) {}
+}
+/**
+ * 提供给后端所需的上传文件的分类
+ * @param type
+ * @returns
+ */
+export const getUploadType = (type: string) => {
+  if (type.includes('video') || type.includes('audio')) {
+    return FILE_TYPE.VIDEO
+  } else if (type.includes('image')) {
+    return FILE_TYPE.IMAGE
+  } else if (type.includes('openxmlformats-officedocument')) {
+    return FILE_TYPE.MS_OFFICE
+  } else if (type === '') {
+    return FILE_TYPE.CODE
+  }
+  return FILE_TYPE.NORMAL
+}
+const handleHash = fdsData => {
+  try {
+    if (fdsData.success && fdsData?.data?.complete === true) {
+      return true
+    }
+    return false
+  } catch (error) {
+    console.log(error)
+    return false
+  }
+}
+/**
+ * 大文件分片上传和失败重连
+ * @param filename
+ * @param fileSize
+ * @param file
+ * @param fileType
+ * @param callback
+ * @param originFile - 原始文件，用于计算hash
+ * @returns
+ */
+export const uploadFileChunk = async (
+  filename: string,
+  fileSize: number,
+  file: File,
+  fileType: string,
+  callback: (progress: number) => void = () => { },
+  originFile: File = null
+) => {
+  const docUUID = getSearchObjFromUrl()?.docUUID
+  if (!docUUID) {
+    message.error('url need docUUID')
+    return
+  }
+  let fileSizeTotal = 0
+  const uploadPartResults = []
+  console.time('uploadFileChunk')
+  const hash = await calculateHash(originFile || file)
+  console.timeEnd('uploadFileChunk')
+  // 分片配置
+  const CHUNK_SIZE = FILE_CHUNK_SIZE
+  const MAX_RETRIES = FILE_MAX_RETRIES
+  const totalChunks = Math.ceil(file.size / CHUNK_SIZE)
+  const chunks: ChunkStatus[] = []
+  const mes = i18n.t('failupload')
+  let objectName = ''
+  let uploadId = ''
+  const fdsData: any = await serviceApi.uploadFileFDSId({
+    docUUID,
+    fileName: filename,
+    fileSign: hash
+  })
+  if (fdsData.success) {
+    const result = handleHash(fdsData)
+    if (result && fdsData?.data?.uploadResult) {
+      callback(100)
+      return {
+        ...(fdsData.data.uploadResult ?? {}),
+        fileSign: fdsData.data.uploadResult?.fileSign ?? hash
+      }
+    }
+    objectName = fdsData.data.objectName
+    uploadId = fdsData.data.uploadId
+  } else {
+    message.error(fdsData?.errorMsg || '文件上传失败')
+    return
+  }
+  // 初始化分片
+  for (let i = 0; i < totalChunks; i++) {
+    const start = i * CHUNK_SIZE
+    const end = Math.min(start + CHUNK_SIZE, file.size)
+    chunks.push({
+      chunk: file.slice(start, end),
+      chunkNumber: i + 1,
+      retries: 0,
+      uploaded: false,
+      size: end - start
+    })
+  }
+  // 顺序上传分片
+  try {
+    //  console.log('chunks', chunks)
+    for (const chunkStatus of chunks) {
+      let success = false
+      // console.log('chunkStatus', chunkStatus)
+      while (chunkStatus.retries < MAX_RETRIES && !success) {
+        try {
+          const formData = new FormData()
+          formData.append('docUUID', docUUID as string)
+          formData.append('objectName', objectName)
+          formData.append('file', chunkStatus.chunk)
+          // formData.append('filename', filename)
+          // formData.append('fileType', fileType)
+          formData.append('uploadId', uploadId as string)
+          formData.append('partNumber', String(chunkStatus.chunkNumber))
+          formData.append('fileSign', hash as string)
+          const res = await serviceApi.uploadFileChunk(formData)
+          if (res.success) {
+            success = true
+            chunkStatus.uploaded = true
+            // 更新进度
+            const uploadedCount = chunks.filter(c => c.uploaded).length
+            // 这里不需要调前端的进度更新接口了，直接按切片来就好了
+            callback(Math.floor((uploadedCount / totalChunks) * 100))
+            fileSizeTotal += chunkStatus.size
+            uploadPartResults.push(res.data)
+            break
+          } else {
+            if (chunkStatus.retries === MAX_RETRIES) {
+              message.error(res?.errorMsg ?? mes)
+            }
+            chunkStatus.retries++
+          }
+        } catch (error) {
+          chunkStatus.retries++
+        }
+      }
+      if (!success) {
+        return Promise.reject({ status: FILE_STATUS.FAIL })
+      }
+    }
+    // 所有分片上传完成后延迟请求合并
+    return await new Promise((resolve, reject) => {
+      setTimeout(async () => {
+        try {
+          const mergeRes = await serviceApi.uploadFileFinish({
+            docUUID,
+            filename,
+            totalChunks,
+            storageType: '0',
+            fileType,
+            fileSize: fileSizeTotal,
+            uploadPartResults,
+            objectName,
+            uploadId,
+            fileSign: hash
+          })
+          // console.log('mergeResmergeRes', mergeRes)
+          if (mergeRes.success) {
+            callback(100)
+            resolve({
+              ...((mergeRes?.data as any) ?? {}),
+              fileSign: mergeRes?.data?.fileSign ?? hash
+            })
+          } else {
+            reject(new Error('文件合并失败'))
+          }
+        } catch (error) {
+          reject(new Error('最终合并请求失败'))
+        }
+      }, 1000)
+    })
+  } catch (error) {
+    message.error(error.message || '文件上传失败')
+    throw error
+  }
+}
+/**
+ * 上传文件处理函数
+ * @param filename 文件名称
+ * @param fileSize 文件大小
+ * @param file 文件内容
+ * @param fileType 文件类型
+ * @param callback 回调 用来记录上传进度
+ * @param originalFile - 原始文件，用于计算hash
+ * @returns 成功返回文件url和部分信息
+ */
+export const handleUploadFile = async (
+  filename: string,
+  fileSize: number,
+  file: File,
+  fileType: string,
+  callback = res => { },
+  originalFile: File = null
+) => {
+  const docUUID = getSearchObjFromUrl()?.docUUID
+  if (!docUUID) {
+    message.error('url need docUUID')
+    return
+  }
+  const hash = await calculateHash(originalFile || file)
+  const formData = new FormData()
+  formData.append('file', file)
+  formData.append('docUUID', docUUID as string)
+  // 云储存
+  formData.append('storageType', STORAGE_TYPE.FDS)
+  formData.append('filename', filename)
+  formData.append('fileType', fileType)
+  formData.append('fileSize', String(fileSize))
+  formData.append('fileSign', hash as string)
+  const mes = i18n.t('failupload')
+  try {
+    const res = await serviceApi.uploadFile(formData, callback)
+    if (res.success) {
+      return { ...((res?.data as any) ?? {}), fileSign: res?.data?.fileSign ?? hash }
+    } else {
+      message.error(res?.errorMsg ?? mes)
+      return
+    }
+  } catch (error) {
+    message.error(mes)
+    return
+  }
+}
+/**
+ * 增强上传处理
+ * @param editor 编辑器
+ * @param undos 撤销记录
+ * @param i index
+ * @param data 文件信息
+ */
+const moreUpdateFileHistory = (editor: any, undos: any[], i: number, data) => {
+  try {
+    const { url = '', block_id, status, fileSign = '', previewUrl = '', duration, fileType = '',compressedSize = 0 } = data
+    const temp = cloneDeep(undos[i])
+    for (let j = 0; j < temp?.length; j++) {
+      const undo = temp[j]
+      if (
+        undo?.type === 'insert_node' &&
+        undo?.node?.block_id === block_id &&
+        [FILE_STATUS.LOADING, FILE_STATUS.PENDING, FILE_STATUS.SUCCESS].includes(undo?.node?.property?.status)
+      ) {
+        undo.node.property.url = url
+        undo.node.property.file_sign = fileSign
+        // 图片的预览更新
+        if (undo.node.block_type_string === ELTYPE.IMAGE) {
+          undo.node.property.preview_url = url
+          undo.node.property.compressed_size = compressedSize
+        }
+        if (undo.node.block_type_string === ELTYPE.VIDEO && previewUrl) {
+          undo.node.property.preview_url = previewUrl
+        }
+        // 视频时长更新（秒），供后端解析转发使用
+        if (undo.node.block_type_string === ELTYPE.VIDEO && Number.isFinite(duration)) {
+          undo.node.property.duration = duration
+        }
+        // 图片 MIME 类型更新，供后端解析转发使用
+        if (undo.node.block_type_string === ELTYPE.IMAGE && fileType) {
+          undo.node.property.type = fileType
+        }
+        undo.node.property.status = status
+      }
+    }
+    editor.history.undos[i] = temp
+  } catch (error) {
+    console.log(error)
+  }
+}
+/**
+ * 上传文件结局成功或者失败更新为实际的url和状态
+ * @param editor 编辑器实例
+ * @param data
+ */
+export const updateFileHistory = (
+  editor: any,
+  data: {
+    url: string
+    block_id: string
+    status: FILE_STATUS
+    fileSign: string
+    previewUrl?: string
+    duration?: number
+    fileType?: string
+    compressedSize?: number
+  }
+) => {
+  try {
+    const undos = editor?.history?.undos
+    for (let i = 0; i < undos?.length; i++) {
+      // 对批次认证，增强处理和协同
+      moreUpdateFileHistory(editor, undos, i, data)
+    }
+  } catch (error) {
+    console.log(error)
+  }
+}
+export const fileView = async (url: string) => {
+  const res = await serviceApi.loadFile(url)
+}
+/**
+ * 检查当前节点是否存在且是否可以拖拽
+ * @param editor 编辑器实例
+ * @param path 路径
+ * @returns boolean
+ */
+const canDrag = (editor, path) => {
+  try {
+    console.log('pathpathpath', path)
+    const node = Node.getIf(editor, path)
+    if (node && dragArr.includes(node?.block_type_string)) {
+      return true
+    }
+    return false
+  } catch (error) {
+    console.log(error)
+    return false
+  }
+}
+/**
+ * 是否展示拉伸放大的拉伸点
+ * @param element 节点
+ * @returns boolean
+ */
+const isShowResize = (element) => {
+  // 在实例模板下，如果元素来自类模板，阻止拉伸
+  const isSorOperationMode = store.getState()?.editor?.isSorOperationMode
+  const editMode = store.getState()?.editor?.docConfig?.editMode
+  const isFromClassTemplate = element?.property?.source === SOURCE_TYPE.CLASS_TEMPLATE
+  
+  // 检查是否为视频、图片、画布、流程图或UML
+  const isResizableElement = [
+    ELTYPE.VIDEO,
+    ELTYPE.IMAGE,
+    ELTYPE.EXCALIDRAW,
+    ELTYPE.FLOW_CHART,
+    ELTYPE.UML,
+  ].includes(element.block_type_string)
+  // 在实例模板下，如果元素来自类模板，阻止拉伸
+  if (isSorOperationMode && editMode !== TO_EDITOR_MODE.read && isFromClassTemplate && isResizableElement) {
+    return false
+  }
+  return true
+}
+/**
+ * 四周的四个点，拉动可缩放图片
+ */
+export const onMouseDown = (
+  e: React.MouseEvent<HTMLDivElement, MouseEvent> | React.TouchEvent,
+  props
+) => {
+  const { blockId, path, propref, callback } = props
+  const config = props.element
+  let centerPoint = false
+  if ([ELTYPE.FLOW_CHART, ELTYPE.UML, ELTYPE.EXCALIDRAW].includes(config.block_type_string)) {
+    centerPoint = true
+  }
+  const tag = canDrag(props.editor, path)
+  if (!tag) return
+  if (!isShowResize(config)) return
+  try {
+    // 支持鼠标和触摸事件
+    let clientX: number, clientY: number
+    if ('touches' in e) {
+      // 触摸事件
+      clientX = e.touches[0].clientX
+      clientY = e.touches[0].clientY
+    } else {
+      // 鼠标事件
+      clientX = e.clientX
+      clientY = e.clientY
+    }
+    const resider = e.target as HTMLDivElement
+    const element = propref.current
+    let temWidth = 0
+    let oldLen = props.editor.history.undos.length ?? 0
+    e.stopPropagation()
+    e.preventDefault() // 阻止默认行为，包括移动端的滚动和缩放
+    if (resider instanceof HTMLDivElement && resider.dataset.type && element && config) {
+      const startX = clientX
+      const startY = clientY
+      const startWidth = element.offsetWidth
+      const startHeight = element.offsetHeight
+      const ratio = startWidth / startHeight
+      const type = resider.dataset.type
+      if (!path) return
+      // 统一处理鼠标和触摸事件
+      const handleMove = (moveEvent: MouseEvent | TouchEvent) => {
+        try {
+          let currentX: number, currentY: number
+          if ('touches' in moveEvent) {
+            currentX = moveEvent.touches[0].clientX
+            currentY = moveEvent.touches[0].clientY
+            // 在移动过程中持续阻止默认行为
+            moveEvent.preventDefault()
+          } else {
+            currentX = moveEvent.clientX
+            currentY = moveEvent.clientY
+          }
+          const diffX = currentX - startX
+          const diffY = currentY - startY
+          let width = startWidth
+          let height = startHeight
+          switch (type) {
+            case 'lt':
+              width -= diffX
+              height -= diffY
+              break
+            case 'rt':
+              width += diffX
+              height -= diffY
+              break
+            case 'lb':
+              width -= diffX
+              height += diffY
+              break
+            case 'rb':
+              width += diffX
+              height += diffY
+              break
+            case 'ct':
+              height -= diffY
+              break
+            case 'cb':
+              height += diffY
+              break
+            case 'cl':
+              width -= diffX
+              break
+            case 'cr':
+              width += diffX
+              break
+          }
+          if (centerPoint) {
+            if (width <= 150) {
+              width = 150
+            }
+            if (height <= 150) {
+              height = 150
+            }
+          } else {
+            if (width / height > ratio) {
+              height = width / ratio
+            } else {
+              width = height * ratio
+            }
+            // if (width >= 50) {
+            temWidth = width
+            // }
+          }
+          // temWidth = Math.max(width, 50)
+          if (centerPoint && (width < 150 || height < 150)) {
+            return
+          }
+          if (width > startWidth) {
+            // 当前是因为分栏表格等特殊情况造成宽高小于50，现在需要变大，这里需要给过
+            // console.log(width, startWidth)
+          } else if (width < 50 || height < 50) {
+            // TODO 优化：存在快速往里拖拽，虽然model数据不变，但是页面图片会略微缩小，需要优化
+            removeEventListeners()
+            return
+          }
+          // 因为分栏等情况会造成极度的收缩宽高比
+          if (props.element.block_type_string === ELTYPE.IMAGE) {
+            const zoom = temWidth / config.property.wrap_width
+            callback(width, zoom)
+          } else {
+            callback(width, height)
+          }
+        } catch (error) {
+          console.error('[Drag组件]事件报错:', error)
+        }
+      }
+      const { isMobile } = checkDevice()
+      const handleUp = () => {
+        try {
+          // TODO ↓↓↓↓↓待验证：如果后续存在不合理，需要重新调整↓↓↓↓↓
+          const undoArr = props.editor.history.undos
+          const newLen = undoArr.length ?? 0
+          if (newLen > oldLen) {
+            // 直接操作是否会影响协同 yjs？？
+            props.editor.history.undos = undoArr.slice(0, oldLen + 1)
+          } else {
+            if (props.element.block_type_string === ELTYPE.IMAGE) {
+              const zoom = temWidth / props.element.property.wrap_width
+              // 鼠标点击后没拖拽
+              if (zoom > 0) {
+                callback(temWidth, zoom)
+              }
+            }
+          }
+        } catch (error) {}
+        removeEventListeners()
+        if (isMobile) {
+          // 拖拽结束后恢复页面滚动
+          restorePageScroll()
+        }
+      }
+      // 阻止页面滚动的函数
+      const preventPageScroll = () => {
+        const rootNode = document.querySelector('#root')
+        // 阻止页面滚动
+        if (rootNode && rootNode instanceof HTMLElement) {
+          rootNode.style.overflowY = 'hidden'
+          rootNode.style.touchAction = 'none' // 防止触摸动作
+          rootNode.style.userSelect = 'none' // 防止文字选择
+        }
+      }
+      // 恢复页面滚动的函数
+      const restorePageScroll = () => {
+        const rootNode = document.querySelector('#root')
+        // 阻止页面滚动
+        if (rootNode && rootNode instanceof HTMLElement) {
+          rootNode.style.overflowY = 'auto'
+          rootNode.style.touchAction = ''
+          rootNode.style.userSelect = ''
+        }
+      }
+      const throttledHandleMove = throttle(handleMove, 16) // 约60fps
+      // 添加事件监听器
+      const addEventListeners = () => {
+        if (isMobile) {
+          preventPageScroll() // 开始拖拽时阻止页面滚动
+        }
+        if ('touches' in e) {
+          // 触摸设备
+          document.addEventListener('touchmove', throttledHandleMove, { passive: false })
+          document.addEventListener('touchend', handleUp, { passive: false })
+          document.addEventListener('touchcancel', handleUp, { passive: false })
+        } else {
+          // 鼠标设备
+          document.addEventListener('pointermove', throttledHandleMove)
+          document.addEventListener('pointerup', handleUp)
+        }
+      }
+      // 移除事件监听器
+      const removeEventListeners = () => {
+        document.removeEventListener('touchmove', throttledHandleMove)
+        document.removeEventListener('touchend', handleUp)
+        document.removeEventListener('touchcancel', handleUp)
+        document.removeEventListener('pointermove', throttledHandleMove)
+        document.removeEventListener('pointerup', handleUp)
+      }
+      addEventListeners()
+    }
+  } catch (error) {
+    console.error('error', error)
+  }
+}
+/**
+ * 判断类型，是走四个点位不形变拖动，还是走八个点位的支持形变拖动
+ */
+export const Drag = props => {
+  // 在实例模板下，如果元素来自类模板，不显示拉伸点
+  if (!isShowResize(props.element)) return null
+  // 流程图 UML类图走八个点位图
+  if (
+    [ELTYPE.FLOW_CHART, ELTYPE.UML, ELTYPE.EXCALIDRAW].includes(props?.element?.block_type_string)
+  ) {
+    return (
+      <>
+        {['lt', 'rt', 'lb', 'rb', 'ct', 'cr', 'cb', 'cl'].map(pointType => (
+          <div
+            key={pointType}
+            data-type={pointType}
+            className={cx((props.selected || props.showFourPoint) && style['app-drag-resider'])}
+            onMouseDown={event => {
+              onMouseDown(event, props)
+            }}
+            onTouchStart={event => {
+              onMouseDown(event, props)
+            }}
+            contentEditable={false}
+          >
+        ))}
+      </>
+    )
+  }
+  // 其他元素，只支持四角的移动
+  return (
+    <>
+      {['lt', 'rt', 'lb', 'rb'].map(pointType => (
+        <div
+          key={pointType}
+          data-type={pointType}
+          className={cx((props.selected || props.showFourPoint) && style['app-drag-resider'])}
+          onMouseDown={event => {
+            onMouseDown(event, props)
+          }}
+          onTouchStart={event => {
+            onMouseDown(event, props)
+          }}
+        >
+      ))}
+    </>
+  )
+}
+// 上传报错图片占位图
+export const errorUrl = `data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIwIiBoZWlnaHQ9IjEyMCIgdmlld0JveD0iMCAwIDEyMCAxMjAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PHBhdGggZD0iTTEwOS45MTMgNjguMjU0di03LjcwMWM0LjMwNiAyLjcyNiA1LjYwNyA1LjkzMiA1LjYwNyA5LjE2OCAwIDEuMzg4LjAwNyAyLjUyNS4wMTQgMy41Ny4wMTIgMS44NTYuMDIyIDMuNDIxLS4wMTQgNS41NzYtLjQwMS0yLjQwNi0xLjU1Ni03LjYzMy01LjYwNy0xMC42MTRaTTEwLjMzIDQyLjc1djcuNjgxYy0xLjk0NyAxLjc4LTMuNzI1IDYuMjE5LTIuNDc5IDkuODktLjI5LS4zNjMtLjU1OC0uNjgyLS44MDgtLjk3OEM1LjYzNiA1Ny42NjkgNC44MTggNTYuNjk3IDQgNTIuNTQ3YzAtMi4yOTEuOTktNy40MTIgNi4zMy05Ljc5N1oiIGZpbGw9IiMwQzI5NkUiLz48cGF0aCBkPSJNMTAuMzMgMjMuMTc0VjkzLjU5YTQgNCAwIDAgMCA0IDRoMzguOTc1bDguNjEtMjAuMzkzLTExLjYzNC0xOS4zMzRMNjEuOTE1IDMxLjYxaC01LjMzM2E0IDQgMCAwIDEtMy4xNjMtMS41NTJsLTcuMjI2LTkuMzMzYTQgNCAwIDAgMC0zLjE2My0xLjU1MWgtMjguN2E0IDQgMCAwIDAtNCA0WiIgZmlsbD0iI0JCQkZDNCIgZmlsbC1vcGFjaXR5PSIuNDUiLz48cGF0aCBkPSJNMTA5LjkxMiA5My41OVYzNS42MWE0IDQgMCAwIDAtNC00SDczLjA5M2wtMTEuNTMgMjYuMjU0TDczLjAxIDc3LjE5OCA2NC41NSA5Ny41OWg0MS4zNjJhNCA0IDAgMCAwIDQtNFoiIGZpbGw9IiNCQkJGQzQiIGZpbGwtb3BhY2l0eT0iLjQ1Ii8+PHBhdGggZD0iTTUgNjQuNTExdi03LjQzYzEuMDA0IDEuNTQ2IDIuMjUyIDIuODYgMy43NDUgMy45OTMgMi41MSAxLjkwNCA1LjY3NyAzLjI2NyA5LjQ1NiA0LjM4N3Y4LjUyNUM5LjQ4NCA3MS41MjYgNi4xNDIgNjcuMTk4IDUgNjQuNTFabTAtOS40NDVhMTcuMDMgMTcuMDMgMCAwIDEtMS0yLjQ5OFY2NC43MWMxLjIxNCAzLjAyNyA0LjgzNiA3Ljc0MyAxNC4yIDEwLjMxNC4zMjcuMDg5LjY2LjE3NiAxIC4yNlY2NC43MUMxMi4xOSA2Mi43MjcgNy40OTQgNjAuMDY3IDUgNTUuMDY2WiIgZmlsbD0iIzBDMjk2RSIvPjxwYXRoIGQ9Ik0xOS4wNjggMjcuNjMzYTEuOTggMS45OCAwIDEgMSAwIDMuOTYgMS45OCAxLjk4IDAgMCAxIDAtMy45NlptMi45OCAxLjk4YTIuOTggMi45OCAwIDEgMC01Ljk2IDAgMi45OCAyLjk4IDAgMCAwIDUuOTYgMFptNi44NjgtMS45OGExLjk4IDEuOTggMCAxIDEgMCAzLjk2IDEuOTggMS45OCAwIDAgMSAwLTMuOTZabTIuOTggMS45OGEyLjk4IDIuOTggMCAxIDAtNS45NiAwIDIuOTggMi45OCAwIDAgMCA1Ljk2IDBaTTE1LjU4OCA0OS43NDhhLjUuNSAwIDAgMSAuNS0uNWgyMC44OTlhLjUuNSAwIDAgMSAwIDFoLTIwLjlhLjUuNSAwIDAgMS0uNS0uNVptMCA5LjMwMmEuNS41IDAgMCAxIC41LS41aDIwLjg5OWEuNS41IDAgMSAxIDAgMWgtMjAuOWEuNS41IDAgMCAxLS41LS41WiIgZmlsbD0iIzhGOTU5RSIvPjxwYXRoIGQ9Ik05NS4zMTQgMTA0LjA1OGMxMC40NDktLjgwNiAxMy41NTQtNC41NDMgMTYuNTc2LTcuNzEydjcuNzEyYy0xLjg0MyAyLjc3MS04LjIwMSA1Ljk5NC0xNi41NzYgNi42NjYtOC4zNzQuNjczLTE4LjAzIDAtMzQuMDQ1LS43ODR2LTYuNjYzYzEyLjY5MSAwIDIzLjU5NyAxLjU4NyAzNC4wNDUuNzgxWk04MC41NDIgODkuMTkydi03LjcxOGM2Ljc0LjU5IDEyLjgzNCAxLjQ0NCAyMS45OCAwIDkuMjQxLTEuNDYgMTIuOTk4LTcuMDk2IDEyLjk5OC0xMi41MTd2MTAuMDdjLS40ODEgMy40MS00LjgxNCA5LjE4Ni0xMi41MTYgMTAuMTUtNy43MDMuOTYyLTE0Ljc5NC45MzEtMjIuNDYyLjAxNVoiIGZpbGw9IiMzMzcwRkYiLz48cGF0aCBkPSJNNS40IDkzLjY3NHYtOC4yMDFjOC4yIDYuNCAyMS4xMiA5LjM3NiAzMy4yOTYgOS4zNzZ2OC4xMDVjLTE0LjA5NCAwLTI3LjY5Ni0zLjY3OS0zMy4yOTctOS4yOFoiIGZpbGw9IiMwMEQ2QjkiLz48cGF0aCBkPSJNOTguMDMxIDQ0LjYzM2M5Ljk0MSAwIDE4LTguMDYgMTgtMTggMC05Ljk0MS04LjA1OS0xOC0xOC0xOHMtMTggOC4wNTktMTggMThjMCA5Ljk0IDguMDU5IDE4IDE4IDE4WiIgZmlsbD0iI0Y4MCIvPjxwYXRoIGQ9Ik05Ny4yMTMgMTguNDUxYS44MTguODE4IDAgMCAwLS44MTkuODE4djkuODE5YS44Mi44MiAwIDAgMCAuODE5LjgxOGgxLjYzNmEuODE4LjgxOCAwIDAgMCAuODE4LS44MTlWMTkuMjdhLjgxOC44MTggMCAwIDAtLjgxOC0uODE4aC0xLjYzNlptMCAxMy4wOTFhLjgxOC44MTggMCAwIDAtLjgxOS44MTh2MS42MzdjMCAuNDUyLjM2Ny44MTguODE5LjgxOGgxLjYzNmEuODE4LjgxOCAwIDAgMCAuODE4LS44MThWMzIuMzZhLjgxOC44MTggMCAwIDAtLjgxOC0uODE4aC0xLjYzNloiIGZpbGw9IiNmZmYiLz48L3N2Zz4=`
+结合之前代码为啥要修改历史记录呢？

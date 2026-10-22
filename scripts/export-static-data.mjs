@@ -1,9 +1,10 @@
 // 构建前导出静态数据：把 data/ 下的「文件真相」变成浏览器可直接读的 JSON
-// 输出结构（与线上路径一一对应）：
+// 线上（Netlify）没有后端进程，只能读静态文件；本地开发则走 Express API 读同一批文件。
+// 输出结构：
 //   public/data/meta.json              分类 + 标签
 //   public/data/articles.json          列表索引（不含正文）
 //   public/data/articles/<id>.json     单篇（索引 + 正文），详情页按需取
-//   public/media/<kind>/...            图片/文件/视频（存在才拷贝）
+//   public/media/<kind>/...            图片/附件/视频（存在才拷贝）
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -34,15 +35,7 @@ if (files.length === 0) {
   process.exit(0);
 }
 
-// 清理旧产物：某些环境会拦截递归删除，失败就继续（索引不引用旧文件即可）
-try {
-  fs.rmSync(OUT_DIR, { recursive: true, force: true });
-} catch (err) {
-  console.warn(`⚠️  旧产物清理失败（不影响导出）：${err.message}`);
-}
-fs.mkdirSync(OUT_ARTICLES, { recursive: true });
-
-/** 正文不进列表索引，只留展示需要的字段 */
+/** 列表项：正文不进索引 */
 const toIndex = (article) => ({
   id: article.id,
   title: article.title,
@@ -54,11 +47,19 @@ const toIndex = (article) => ({
   updatedAt: article.updatedAt,
 });
 
+// 清理旧产物：某些环境会拦截递归删除，失败就继续（索引不引用旧文件即可）
+try {
+  fs.rmSync(OUT_DIR, { recursive: true, force: true });
+} catch (err) {
+  console.warn(`⚠️  旧产物清理失败（不影响导出）：${err.message}`);
+}
+fs.mkdirSync(OUT_ARTICLES, { recursive: true });
+
 const index = [];
 let skipped = 0;
 
 for (const file of files) {
-  const id = file.slice(0, -5);
+  const id = path.basename(file, '.json');
   try {
     const article = { ...readJson(path.join(ARTICLES_DIR, file)), id };
     // 只导出已发布的文档：草稿不该出现在公开站点上
@@ -66,10 +67,11 @@ for (const file of files) {
       skipped += 1;
       continue;
     }
-    index.push(toIndex(article));
+    const item = toIndex(article);
+    index.push(item);
     fs.writeFileSync(
       path.join(OUT_ARTICLES, `${id}.json`),
-      JSON.stringify({ ...toIndex(article), content: article.content ?? [] }),
+      JSON.stringify({ ...item, content: Array.isArray(article.content) ? article.content : [] }),
     );
   } catch (err) {
     console.warn(`跳过坏文件 ${file}：${err.message}`);

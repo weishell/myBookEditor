@@ -3,12 +3,17 @@ dist
 demo/
 
 # ---------- 站点数据 ----------
-# data/articles、data/meta.json、data/media 是内容资产，必须提交（Netlify 构建要用）
-# 索引库是「可重建的缓存」，不进仓库
-data/index.db
-data/index.db-wal
-data/index.db-shm
+# 正文：data/articles/<id>.json —— 一篇一个文件，这是数据的真相，必须提交
+# 分类标签：data/meta.json —— 同样是真相，必须提交
+# 媒体：data/media/**（图片/附件/视频）—— 必须提交，否则线上图片 404
+# 删除的文章会进 data/.trash/，留几天再清理，不用提交
 data/.trash/
+
+# 索引库：database/mybook.db 只是 SQLite 索引缓存，启动时从上面的文件全量重建，
+# 删了、坏了都不影响数据，所以不进仓库（也避免二进制文件污染 diff）
+database/*.db
+database/*.db-wal
+database/*.db-shm
 
 # 构建时由 scripts/export-static-data.mjs 生成，不进仓库
 public/data/
