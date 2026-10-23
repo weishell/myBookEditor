@@ -27,9 +27,15 @@ export default function Home() {
           按分类浏览，或从标签直达感兴趣的话题。每一篇文章都是可编辑的富文档，打开即是编辑器。
         </p>
         <div className={styles.heroStats}>
-          <span>{total} 篇文章</span>
-          <span>{categories.length} 个分类</span>
-          <span>{tags.length} 个标签</span>
+          <span>
+            <b>{total}</b>篇文章
+          </span>
+          <span>
+            <b>{categories.length}</b>个分类
+          </span>
+          <span>
+            <b>{tags.length}</b>个标签
+          </span>
         </div>
         <div className={styles.heroActions}>
           {writable && (
@@ -66,8 +72,9 @@ export default function Home() {
             </span>
           </div>
           <div className={styles.latestList}>
-            {latest.map((a) => (
+            {latest.map((a, i) => (
               <Link key={a.id} to={`/article/${a.id}`} className={styles.latestRow}>
+                <span className={styles.latestIndex}>{String(i + 1).padStart(2, '0')}</span>
                 <span className={styles.latestTitle}>{a.title}</span>
                 <span className={styles.latestDate}>{a.date}</span>
               </Link>

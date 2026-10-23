@@ -15,6 +15,7 @@ import { createEditor, Editor } from 'slate';
 import { Slate, Editable, withReact } from 'slate-react';
 import { withHistory } from 'slate-history';
 import CommentSection from '@/components/comments/CommentSection';
+import type { CommentItem } from '@/data/comments';
 import {
   MenuProvider,
   ContextMenu,
@@ -68,6 +69,10 @@ interface EditorProps {
   persistKey?: string;
   /** 防抖后的保存回调（如提交到后端）。与 persistKey 可同时使用 */
   onSave?: (value: Descendant[]) => void;
+  /** 底部评论的存储槽位（一般传文章 id）；不传则共用 default 槽位 */
+  commentKey?: string;
+  /** 底部评论的种子评论：只有示例文档传入，真实文档保持为空 */
+  commentSeed?: CommentItem[];
 }
 
 // 文档正文持久化：评论锚点（comments 标记）就写在文档数据里，若不落盘，
@@ -90,6 +95,8 @@ export default function BookEditor({
   initialValue = demoInitialValue,
   persistKey = DOC_PERSIST_KEY,
   onSave,
+  commentKey = 'default',
+  commentSeed,
 }: EditorProps) {
   const { setEditor, globalFont } = useEditorMode();
   const { isDarkMode } = useTheme();
@@ -295,8 +302,8 @@ export default function BookEditor({
                 {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}
                 {!readOnly && <TrailingAddZone />}
               </div>
-              {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互 */}
-              <CommentSection />
+              {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互；按 commentKey 隔离存储 */}
+              <CommentSection storageKey={commentKey} seed={commentSeed} />
             </InlineCommentProvider>
           </DocBarProvider>
         </MenuProvider>

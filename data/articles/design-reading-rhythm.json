@@ -10,6 +10,19 @@
   "updatedAt": "2026-10-13T09:00:00.000Z",
   "content": [
     {
+      "type": "heading-title",
+      "id": "cea51b7b-600b-4319-a624-e0db8ca31692",
+      "attrs": {
+        "author": "青柠脉动",
+        "date": "2026-10-13"
+      },
+      "children": [
+        {
+          "text": "长文的阅读节奏怎么调"
+        }
+      ]
+    },
+    {
       "type": "paragraph",
       "id": "815544c2-b2fb-48b5-bbb2-ecf9b2e90e7f",
       "children": [

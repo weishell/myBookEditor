@@ -1,11 +1,12 @@
 // 内置示例数据：只在「数据源不可用」时兜底（本地 API 没起、线上快照没生成）
-// 与真实数据使用同一套形状，页面无需感知差异
+// 与真实数据使用同一套形状，页面无需感知差异。
+// 这里只保留一篇“精修过的完整示例”，不再批量生成假文章，避免首页出现大量重复占位内容。
 import type { Descendant } from 'slate';
-import { v4 as uuidv4 } from 'uuid';
-import { BlockElementType } from '@/enums';
 import type { Article, Category, Tag } from './types';
 
 export const DEMO_CATEGORIES: Category[] = [
+  { id: 'design', name: '设计创意', color: '#e05b3f', icon: '🎨', desc: '视觉、交互与产品设计' },
+  { id: 'tools', name: '效率工具', color: '#d4a017', icon: '🧰', desc: '软件工具与工作流搭建' },
   {
     id: 'frontend',
     name: '前端开发',
@@ -13,130 +14,197 @@ export const DEMO_CATEGORIES: Category[] = [
     icon: '🖥️',
     desc: '框架、工程化与浏览器技术',
   },
-  { id: 'backend', name: '后端架构', color: '#00a66c', icon: '⚙️', desc: '服务端、数据库与分布式' },
-  { id: 'ai', name: '人工智能', color: '#7c3aed', icon: '🤖', desc: '模型应用与大模型实践' },
-  { id: 'design', name: '设计创意', color: '#e05b3f', icon: '🎨', desc: '视觉、交互与产品设计' },
-  { id: 'tools', name: '效率工具', color: '#d4a017', icon: '🧰', desc: '软件工具与工作流搭建' },
-  { id: 'growth', name: '职场成长', color: '#c026a5', icon: '🌱', desc: '方法论、沟通与职业发展' },
 ];
 
 export const DEMO_TAGS: Tag[] = [
-  { id: 'frontend', name: '前端', color: '#2f6fed' },
-  { id: 'backend', name: '后端', color: '#00a66c' },
-  { id: 'ai', name: '人工智能', color: '#7c3aed' },
   { id: 'design', name: '设计', color: '#e05b3f' },
-  { id: 'tools', name: '效率工具', color: '#d4a017' },
-  { id: 'growth', name: '职场', color: '#c026a5' },
-  { id: 'react', name: 'React', color: '#0ea5e9' },
-  { id: 'ts', name: 'TypeScript', color: '#3178c6' },
-  { id: 'perf', name: '性能优化', color: '#f59e0b' },
-  { id: 'viz', name: '数据可视化', color: '#14b8a6' },
-  { id: 'oss', name: '开源项目', color: '#6366f1' },
   { id: 'notes', name: '学习笔记', color: '#94a3b8' },
+  { id: 'tools', name: '效率工具', color: '#d4a017' },
+  { id: 'frontend', name: '前端', color: '#2f6fed' },
 ];
 
-const TOPICS: Record<string, string[]> = {
-  frontend: ['React', 'TypeScript', 'Vite', '性能优化', '工程化'],
-  backend: ['Node.js', '数据库', '微服务', '云原生', '缓存'],
-  ai: ['大模型应用', 'Prompt 工程', 'AI Agent', '机器学习', '多模态'],
-  design: ['设计系统', '交互体验', '视觉排版', '动效设计', '用户研究'],
-  tools: ['自动化工作流', '效率方法论', '生产力工具', '笔记系统', '时间管理'],
-  growth: ['职场沟通', '项目管理', '技术写作', '职业规划', '团队协作'],
-};
-
-const VARIANTS = [
-  (t: string) => `深入理解 ${t}`,
-  (t: string) => `${t} 从入门到精通`,
-  (t: string) => `${t} 实战指南`,
-  (t: string) => `${t} 踩坑与避坑`,
-  (t: string) => `${t} 原理剖析`,
-  (t: string) => `${t} 最佳实践`,
-  (t: string) => `${t} 进阶之路`,
-  (t: string) => `${t} 源码解读`,
-  (t: string) => `${t} 性能优化实战`,
-  (t: string) => `${t} 项目落地案例`,
-  (t: string) => `${t} 常见问题汇总`,
-  (t: string) => `${t} 学习路线与资源`,
+// 一篇完整示例文章：覆盖标题 / 段落 / 提示块 / 列表 / 代码块 / 待办 / 分割线 / 引用 / 图片
+// 既是离线兜底样本，也用来展示编辑器支持的块类型。
+const DEMO_CONTENT: Descendant[] = [
+  {
+    type: 'heading-title',
+    id: 'demo-title',
+    attrs: { author: '青柠脉动', date: '2026-10-17' },
+    children: [{ text: 'MyBook 写作台 · 功能一览' }],
+  },
+  {
+    type: 'heading',
+    id: 'demo-h1',
+    attrs: { level: 2 },
+    children: [{ text: '为什么是 MyBook 写作台' }],
+  },
+  {
+    type: 'paragraph',
+    id: 'demo-p1',
+    children: [
+      {
+        text: 'MyBook 把“写作”和“发布”拆成了两件独立的事：你只管在本地把内容写清楚，文件就是唯一真相；发布时前端直接读同一批 JSON，不需要数据库，也不需要服务器常驻。',
+      },
+    ],
+  },
+  {
+    type: 'hint-block',
+    id: 'demo-hint1',
+    attrs: { type: 'tip' },
+    children: [
+      {
+        text: '小提示：把正文当成纯文本来写，复杂的排版（列表、代码、卡片）交给块类型去处理，思路会清晰很多。',
+      },
+    ],
+  },
+  {
+    type: 'heading',
+    id: 'demo-h2',
+    attrs: { level: 2 },
+    children: [{ text: '核心能力一览' }],
+  },
+  {
+    type: 'bulleted-list',
+    id: 'demo-ul',
+    children: [
+      {
+        type: 'list-item',
+        id: 'demo-li1',
+        children: [
+          {
+            type: 'paragraph',
+            id: 'demo-li1-p',
+            children: [
+              { text: '块化编辑：标题、引用、提示、代码、图片、表格都能当成一个块来拖拽与嵌套。' },
+            ],
+          },
+        ],
+      },
+      {
+        type: 'list-item',
+        id: 'demo-li2',
+        children: [
+          {
+            type: 'paragraph',
+            id: 'demo-li2-p',
+            children: [{ text: '自动保存：正文改动实时落盘，刷新页面也不会丢。' }],
+          },
+        ],
+      },
+      {
+        type: 'list-item',
+        id: 'demo-li3',
+        children: [
+          {
+            type: 'paragraph',
+            id: 'demo-li3-p',
+            children: [{ text: '多语言界面：内置七种语言，文案跟随设置切换。' }],
+          },
+        ],
+      },
+    ],
+  },
+  {
+    type: 'heading',
+    id: 'demo-h3',
+    attrs: { level: 2 },
+    children: [{ text: '一段真实代码示例' }],
+  },
+  {
+    type: 'paragraph',
+    id: 'demo-p2',
+    children: [{ text: '下面这段代码演示了如何在编辑器里注册一个新的块类型：' }],
+  },
+  {
+    type: 'code-block',
+    id: 'demo-code',
+    attrs: { language: 'typescript', wrap: true },
+    children: [
+      {
+        type: 'code-line',
+        id: 'demo-code-1',
+        children: [{ text: "import { BlockElementType } from '@/enums';" }],
+      },
+      {
+        type: 'code-line',
+        id: 'demo-code-2',
+        children: [{ text: 'export const renderElement = ({ element }) => {' }],
+      },
+      {
+        type: 'code-line',
+        id: 'demo-code-3',
+        children: [{ text: '  switch (element.type) {' }],
+      },
+      {
+        type: 'code-line',
+        id: 'demo-code-4',
+        children: [{ text: '    case BlockElementType.HINT_BLOCK: return <HintBlock />;' }],
+      },
+      {
+        type: 'code-line',
+        id: 'demo-code-5',
+        children: [{ text: '  }' }],
+      },
+      {
+        type: 'code-line',
+        id: 'demo-code-6',
+        children: [{ text: '};' }],
+      },
+    ],
+  },
+  {
+    type: 'heading',
+    id: 'demo-h4',
+    attrs: { level: 2 },
+    children: [{ text: '十分钟内上手' }],
+  },
+  {
+    type: 'todo-list',
+    id: 'demo-todo1',
+    attrs: { checked: true },
+    children: [{ text: '在首页点“新建文档”，填标题、选分类。' }],
+  },
+  {
+    type: 'todo-list',
+    id: 'demo-todo2',
+    attrs: { checked: false },
+    children: [{ text: '用“/”唤起块菜单，插入标题、列表和代码块。' }],
+  },
+  {
+    type: 'todo-list',
+    id: 'demo-todo3',
+    attrs: { checked: false },
+    children: [{ text: '滚动到正文底部，留下你的第一条评论。' }],
+  },
+  {
+    type: 'divider',
+    id: 'demo-divider',
+    children: [{ text: '' }],
+  },
+  {
+    type: 'blockquote',
+    id: 'demo-quote',
+    attrs: { type: 'info' },
+    children: [{ text: '一句话：文件负责内容，数据库负责查询，静态托管负责公开阅读。' }],
+  },
+  {
+    type: 'image-block',
+    id: 'demo-img',
+    attrs: { url: '/b1.png', align: 'center', width: 720 },
+    children: [{ text: '' }],
+  },
 ];
 
-const SUMMARY_TAILS = [
-  '从零搭建到线上部署，一步一个坑，帮你少走弯路。',
-  '结合真实业务场景拆解核心原理，读这一篇就够了。',
-  '不仅有代码示例，还有思路推演，适合对照练习。',
-  '整理高频问题与解决方案，可作为日常速查手册。',
-  '从一个最小示例出发，逐步扩展到生产级用法。',
-  '深入源码层解析实现细节，助你彻底搞懂机制。',
+export const DEMO_ARTICLES: Article[] = [
+  {
+    id: 'demo-showcase',
+    title: 'MyBook 写作台 · 功能一览',
+    summary:
+      '一篇完整的示例文档：覆盖标题、列表、代码块、待办、提示与图片，用来展示编辑器支持的块类型。',
+    category: 'design',
+    tags: ['design', 'notes'],
+    date: '2026-10-17',
+    reads: 128,
+    content: DEMO_CONTENT,
+  },
 ];
-
-const makeParagraph = (text: string): Descendant => ({
-  type: BlockElementType.PARAGRAPH,
-  id: uuidv4(),
-  children: [{ text }],
-});
-
-const BASE_DATE = new Date('2026-09-30T00:00:00');
-
-function buildContent(title: string, topic: string, seed: number): Descendant[] {
-  const intro = `${title}：${topic} 是当前最值得投入的方向之一，本文用平实的语言把关键概念和落地路径讲清楚。`;
-  const first = `先厘清几个核心概念：${topic} 的本质、适用场景与边界。很多人在第一步就陷入细节，本文先给整体框架，再逐个击破。`;
-  const second =
-    seed % 2 === 0
-      ? '实践环节以一个小型示例贯穿始终。我们会从初始化项目开始，逐步补充功能、处理边界、优化体验，最终得到一个可以放进真实项目的产物。'
-      : '接着进入动手环节，按照可复现的步骤演示完整过程。每一步都配有说明，遇到异常时也能快速定位原因，而不是盲目试错。';
-  const third =
-    seed % 3 === 0
-      ? '最后总结几条经验：一是先跑通再优化，二是善用社区资源，三是持续复盘。文末附上相关工具与进一步阅读的清单。'
-      : '最后做一个横向对比，把常见方案的取舍讲清楚。你会明白为什么有些方案在特定场景下更合适，以及如何根据自身情况做选择。';
-  const nodes: Descendant[] = [makeParagraph(intro), makeParagraph(first)];
-  if (seed % 2 === 1) {
-    nodes.push({
-      type: BlockElementType.HEADING,
-      id: uuidv4(),
-      attrs: { level: 2 },
-      children: [{ text: '核心要点' }],
-    });
-  }
-  nodes.push(makeParagraph(second), makeParagraph(third));
-  return nodes;
-}
-
-const byDateDesc = (a: Article, b: Article) => (a.date < b.date ? 1 : -1);
-
-function buildDemoArticles(): Article[] {
-  let n = 0;
-  const generated: Article[] = [];
-  for (const cat of DEMO_CATEGORIES) {
-    const topics = TOPICS[cat.id] ?? [];
-    topics.forEach((topic, ti) => {
-      for (let vi = 0; vi < VARIANTS.length; vi++) {
-        const seed = n;
-        const title = VARIANTS[vi](topic);
-        const offset = ((seed * 37) % 400) + (seed % 5) * 400;
-        const date = new Date(BASE_DATE.getTime() - offset * 24 * 3600000)
-          .toISOString()
-          .slice(0, 10);
-        const tags = Array.from(
-          new Set([
-            cat.id,
-            DEMO_TAGS[(seed * 7 + 3) % DEMO_TAGS.length].id,
-            ...(seed % 3 === 0 ? [DEMO_TAGS[(seed * 11 + 5) % DEMO_TAGS.length].id] : []),
-          ]),
-        );
-        generated.push({
-          id: `${cat.id}-t${ti}-v${vi}`,
-          title,
-          summary: `「${title}」围绕 ${topic} 从基础概念讲到落地实践。${SUMMARY_TAILS[seed % SUMMARY_TAILS.length]}`,
-          category: cat.id,
-          tags,
-          date,
-          reads: ((seed * 137) % 9000) + 300,
-          content: buildContent(title, topic, seed),
-        });
-        n++;
-      }
-    });
-  }
-  return generated.sort(byDateDesc);
-}
-
-export const DEMO_ARTICLES: Article[] = buildDemoArticles();

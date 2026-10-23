@@ -1,0 +1,16 @@
+[
+  {
+    "id": "seed-1",
+    "author": "青柠脉动",
+    "color": "#f2a54a",
+    "content": "这篇文档写得真不错，条理清晰，感谢整理！",
+    "offsetMin": 8
+  },
+  {
+    "id": "seed-2",
+    "author": "山雀",
+    "color": "#41b584",
+    "content": "建议再补充一下分栏在不同场景下的使用对比。",
+    "offsetMin": 180
+  }
+]

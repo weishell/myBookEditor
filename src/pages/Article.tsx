@@ -153,6 +153,7 @@ export default function Article() {
             initialValue={content.length ? content : EMPTY_DOC}
             readOnly={mode === 'read' || !writable}
             persistKey=""
+            commentKey={article.id}
             onSave={handleSave}
           />
         ) : loadError ? (

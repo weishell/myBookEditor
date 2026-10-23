@@ -10,6 +10,19 @@
   "updatedAt": "2026-10-15T09:00:00.000Z",
   "content": [
     {
+      "type": "heading-title",
+      "id": "fff3c62e-73aa-4c4c-9f1d-449735670abe",
+      "attrs": {
+        "author": "青柠脉动",
+        "date": "2026-10-15"
+      },
+      "children": [
+        {
+          "text": "文件是真相，数据库只是索引"
+        }
+      ]
+    },
+    {
       "type": "paragraph",
       "id": "a19b73fe-a715-4c16-90fb-a35224abdd23",
       "children": [

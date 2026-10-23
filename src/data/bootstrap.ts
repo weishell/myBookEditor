@@ -103,6 +103,12 @@ export async function createArticle(input: ArticleInput): Promise<ArticleIndex> 
       categoryId: input.categoryId,
       tagIds: input.tagIds ?? [],
       content: input.content ?? [
+        {
+          type: 'heading-title',
+          id: crypto.randomUUID(),
+          attrs: { author: '青柠脉动', date: new Date().toISOString().slice(0, 10) },
+          children: [{ text: input.title || '未命名文档' }],
+        },
         { type: 'paragraph', id: crypto.randomUUID(), children: [{ text: '' }] },
       ],
     }),

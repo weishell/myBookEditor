@@ -1,52 +1,16 @@
 // 全文评论（底部评论区）- 对齐飞书文档底部评论样式
-// 标题 + 评论列表 + 输入区三部分；评论持久化到 localStorage
+// 标题 + 评论列表 + 输入区三部分；评论按文档隔离持久化到 localStorage
+// （storageKey 由上层按文章 id 传入；种子评论仅示例文档通过 seed 注入）
 import React, { useEffect, useState } from 'react';
 import styles from './CommentSection.module.less';
-
-interface CommentItem {
-  id: string;
-  author: string;
-  color: string;
-  content: string;
-  createTime: number;
-}
-
-const STORAGE_KEY = 'mybook-document-comments';
+import type { CommentItem } from '@/data/comments';
 
 const AVATAR_COLORS = ['#3370ff', '#41b584', '#f2a54a', '#e85a71', '#7b6cf0', '#3aa0c9'];
-
-// 初始示例评论（首次打开时预置，便于体验评论区效果）
-const SEED: CommentItem[] = [
-  {
-    id: 'seed-1',
-    author: '青柠脉动',
-    color: '#f2a54a',
-    content: '这篇文档写得真不错，条理清晰，感谢整理！',
-    createTime: Date.now() - 1000 * 60 * 8,
-  },
-  {
-    id: 'seed-2',
-    author: '山雀',
-    color: '#41b584',
-    content: '建议再补充一下分栏在不同场景下的使用对比。',
-    createTime: Date.now() - 1000 * 60 * 60 * 3,
-  },
-];
 
 function genId(): string {
   return typeof crypto !== 'undefined' && 'randomUUID' in crypto
     ? crypto.randomUUID()
     : `c-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-}
-
-function loadComments(): CommentItem[] {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (raw) return JSON.parse(raw) as CommentItem[];
-  } catch {
-    /* 忽略读取失败，回退到示例 */
-  }
-  return SEED;
 }
 
 // 相对时间："刚刚 / N 分钟前 / N 小时前 / MM-DD"
@@ -120,8 +84,24 @@ const IconTrash = () => (
   </svg>
 );
 
-const CommentSection: React.FC = () => {
-  const [comments, setComments] = useState<CommentItem[]>(loadComments);
+interface CommentSectionProps {
+  /** 每篇文档一个存储槽位（一般传文章 id），避免不同文档互相串评论 */
+  storageKey?: string;
+  /** 种子评论：只有示例文档传入；真实文档不传，从空评论开始 */
+  seed?: CommentItem[];
+}
+
+const CommentSection: React.FC<CommentSectionProps> = ({ storageKey = 'default', seed }) => {
+  const persistKey = `mybook-document-comments:${storageKey}`;
+  const [comments, setComments] = useState<CommentItem[]>(() => {
+    try {
+      const raw = localStorage.getItem(persistKey);
+      if (raw) return JSON.parse(raw) as CommentItem[];
+    } catch {
+      /* 忽略读取失败，按空评论处理 */
+    }
+    return seed ?? [];
+  });
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   // 待确认删除的评论 id（null 表示无待确认项）
@@ -129,11 +109,11 @@ const CommentSection: React.FC = () => {
 
   useEffect(() => {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(comments));
+      localStorage.setItem(persistKey, JSON.stringify(comments));
     } catch {
       /* 存储失败不影响本次会话 */
     }
-  }, [comments]);
+  }, [persistKey, comments]);
 
   const canSubmit = value.trim().length > 0;
 

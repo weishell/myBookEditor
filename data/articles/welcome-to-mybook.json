@@ -7,8 +7,21 @@
   "createdAt": "2026-10-17T09:00:00.000Z",
   "reads": 0,
   "status": "published",
-  "updatedAt": "2026-10-17T09:00:00.000Z",
+  "updatedAt": "2026-10-23T12:44:41.961Z",
   "content": [
+    {
+      "type": "heading-title",
+      "id": "f3b7d2e7-855c-443f-9a90-a2898ef6560c",
+      "attrs": {
+        "author": "青柠脉动",
+        "date": "2026-10-17"
+      },
+      "children": [
+        {
+          "text": "从这里开始：MyBook 写作台"
+        }
+      ]
+    },
     {
       "type": "heading",
       "id": "690e4e54-59c2-4403-995f-d8ba9aece0f1",

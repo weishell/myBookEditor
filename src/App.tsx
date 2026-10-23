@@ -19,6 +19,7 @@ import { LanguageProvider } from '@/context/LanguageContext';
 import { CursorProvider } from '@/context/CursorContext';
 import { FindReplaceProvider, FindReplacePanel } from '@/components/SettingsSwitcher/find-replace';
 import CursorTrail from '@/components/CursorTrail';
+import { SEED_COMMENTS } from '@/data/comments';
 import styles from './App.module.less';
 
 /** 顶栏搜索框：回车跳转到 /search?q=… */
@@ -83,7 +84,12 @@ function AppLayout() {
             <Route path="/category/:name" element={<ArticleList kind="category" />} />
             <Route path="/tag/:name" element={<ArticleList kind="tag" />} />
             <Route path="/article/:id" element={<Article />} />
-            <Route path="/demo" element={<Editor readOnly={mode === 'read'} />} />
+            <Route
+              path="/demo"
+              element={
+                <Editor readOnly={mode === 'read'} commentKey="demo" commentSeed={SEED_COMMENTS} />
+              }
+            />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </main>

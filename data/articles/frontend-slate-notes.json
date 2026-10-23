@@ -10,6 +10,19 @@
   "updatedAt": "2026-10-16T09:00:00.000Z",
   "content": [
     {
+      "type": "heading-title",
+      "id": "ff9defec-a72c-4ec9-b56a-7adc298f8ab6",
+      "attrs": {
+        "author": "青柠脉动",
+        "date": "2026-10-16"
+      },
+      "children": [
+        {
+          "text": "Slate 编辑器里踩过的几个坑"
+        }
+      ]
+    },
+    {
       "type": "paragraph",
       "id": "85c8068c-4da1-4309-8c42-07087d203302",
       "children": [
