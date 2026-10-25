@@ -1,5 +1,5 @@
-// 底部评论的初始种子数据：单独抽成 JSON 文件夹，便于维护与扩充
-// 组件仍然把用户新增的评论持久化在 localStorage，这里只负责“首次打开时的示例”
+// 底部评论的初始种子数据 + 服务端读写
+// 本地后端可写时评论落 data/comments/<articleId>.json；只读模式回退 localStorage
 import seedData from './seed.json';
 
 export interface CommentItem {
@@ -29,3 +29,21 @@ export const SEED_COMMENTS: CommentItem[] = SEED_RAW.map((c) => ({
   content: c.content,
   createTime: Date.now() - c.offsetMin * 60_000,
 }));
+
+/** 读取一篇文档的全文评论（data/comments/<articleId>.json） */
+export async function fetchComments(articleId: string): Promise<CommentItem[]> {
+  const res = await fetch(`/api/comments/${encodeURIComponent(articleId)}`);
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const body = (await res.json()) as { comments?: CommentItem[] };
+  return Array.isArray(body.comments) ? body.comments : [];
+}
+
+/** 覆盖保存全文评论：后端按 articleId 整文件重写 */
+export async function saveComments(articleId: string, comments: CommentItem[]): Promise<void> {
+  const res = await fetch(`/api/comments/${encodeURIComponent(articleId)}`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ comments }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+}

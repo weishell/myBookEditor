@@ -54,3 +54,21 @@ export interface ArticleInput {
 
 /** 数据来源：api=本地后端（可写）｜static=线上静态 JSON（只读）｜demo=接口不可用时的内置示例 */
 export type DataSource = 'api' | 'static' | 'demo';
+
+/** 回收站条目：对应 data/.trash/ 下的一个文件，name 是它的唯一标识 */
+export interface TrashEntry {
+  name: string;
+  articleId: string;
+  title: string;
+  summary: string;
+  /** 分类 id */
+  category: string;
+  /** 原文创建日期 */
+  date: string;
+  /** 删除时间（ISO） */
+  deletedAt: string;
+  size: number;
+  /** 关键词命中位置：title / summary / body，空字符串表示无搜索 */
+  matchedIn?: 'title' | 'summary' | 'body' | '';
+  snippet?: string;
+}

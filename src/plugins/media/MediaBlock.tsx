@@ -7,7 +7,7 @@
 
 import React, { useState, useCallback, useRef, useEffect, useSyncExternalStore } from 'react';
 import { Transforms } from 'slate';
-import { ReactEditor, useSlateStatic, useSelected } from 'slate-react';
+import { ReactEditor, useSlateStatic, useSelected, useReadOnly } from 'slate-react';
 import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import { BlockElementType } from '@/enums';
@@ -16,6 +16,8 @@ import { uploadProgressStore } from '@/plugins/image/uploadImage';
 import { AlignIcon } from '@/components/AlignIndentPanel';
 import { TrashIcon, CopyIcon } from '@/components/icons/lineIcons';
 import MediaPreview from './MediaPreview';
+import { FileCode, isTextualFile } from './file-code';
+import { toMediaUrl } from '@/data/media';
 import styles from './MediaBlock.module.less';
 
 export type MediaKind = 'file' | 'video';
@@ -49,17 +51,12 @@ export const formatBytes = (bytes?: number): string => {
   return `${value.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
 };
 
+const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|avif|svg|bmp)$/i;
+/** 文件块里也可能是图片：按 MIME 或扩展名判断，用于直接渲染图片预览 */
+export const isImageFile = (name = '', mimeType = ''): boolean =>
+  /^image\//i.test(mimeType) || IMAGE_EXT_RE.test(name);
+
 /** 文本类文件（可读取正文预览） */
-const isTextual = (name = '', mime = ''): boolean => {
-  if (/^text\//.test(mime)) return true;
-  if (
-    /\.(txt|md|markdown|json|csv|log|xml|html|htm|css|js|ts|tsx|jsx|less|yml|yaml|ini|env|gitignore)$/i.test(
-      name,
-    )
-  )
-    return true;
-  return false;
-};
 
 const FileIcon = ({ size = 20 }: { size?: number }) => (
   <svg
@@ -202,6 +199,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   const { attrs } = element;
   const { t } = useTranslation();
   const isSelected = useSelected();
+  const readOnly = useReadOnly();
 
   const kind: MediaKind = attrs?.kind === 'video' ? 'video' : 'file';
   const layer: MediaLayer =
@@ -254,7 +252,10 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
     };
   }, [showToolbar, isSelected, layer, align, updateToolbarLeft]);
 
-  const isTextFile = kind === 'file' && isTextual(attrs?.name, attrs?.mimeType);
+  const isImage = kind === 'file' && isImageFile(attrs?.name, attrs?.mimeType);
+  const isTextFile = kind === 'file' && !isImage && isTextualFile(attrs?.name, attrs?.mimeType);
+  // 预览模式（readOnly）下，文本文件/图片直接展开，不需要再点小眼睛打开全局预览
+  const effectiveLayer: MediaLayer = readOnly && (isTextFile || isImage) ? 'view' : layer;
 
   const getElementPath = useCallback(() => {
     try {
@@ -303,14 +304,14 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
 
   // 行内视图层（view）时，自动拉取文本正文
   useEffect(() => {
-    if (layer !== 'view' || kind !== 'file' || !isTextFile || !attrs?.src) {
+    if (effectiveLayer !== 'view' || kind !== 'file' || !isTextFile || !attrs?.src) {
       setTextContent(null);
       return;
     }
     let cancelled = false;
     setTextLoading(true);
     setTextError(null);
-    fetch(attrs.src)
+    fetch(toMediaUrl(attrs.src))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();
@@ -330,7 +331,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
     return () => {
       cancelled = true;
     };
-  }, [layer, kind, isTextFile, attrs?.src]);
+  }, [effectiveLayer, kind, isTextFile, attrs?.src]);
 
   const showToolbarHandler = useCallback(() => {
     if (hideTimerRef.current) {
@@ -379,7 +380,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {(showToolbar || isSelected) && (
+        {!readOnly && (showToolbar || isSelected) && (
           <div
             className={styles.toolbar}
             style={toolbarLeft != null ? { left: toolbarLeft } : undefined}
@@ -455,7 +456,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         )}
 
         {/* 文本层 */}
-        {layer === 'text' && (
+        {effectiveLayer === 'text' && (
           <div
             className={styles.textLayer}
             data-visual-root
@@ -473,18 +474,28 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         )}
 
         {/* 卡片层 */}
-        {layer === 'card' && (
+        {effectiveLayer === 'card' && (
           <div
             className={styles.cardLayer}
             data-visual-root
             contentEditable={false}
             suppressContentEditableWarning={true}
           >
-            <div className={styles.cardIcon}>
-              <Icon size={28} />
-            </div>
+            {isImage && attrs?.src ? (
+              <img
+                className={styles.cardThumb}
+                src={toMediaUrl(attrs.src)}
+                alt={attrs?.name || typeLabel}
+                loading="lazy"
+                onClick={() => setPreviewOpen(true)}
+              />
+            ) : (
+              <div className={styles.cardIcon}>
+                <Icon size={28} />
+              </div>
+            )}
             <div className={styles.cardInfo}>
-              {editing ? (
+              {editing && !readOnly ? (
                 <input
                   className={styles.cardNameInput}
                   value={attrs?.name || ''}
@@ -505,25 +516,27 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
               )}
             </div>
             <div className={styles.cardActions}>
-              <button
-                className={styles.cardAction}
-                title={editing ? t('media.done') : t('media.editName')}
-                onClick={() => setEditing((v) => !v)}
-              >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.8"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+              {!readOnly && (
+                <button
+                  className={styles.cardAction}
+                  title={editing ? t('media.done') : t('media.editName')}
+                  onClick={() => setEditing((v) => !v)}
                 >
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                </button>
+              )}
               <button
                 className={styles.cardAction}
                 title={t('media.preview')}
@@ -535,7 +548,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                 <a
                   className={styles.cardAction}
                   title={t('media.download')}
-                  href={attrs.src}
+                  href={toMediaUrl(attrs.src)}
                   download={attrs?.name || undefined}
                 >
                   <svg
@@ -560,7 +573,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
         )}
 
         {/* 视图层 */}
-        {layer === 'view' && (
+        {effectiveLayer === 'view' && (
           <div
             className={styles.viewLayer}
             data-visual-root
@@ -569,9 +582,27 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
           >
             {kind === 'video' ? (
               attrs?.src ? (
-                <video className={styles.video} src={attrs.src} controls preload="metadata" />
+                <video
+                  className={styles.video}
+                  src={toMediaUrl(attrs.src)}
+                  controls
+                  preload="metadata"
+                />
               ) : (
                 <div className={styles.emptyView}>{t('media.emptyVideo')}</div>
+              )
+            ) : isImage ? (
+              attrs?.src ? (
+                <div className={styles.viewImageWrap}>
+                  <img
+                    className={styles.viewImage}
+                    src={toMediaUrl(attrs.src)}
+                    alt={attrs?.name || typeLabel}
+                    onClick={() => setPreviewOpen(true)}
+                  />
+                </div>
+              ) : (
+                <div className={styles.emptyView}>{t('media.unsupported')}</div>
               )
             ) : (
               <>
@@ -587,7 +618,12 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                     </div>
                   )}
                   {!textLoading && !textError && textContent !== null && (
-                    <pre className={styles.textContent}>{textContent}</pre>
+                    <FileCode
+                      className={styles.textContent}
+                      code={textContent}
+                      name={attrs?.name}
+                      mimeType={attrs?.mimeType}
+                    />
                   )}
                   {!textLoading && !textError && textContent === null && !isTextFile && (
                     <div className={styles.emptyView}>{t('media.unsupported')}</div>

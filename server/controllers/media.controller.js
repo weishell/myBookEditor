@@ -8,6 +8,12 @@ export function upload(req, res) {
   res.json({ ok: true, ...result });
 }
 
+/** POST /api/drawboards，JSON 体 { data: Shape[], path?: 相对路径 } */
+export function saveDrawboard(req, res) {
+  const path = mediaService.saveDrawboard(req.body?.data, req.body?.path);
+  res.json({ ok: true, path });
+}
+
 /** GET /media/**，直接流式返回文件 */
 export function serve(req, res) {
   const relative = req.path.replace(/^\//, '');

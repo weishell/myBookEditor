@@ -115,6 +115,11 @@ export function touchArticle(id, updatedAt) {
   getDb().prepare('UPDATE article SET updated_at = ? WHERE id = ?').run(updatedAt, id);
 }
 
+/** 阅读量：只改 reads，不动 updated_at（阅读不算编辑） */
+export function setReads(id, reads) {
+  getDb().prepare('UPDATE article SET reads = ? WHERE id = ?').run(reads, id);
+}
+
 export function deleteArticle(id) {
   const db = getDb();
   db.prepare('DELETE FROM article_tag WHERE article_id = ?').run(id);

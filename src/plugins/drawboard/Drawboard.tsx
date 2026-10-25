@@ -10,6 +10,8 @@ import DrawboardEditor from './DrawboardEditor';
 import DrawboardPreview from './DrawboardPreview';
 import { type DrawboardAttrs } from './drawboard-utils';
 import type { Shape } from 'drawui-core';
+import { canWrite } from '@/data/store';
+import { loadDrawboard, saveDrawboard } from '@/data/media';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Drawboard.module.less';
 
@@ -50,10 +52,32 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const effH = dragSize?.h ?? height;
 
   // 图形数据：编辑中实时保存在 liveData（不写 Slate 历史，避免每次笔触都产生撤销记录）；
-  // 关闭编辑器时一次性提交到文档节点 attrs.data（按画板 id 隔离，不使用 localStorage）。
+  // 关闭编辑器时一次性上传到 data/media/drawboards，文档节点只保留相对路径 attrs.src。
   const [liveData, setLiveData] = useState<Shape[] | undefined>(attrs?.data);
   const liveDataRef = useRef<Shape[] | undefined>(attrs?.data);
   liveDataRef.current = liveData;
+
+  // 旧文档可能只有 attrs.src（数据在独立文件里），进页面时按路径懒加载
+  const [remoteShapes, setRemoteShapes] = useState<Shape[] | null>(null);
+  useEffect(() => {
+    if (attrs?.data?.length || !attrs?.src) return;
+    let alive = true;
+    loadDrawboard(attrs.src)
+      .then((data) => {
+        if (alive) {
+          const shapes = data as Shape[];
+          // 同步到 ref：未编辑就关闭时，提交的仍是文件里的原数据，而不是空数组
+          liveDataRef.current = shapes;
+          setRemoteShapes(shapes);
+        }
+      })
+      .catch(() => {
+        if (alive) setRemoteShapes([]);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [attrs?.data, attrs?.src]);
 
   // 编辑器内图形变化：实时更新缩略图
   const handleEditorDataChange = useCallback((shapes: Shape[]) => {
@@ -61,17 +85,29 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
     setLiveData(shapes);
   }, []);
 
-  // 把图形提交到当前画板节点（替换式写入 attrs.data）
-  const commitShapes = useCallback((shapes?: Shape[]) => {
+  // 把图形提交到独立文件，并在节点上写相对路径（旧内联数据同时清掉）
+  const commitShapes = useCallback(async (shapes?: Shape[]) => {
     const finalShapes = shapes ?? liveDataRef.current ?? [];
+    const cur = elementRef.current as { attrs?: DrawboardAttrs };
+    let nextAttrs: DrawboardAttrs = { ...(cur.attrs ?? {}) };
+
+    if (canWrite()) {
+      try {
+        const src = await saveDrawboard(finalShapes, nextAttrs.src);
+        nextAttrs = { ...nextAttrs, src };
+        delete nextAttrs.data;
+      } catch {
+        // 保存失败：至少把当前数据留在文档里，避免直接丢内容
+        nextAttrs = { ...nextAttrs, data: finalShapes };
+      }
+    } else {
+      nextAttrs = { ...nextAttrs, data: finalShapes };
+    }
+
     try {
       const path = ReactEditor.findPath(editorRef.current, elementRef.current as any);
       if (path) {
-        Transforms.setNodes(
-          editorRef.current,
-          { attrs: { ...elementRef.current.attrs, data: finalShapes } } as any,
-          { at: path },
-        );
+        Transforms.setNodes(editorRef.current, { attrs: nextAttrs } as any, { at: path });
       }
     } catch {
       /* ignore */
@@ -79,11 +115,11 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   }, []);
 
   const handleClose = useCallback(() => {
-    commitShapes();
+    void commitShapes();
     setEditing(false);
   }, [commitShapes]);
 
-  const previewShapes = liveData ?? attrs?.data;
+  const previewShapes = liveData ?? attrs?.data ?? remoteShapes ?? undefined;
 
   // 画板块被选中时，在窗口捕获阶段拦截 Enter → 进入全屏编辑。
   // 选捕获阶段在根节点 React/Slate 处理之前触发，preventDefault 会让 Slate 跳过插入换行等默认行为。
@@ -323,7 +359,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
 
       {editing && (
         <DrawboardEditor
-          initialData={attrs?.data}
+          initialData={attrs?.data ?? liveData ?? remoteShapes ?? undefined}
           onDataChange={handleEditorDataChange}
           onClose={handleClose}
         />

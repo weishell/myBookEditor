@@ -27,6 +27,11 @@ export function autosave(req, res) {
   res.json(articlesService.autosaveArticle(req.params.id, req.body?.content));
 }
 
+/** 阅读计数：进入文章页时调用，返回最新阅读量 */
+export function recordRead(req, res) {
+  res.json(articlesService.incrementReads(req.params.id));
+}
+
 export function remove(req, res) {
   res.json(articlesService.removeArticle(req.params.id));
 }

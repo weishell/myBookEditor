@@ -7,6 +7,8 @@ import { Transforms, type Editor, type Element as SlateElement } from 'slate';
 import { BlockElementType } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 import { simulateUploadProgress } from '@/plugins/image/uploadImage';
+import { uploadBinary } from '@/data/media';
+import type { UploadedMedia } from '@/data/media';
 
 export type MediaUploadKind = 'file' | 'video';
 
@@ -35,12 +37,12 @@ export const pickMediaFiles = (kind: MediaUploadKind): Promise<File[]> =>
   });
 
 /** 构造文件/视频块节点（成功态；进度条由 uploadProgressStore 瞬态驱动） */
-const createMediaElement = (kind: MediaUploadKind, file: File): SlateElement => ({
+const createMediaElement = (kind: MediaUploadKind, file: File, src: string): SlateElement => ({
   type: kind === 'video' ? BlockElementType.VIDEO_BLOCK : BlockElementType.FILE_BLOCK,
   id: uuidv4(),
   attrs: {
     kind,
-    src: URL.createObjectURL(file),
+    src,
     name: file.name,
     size: file.size,
     mimeType: file.type || undefined,
@@ -57,7 +59,17 @@ export const insertMediaWithProgress = async (
   file: File,
   kind: MediaUploadKind,
 ): Promise<void> => {
-  const node = createMediaElement(kind, file);
+  // 真实存储：文件落到 data/media/files|videos，文档里只留相对路径；
+  // 只读模式由 uploadBinary 内部回退 blob，上传失败则取消插入
+  let uploaded: UploadedMedia;
+  try {
+    uploaded = await uploadBinary(file, kind === 'video' ? 'videos' : 'files');
+  } catch (err) {
+    console.error('[upload] 文件上传失败，已取消插入', err);
+    return;
+  }
+  // 用实际入库的文件（图片可能已被压缩/转换格式）构造节点，名称与大小保持一致
+  const node = createMediaElement(kind, uploaded.file, uploaded.path);
   const id = node.id as string;
   Transforms.insertNodes(editor, node as any, { at: insertPath });
   simulateUploadProgress(id);

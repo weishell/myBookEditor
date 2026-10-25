@@ -5,9 +5,9 @@
   "categoryId": "frontend",
   "tagIds": [],
   "createdAt": "2026-10-23T12:54:15.280Z",
-  "reads": 0,
+  "reads": 1,
   "status": "published",
-  "updatedAt": "2026-10-24T03:56:03.043Z",
+  "updatedAt": "2026-10-25T05:22:20.758Z",
   "content": [
     {
       "type": "heading-title",
@@ -23,13 +23,16 @@
       ]
     },
     {
-      "type": "paragraph",
+      "type": "heading",
       "id": "5e248fd3-2dcb-4457-bd36-209d786e787f",
       "children": [
         {
           "text": "E22222222222222222222222222222222222"
         }
-      ]
+      ],
+      "attrs": {
+        "level": 1
+      }
     },
     {
       "type": "paragraph",
@@ -37,6 +40,19 @@
       "children": [
         {
           "text": "完全1111111111111111111111111111111111111111111111111去玩儿玩儿为侨服务曲儿"
+        }
+      ]
+    },
+    {
+      "type": "drawboard",
+      "id": "ad1f8807-9350-4b67-84bc-bde2d8d80a51",
+      "attrs": {
+        "width": 720,
+        "height": 400
+      },
+      "children": [
+        {
+          "text": "​"
         }
       ]
     }

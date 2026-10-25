@@ -148,6 +148,17 @@
   flex-shrink: 0;
 }
 
+/* 图片文件：卡片层左侧缩略图 */
+.cardThumb {
+  width: 48px;
+  height: 48px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex-shrink: 0;
+  background: #f3f4f6;
+  cursor: zoom-in;
+}
+
 .cardInfo {
   flex: 1;
   min-width: 0;
@@ -296,6 +307,24 @@
   display: block;
 }
 
+/* 图片文件：视图层内联预览 */
+.viewImageWrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 12px;
+  background: #fafafa;
+}
+
+.viewImage {
+  display: block;
+  max-width: 100%;
+  max-height: 480px;
+  object-fit: contain;
+  border-radius: 4px;
+  cursor: zoom-in;
+}
+
 .textContent {
   margin: 0;
   height: 100%;
@@ -409,6 +438,16 @@
   display: block;
 }
 
+/* 全屏图片预览：等比缩放居中 */
+.fullPageImage {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 140px);
+  margin: 0 auto;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
 // 全屏 Office(Word/Excel/PPT) 在线预览
 .fullPageOffice {
   width: 100%;
@@ -494,6 +533,10 @@
   .viewHeader {
     background: #141a26;
     border-color: #2b3240;
+  }
+
+  .viewImageWrap {
+    background: #141a26;
   }
 
   .viewName {

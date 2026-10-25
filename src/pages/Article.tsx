@@ -6,7 +6,12 @@ import BookEditor from '@/core';
 import { useEditorMode } from '@/context/EditorContext';
 import { getArticleById, getCategory } from '@/data/articles';
 import { canWrite, getCachedContent } from '@/data/store';
-import { deleteArticleById, loadArticleContent, saveArticleContent } from '@/data/bootstrap';
+import {
+  deleteArticleById,
+  loadArticleContent,
+  recordArticleRead,
+  saveArticleContent,
+} from '@/data/bootstrap';
 import NotFound from './NotFound';
 import styles from './Article.module.less';
 
@@ -57,6 +62,12 @@ export default function Article() {
     return () => {
       alive = false;
     };
+  }, [id]);
+
+  // 真实阅读量：进入文章页记一次（服务端写 SQLite + 文章文件；线上静态站点忽略）
+  useEffect(() => {
+    if (!getArticleById(id)) return;
+    void recordArticleRead(id);
   }, [id]);
 
   // 编辑器内部已做 400ms 防抖，这里只管提交 + 状态提示
@@ -152,7 +163,7 @@ export default function Article() {
         onOk={handleDelete}
         onCancel={() => setConfirmOpen(false)}
       >
-        <p>文件会被移动到 data/.trash/，需要时可以手动恢复。</p>
+        <p>文件会被移到回收站（data/.trash/），可在顶部「回收站」里恢复。</p>
       </Modal>
     </div>
   );

@@ -1,9 +1,11 @@
 // 全文评论（底部评论区）- 对齐飞书文档底部评论样式
-// 标题 + 评论列表 + 输入区三部分；评论按文档隔离持久化到 localStorage
-// （storageKey 由上层按文章 id 传入；种子评论仅示例文档通过 seed 注入）
-import React, { useEffect, useState } from 'react';
+// 标题 + 评论列表 + 输入区三部分；本地后端可写时落 data/comments/<articleId>.json，
+// 只读模式（线上静态快照 / 示例文档）退回 localStorage
+import React, { useEffect, useRef, useState } from 'react';
 import styles from './CommentSection.module.less';
+import { fetchComments, saveComments } from '@/data/comments';
 import type { CommentItem } from '@/data/comments';
+import { canWrite } from '@/data/store';
 
 const AVATAR_COLORS = ['#3370ff', '#41b584', '#f2a54a', '#e85a71', '#7b6cf0', '#3aa0c9'];
 
@@ -93,7 +95,10 @@ interface CommentSectionProps {
 
 const CommentSection: React.FC<CommentSectionProps> = ({ storageKey = 'default', seed }) => {
   const persistKey = `mybook-document-comments:${storageKey}`;
+  // 本地后端可写且不是示例文档 → 评论落文件；否则只用 localStorage
+  const useServer = canWrite() && storageKey !== 'demo';
   const [comments, setComments] = useState<CommentItem[]>(() => {
+    if (useServer) return [];
     try {
       const raw = localStorage.getItem(persistKey);
       if (raw) return JSON.parse(raw) as CommentItem[];
@@ -102,18 +107,60 @@ const CommentSection: React.FC<CommentSectionProps> = ({ storageKey = 'default',
     }
     return seed ?? [];
   });
+  // 服务端评论是否已加载完：未加载前不保存，避免空数组覆盖文件里的旧评论
+  const [loaded, setLoaded] = useState(!useServer);
+  // 只有用户改过评论才触发保存，避免加载后的初次渲染把数据回写一遍
+  const dirtyRef = useRef(false);
   const [value, setValue] = useState('');
   const [focused, setFocused] = useState(false);
   // 待确认删除的评论 id（null 表示无待确认项）
   const [pendingDelete, setPendingDelete] = useState<string | null>(null);
 
+  // 挂载 / 切换文章时读取服务端评论
   useEffect(() => {
+    if (!useServer) return;
+    let alive = true;
+    setLoaded(false);
+    dirtyRef.current = false;
+    fetchComments(storageKey)
+      .then((list) => {
+        if (!alive) return;
+        setComments(list);
+        setLoaded(true);
+      })
+      .catch(() => {
+        if (alive) setLoaded(true);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [useServer, storageKey]);
+
+  // 只读模式：沿用 localStorage
+  useEffect(() => {
+    if (useServer) return;
     try {
       localStorage.setItem(persistKey, JSON.stringify(comments));
     } catch {
       /* 存储失败不影响本次会话 */
     }
-  }, [persistKey, comments]);
+  }, [useServer, persistKey, comments]);
+
+  // 可写模式：用户改动后防抖覆盖保存到 data/comments/<articleId>.json
+  useEffect(() => {
+    if (!useServer || !loaded || !dirtyRef.current) return;
+    const timer = window.setTimeout(() => {
+      saveComments(storageKey, comments).catch(() => {
+        // 服务端保存失败时至少留一份本地副本，避免刷新后丢失
+        try {
+          localStorage.setItem(persistKey, JSON.stringify(comments));
+        } catch {
+          /* 忽略本地备份失败 */
+        }
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [useServer, loaded, storageKey, persistKey, comments]);
 
   const canSubmit = value.trim().length > 0;
 
@@ -127,12 +174,14 @@ const CommentSection: React.FC<CommentSectionProps> = ({ storageKey = 'default',
       content,
       createTime: Date.now(),
     };
+    dirtyRef.current = true;
     setComments((c) => [mine, ...c]);
     setValue('');
   };
 
-  // 删除评论：从列表移除并同步 localStorage（useEffect 自动落盘）
+  // 删除评论：从列表移除并同步持久化（useEffect 自动落盘）
   const removeComment = (id: string) => {
+    dirtyRef.current = true;
     setComments((c) => c.filter((item) => item.id !== id));
     setPendingDelete((cur) => (cur === id ? null : cur));
   };

@@ -8,6 +8,8 @@
   width: 200px;
   max-height: calc(100vh - 120px);
   overflow-y: auto;
+  /* 目录永远只有纵向滚动：长标题在 header 里换行，条目文字自己省略 */
+  overflow-x: hidden;
   padding: 0;
   background: var(--lw-paper, @bg-base);
   border: 1px solid @border-color-light;
@@ -32,6 +34,8 @@
   padding: 12px 12px 10px;
   border-bottom: 1px solid @border-color-light;
   transition: color 0.2s ease, border-color 0.2s ease;
+  /* 无空格的长串（英文/编号）也要能在 200px 内折行，否则会撑出横向滚动条 */
+  overflow-wrap: anywhere;
 }
 
 // 导航列表
@@ -40,6 +44,7 @@
   flex-direction: column;
   gap: 2px;
   padding: 8px 0 12px;
+  min-width: 0;
 }
 
 // 目录项
@@ -155,6 +160,14 @@
   font-size: 14px;
   font-weight: 600;
   color: @text-primary;
+
+  // 标题过长时自己省略，别把关闭按钮挤出面板
+  span {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
 }
 
 .closeBtn {
@@ -177,7 +190,9 @@
 // 移动端内部滚动
 .panel .nav {
   overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
+  min-height: 0;
   padding: 8px 0;
 
   &::-webkit-scrollbar {

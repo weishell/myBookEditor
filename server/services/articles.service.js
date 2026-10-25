@@ -127,6 +127,18 @@ export function autosaveArticle(id, content) {
   return { ok: true, updatedAt };
 }
 
+/** 阅读量 +1：文件与索引都写，正文和 updatedAt 保持不变 */
+export function incrementReads(id) {
+  assertSafeId(id);
+  const current = readArticleFile(id);
+  if (!current) throw notFound('文章不存在');
+
+  const reads = Number(current.reads ?? 0) + 1;
+  writeArticleFile({ ...current, reads });
+  repo.setReads(id, reads);
+  return { id, reads };
+}
+
 export function removeArticle(id) {
   assertSafeId(id);
   const exists = readArticleFile(id) || repo.findArticleById(id);
@@ -142,7 +154,7 @@ export function countArticles() {
 }
 
 /** 从 Slate 文档树里抽纯文本（正文全文搜索用） */
-function extractText(nodes) {
+export function extractText(nodes) {
   let out = '';
   const walk = (list) => {
     for (const node of list ?? []) {
@@ -155,7 +167,7 @@ function extractText(nodes) {
 }
 
 /** 命中位置前后各取一段，做搜索结果摘要 */
-function excerpt(text, q) {
+export function excerpt(text, q) {
   const lower = text.toLowerCase();
   const idx = lower.indexOf(q);
   if (idx < 0) return '';

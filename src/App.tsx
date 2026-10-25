@@ -17,6 +17,7 @@ import ArticleList from '@/pages/ArticleList';
 import Article from '@/pages/Article';
 import Search from '@/pages/Search';
 import Settings from '@/pages/Settings';
+import RecycleBin from '@/pages/RecycleBin';
 import AntdThemeBridge from '@/components/AntdThemeBridge';
 import { InlineToastHost } from '@/components/InlineToast';
 import { BackToTop } from '@/components/BackToTop/BackToTop';
@@ -82,6 +83,9 @@ function HeaderNav() {
       <NavLink to="/articles" className={navClass}>
         全部文章
       </NavLink>
+      <NavLink to="/trash" className={navClass}>
+        回收站
+      </NavLink>
       <NavLink to="/settings" className={navClass}>
         设置
       </NavLink>
@@ -120,6 +124,7 @@ function AppFrame() {
           <Route path="/category/:name" element={<ArticleList kind="category" />} />
           <Route path="/tag/:name" element={<ArticleList kind="tag" />} />
           <Route path="/articles" element={<ArticleList kind="all" />} />
+          <Route path="/trash" element={<RecycleBin />} />
           <Route path="/settings" element={<Settings />} />
           {/* 旧的 /appearance 已并入 /settings，保留跳转免得书签失效 */}
           <Route path="/appearance" element={<Navigate to="/settings" replace />} />

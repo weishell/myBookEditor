@@ -3,7 +3,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { ARTICLES_DIR, TRASH_DIR } from '../config.js';
-import { badRequest } from '../utils/http-error.js';
+import { badRequest, conflict, notFound } from '../utils/http-error.js';
 
 export function ensureArticleDirs() {
   fs.mkdirSync(ARTICLES_DIR, { recursive: true });
@@ -78,6 +78,102 @@ export function trashArticleFile(id) {
   const target = path.join(TRASH_DIR, `${assertId(id)}.${stamp}.json`);
   fs.renameSync(file, target);
   return target;
+}
+
+/* ---------------- 回收站（data/.trash/<id>.<删除时间>.json） ---------------- */
+
+/** 回收站文件名 → 文章 id / 删除时间；手放进去的文件解析失败时返回 null */
+export function parseTrashName(name) {
+  const m = /^(.*)\.(\d{4}-\d{2}-\d{2})T(\d{2})-(\d{2})-(\d{2})-(\d{3})Z\.json$/.exec(String(name));
+  if (!m) return null;
+  const [, articleId, d, h, mi, s, ms] = m;
+  return { articleId, deletedAt: `${d}T${h}:${mi}:${s}.${ms}Z` };
+}
+
+/** 只允许回收站目录下的文件名，挡住 ../ 与子目录 */
+function assertTrashName(name) {
+  const n = String(name ?? '');
+  if (
+    !n ||
+    path.basename(n) !== n ||
+    n.includes('..') ||
+    !n.endsWith('.json') ||
+    n.endsWith('.tmp')
+  ) {
+    throw badRequest('非法回收站文件名');
+  }
+  return n;
+}
+
+/**
+ * 列出回收站里的文件（含解析后的文章内容，供搜索用）
+ * 坏文件不丢：article 为 null 也照样列出来，允许恢复/删除
+ */
+export function listTrashEntries() {
+  ensureArticleDirs();
+  const files = fs.readdirSync(TRASH_DIR).filter((f) => f.endsWith('.json') && !f.endsWith('.tmp'));
+
+  const entries = [];
+  for (const name of files) {
+    const file = path.join(TRASH_DIR, name);
+    let stat;
+    try {
+      stat = fs.statSync(file);
+    } catch {
+      continue; // 列举期间被删掉
+    }
+    const meta = parseTrashName(name);
+    const fallbackId = meta?.articleId ?? path.basename(name, '.json');
+    let article = null;
+    try {
+      const raw = JSON.parse(fs.readFileSync(file, 'utf8'));
+      article = normalize({ ...raw, id: raw.id ?? fallbackId });
+    } catch (err) {
+      console.warn(`[storage] 回收站文件 ${name} 解析失败：${err.message}`);
+    }
+    entries.push({
+      name,
+      articleId: article?.id ?? fallbackId,
+      deletedAt: meta?.deletedAt ?? stat.mtime.toISOString(),
+      size: stat.size,
+      article,
+    });
+  }
+  return entries;
+}
+
+/** 恢复：把文件从回收站移回 data/articles/，返回文章数据供重建索引 */
+export function restoreTrashEntry(name) {
+  const safe = assertTrashName(name);
+  const source = path.join(TRASH_DIR, safe);
+  if (!fs.existsSync(source)) throw notFound('回收站文件不存在');
+
+  let raw;
+  try {
+    raw = JSON.parse(fs.readFileSync(source, 'utf8'));
+  } catch (err) {
+    throw badRequest(`回收站文件已损坏，无法恢复：${err.message}`);
+  }
+
+  const meta = parseTrashName(safe);
+  const id = String(raw.id ?? meta?.articleId ?? path.basename(safe, '.json'));
+  assertId(id);
+
+  const target = fileOf(id);
+  if (fs.existsSync(target)) throw conflict('原文仍在文章目录中，无需恢复');
+
+  ensureArticleDirs();
+  fs.renameSync(source, target);
+  return normalize({ ...raw, id });
+}
+
+/** 彻底删除：回收站文件直接从磁盘移除，不可恢复 */
+export function removeTrashEntry(name) {
+  const safe = assertTrashName(name);
+  const file = path.join(TRASH_DIR, safe);
+  if (!fs.existsSync(file)) throw notFound('回收站文件不存在');
+  fs.unlinkSync(file);
+  return safe;
 }
 
 /** 统一字段，缺的补默认值 */

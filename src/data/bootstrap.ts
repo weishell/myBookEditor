@@ -1,7 +1,7 @@
 // 数据访问层：开发环境走本地 API，生产环境走静态 JSON
 // 两者形状完全一致，页面只认这里暴露的函数
 import type { Descendant } from 'slate';
-import type { Article, ArticleIndex, ArticleInput, Category, Tag } from './types';
+import type { Article, ArticleIndex, ArticleInput, Category, Tag, TrashEntry } from './types';
 import {
   canWrite,
   clearContentCache,
@@ -137,6 +137,31 @@ export async function saveArticleContent(id: string, content: Descendant[]): Pro
   });
 }
 
+/** 阅读计数去重：同一篇 2 秒内只记一次，避免 StrictMode 下 effect 双跑重复计数 */
+const readMarks = new Map<string, number>();
+
+/**
+ * 记一次阅读（服务端 reads +1，文件与 SQLite 同步更新）。
+ * 仅本地 API 模式生效；线上纯静态站点没有后端，直接忽略。
+ */
+export async function recordArticleRead(id: string): Promise<number | null> {
+  if (!IS_DEV || !canWrite()) return null;
+  const now = Date.now();
+  if (now - (readMarks.get(id) ?? 0) < 2000) return null;
+  readMarks.set(id, now);
+  try {
+    const res = await fetchJson<{ reads: number }>(`${API_BASE}/articles/${id}/reads`, {
+      method: 'POST',
+    });
+    setDataState({
+      articles: getDataState().articles.map((a) => (a.id === id ? { ...a, reads: res.reads } : a)),
+    });
+    return res.reads;
+  } catch {
+    return null;
+  }
+}
+
 /** 删除（服务端会移到 data/.trash，可人工恢复） */
 export async function deleteArticleById(id: string): Promise<void> {
   if (!canWrite()) throw new Error('当前为只读模式，无法删除文档');
@@ -249,4 +274,52 @@ export async function deleteTag(id: string): Promise<TaxonomyResponse> {
   return applyTaxonomy(
     await fetchJson<TaxonomyResponse>(`${API_BASE}/tags/${id}`, { method: 'DELETE' }),
   );
+}
+
+// ---------------------------------------------------------------------------
+// 回收站（仅本地 API 模式）：data/.trash/ 下的文件由后端读取
+// ---------------------------------------------------------------------------
+
+export interface TrashListResult {
+  items: TrashEntry[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface TrashBatchResult {
+  restored?: { name: string; id: string; title: string }[];
+  deleted?: string[];
+  failed: { name: string; error: string }[];
+}
+
+/** 回收站列表：支持关键词（标题/摘要/正文）与分页 */
+export async function listTrash(
+  params: { q?: string; page?: number; pageSize?: number } = {},
+): Promise<TrashListResult> {
+  const query = new URLSearchParams();
+  if (params.q) query.set('q', params.q);
+  query.set('page', String(params.page ?? 1));
+  query.set('pageSize', String(params.pageSize ?? 50));
+  return fetchJson<TrashListResult>(`${API_BASE}/trash?${query.toString()}`);
+}
+
+/** 批量恢复：后端把文件移回 data/articles/ 并重建索引 */
+export async function restoreTrash(names: string[]): Promise<TrashBatchResult> {
+  if (!canWrite()) throw new Error('当前为只读模式，无法恢复文档');
+  const res = await fetchJson<TrashBatchResult>(
+    `${API_BASE}/trash/restore`,
+    jsonInit('POST', { names }),
+  );
+  if (res.restored?.length) {
+    clearContentCache();
+    await bootstrapData(); // 刷新文章快照，恢复的文章立刻出现在列表里
+  }
+  return res;
+}
+
+/** 批量彻底删除：直接从磁盘移除，不可恢复 */
+export async function purgeTrash(names: string[]): Promise<TrashBatchResult> {
+  if (!canWrite()) throw new Error('当前为只读模式，无法彻底删除文档');
+  return fetchJson<TrashBatchResult>(`${API_BASE}/trash`, jsonInit('DELETE', { names }));
 }

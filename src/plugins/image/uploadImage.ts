@@ -6,9 +6,11 @@
 //  - 进度条由本文件暴露的 uploadProgressStore 驱动，key 是节点的 block id，
 //    它是模块级瞬态状态，完全不进历史，所以撤销/重做都只看到最终图片，没有进度条。
 //  - 重做时节点被重新插入，但 store 里已没有该 id 的进度 → 直接显示图片本体。
-// 接入真实后端时，只需在 simulateUploadProgress 里换成真实请求 + 回调。
+// 接入真实后端后：文件走 /api/upload 落到 data/media，节点存相对路径（只读模式回退 blob）。
 import { Transforms, type Editor } from 'slate';
 import { createImageElement } from '@/plugins/block-picker';
+import { toMediaUrl, uploadBinary } from '@/data/media';
+import type { UploadedMedia } from '@/data/media';
 
 /** 图片显示宽度上限（超宽图等比缩放，避免撑满编辑区） */
 const MAX_DISPLAY_WIDTH = 800;
@@ -103,23 +105,32 @@ export const insertImageWithProgress = async (
   insertPath: number[],
   file: File,
 ): Promise<void> => {
-  const url = URL.createObjectURL(file);
+  // 真实存储：上传到 data/media/images，文档里只留相对路径；
+  // 只读模式由 uploadBinary 内部回退 blob，上传失败则取消插入（不把临时 blob 写进文档）
+  let uploaded: UploadedMedia;
+  try {
+    uploaded = await uploadBinary(file, 'images');
+  } catch (err) {
+    console.error('[upload] 图片上传失败，已取消插入', err);
+    return;
+  }
+  const url = uploaded.path;
   let dispWidth = 0;
   let dispHeight = 0;
   try {
-    const { width, height } = await loadImageSize(url);
+    const { width, height } = await loadImageSize(toMediaUrl(url));
     dispWidth = Math.min(width, MAX_DISPLAY_WIDTH);
     dispHeight = Math.round((dispWidth / Math.max(width, 1)) * height);
   } catch {
-    // 无法解码的图片：释放临时地址并静默跳过
-    URL.revokeObjectURL(url);
+    // 无法解码的图片：blob 地址要释放，上传成功的文件留作后续排查
+    if (url.startsWith('blob:')) URL.revokeObjectURL(url);
     return;
   }
 
   const node = createImageElement(url, {
     width: dispWidth,
     height: dispHeight,
-    name: file.name,
+    name: uploaded.file.name,
   });
   const id = node.id as string;
 

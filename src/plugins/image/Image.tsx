@@ -10,6 +10,7 @@ import { uploadProgressStore } from './uploadImage';
 import { useTranslation } from 'react-i18next';
 import { ResetIcon, TrashIcon, CropIcon } from '@/components/icons/lineIcons';
 import { AlignIcon } from '@/components/AlignIndentPanel';
+import { toMediaUrl } from '@/data/media';
 import styles from './Image.module.less';
 
 interface ImageAttrs {
@@ -344,7 +345,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
           onClick={handleContainerClick}
         >
           <img
-            src={attrs.url}
+            src={toMediaUrl(attrs.url)}
             alt=""
             className={`${styles.image} ${hasCrop ? styles.imageCropped : styles.imageFull}`}
             style={
@@ -394,7 +395,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
       {isCropping && (
         <ImageCropper
-          imageUrl={attrs.url}
+          imageUrl={toMediaUrl(attrs.url)}
           imageWidth={attrs.width || 800}
           imageHeight={attrs.height || 450}
           offsetLeft={attrs.offsetLeft}
@@ -408,7 +409,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
 
       {isPreviewing && (
         <ImagePreview
-          src={attrs.url}
+          src={toMediaUrl(attrs.url)}
           offsetLeft={attrs.offsetLeft}
           offsetTop={attrs.offsetTop}
           offsetWidth={attrs.offsetWidth}

@@ -62,6 +62,11 @@
   color: @text-secondary;
 }
 
+/* 壁纸变清晰后底图明暗会透上来，再压深一档，保证 13px 小字不糊 */
+:global(.light-wallpaper) .subtitle {
+  color: #3f3f3f;
+}
+
 /* ========== 列表容器 ========== */
 .list {
   display: flex;

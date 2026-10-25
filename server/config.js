@@ -22,6 +22,11 @@ export const IMAGES_DIR = path.join(MEDIA_DIR, 'images');
 export const FILES_DIR = path.join(MEDIA_DIR, 'files');
 export const VIDEOS_DIR = path.join(MEDIA_DIR, 'videos');
 export const COVERS_DIR = path.join(IMAGES_DIR, 'covers');
+/** 画板数据：data/media/drawboards/<file>.json，文章里只存相对路径 */
+export const DRAWBOARDS_DIR = path.join(MEDIA_DIR, 'drawboards');
+
+/* ---------------- 全文评论：一篇一个 JSON（data/comments/<articleId>.json） ---------------- */
+export const COMMENTS_DIR = path.join(DATA_DIR, 'comments');
 
 /* ---------------- 索引库（缓存层，可随时删除重建） ---------------- */
 export const DATABASE_DIR = path.join(ROOT_DIR, 'database');

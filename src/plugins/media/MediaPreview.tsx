@@ -1,9 +1,11 @@
 // 媒体全屏预览页 - 点小眼睛打开，铺满整个视口
 import React, { useState, useEffect } from 'react';
 import ReactDOM from 'react-dom';
-import { formatBytes } from './MediaBlock';
+import { formatBytes, isImageFile } from './MediaBlock';
 import type { MediaKind, MediaAttrs } from './MediaBlock';
 import { lockPageScroll } from '@/utils/scroll-lock';
+import { toMediaUrl } from '@/data/media';
+import { FileCode, isTextualFile } from './file-code';
 import styles from './MediaBlock.module.less';
 
 interface MediaPreviewProps {
@@ -11,17 +13,6 @@ interface MediaPreviewProps {
   attrs: MediaAttrs;
   onClose: () => void;
 }
-
-const isTextual = (name = '', mime = ''): boolean => {
-  if (/^text\//.test(mime)) return true;
-  if (
-    /\.(txt|md|markdown|json|csv|log|xml|html|htm|css|js|ts|tsx|jsx|less|yml|yaml|ini|env|gitignore)$/i.test(
-      name,
-    )
-  )
-    return true;
-  return false;
-};
 
 // Office 在线预览结果：kind 表示识别到的类型，url 为可嵌入的预览地址（需公网 http(s)）
 // 通过 switch case 分发，方便后续扩展更多文件类型 / 预览通道（微软、WPS 等）
@@ -65,7 +56,8 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const isText = kind === 'file' && isTextual(attrs?.name, attrs?.mimeType);
+  const isImage = kind === 'file' && isImageFile(attrs?.name, attrs?.mimeType);
+  const isText = kind === 'file' && !isImage && isTextualFile(attrs?.name, attrs?.mimeType);
   const office = getOfficePreview(attrs?.name, attrs?.src);
 
   // 全屏预览期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
@@ -76,7 +68,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
     let cancelled = false;
     setLoading(true);
     setError(null);
-    fetch(attrs.src)
+    fetch(toMediaUrl(attrs.src))
       .then((r) => {
         if (!r.ok) throw new Error(`HTTP ${r.status}`);
         return r.text();
@@ -127,7 +119,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
               {attrs?.src && (
                 <a
                   className={styles.fullPageBtn}
-                  href={attrs.src}
+                  href={toMediaUrl(attrs.src)}
                   download={attrs?.name || undefined}
                 >
                   下载
@@ -140,7 +132,7 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
               attrs?.src ? (
                 <video
                   className={styles.fullPageVideo}
-                  src={attrs.src}
+                  src={toMediaUrl(attrs.src)}
                   controls
                   autoPlay
                   preload="metadata"
@@ -148,13 +140,28 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
               ) : (
                 <div className={styles.fullPageEmpty}>暂无可播放的视频地址</div>
               )
+            ) : isImage ? (
+              attrs?.src ? (
+                <img
+                  className={styles.fullPageImage}
+                  src={toMediaUrl(attrs.src)}
+                  alt={attrs?.name || '图片'}
+                />
+              ) : (
+                <div className={styles.fullPageEmpty}>暂无可预览的图片地址</div>
+              )
             ) : isText ? (
               loading ? (
                 <div className={styles.fullPageEmpty}>加载中…</div>
               ) : error ? (
                 <div className={styles.fullPageEmpty}>无法预览：{error}</div>
               ) : (
-                <pre className={styles.fullPageText}>{text}</pre>
+                <FileCode
+                  className={styles.fullPageText}
+                  code={text ?? ''}
+                  name={attrs?.name}
+                  mimeType={attrs?.mimeType}
+                />
               )
             ) : office?.url ? (
               <iframe
