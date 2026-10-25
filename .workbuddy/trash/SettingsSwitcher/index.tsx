@@ -4,6 +4,7 @@
 // 交互：点击「设置」按钮展开面板；面板内可逐级进入字体 / 主题 / 光标 / 语言子视图，
 //       模式为即时切换项；「查找替换」点击后打开全局查找替换面板。
 import { useEffect, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
 import { useCursor, CURSOR_THEMES } from '@/context/CursorContext';
@@ -11,11 +12,13 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useEditorMode } from '@/context/EditorContext';
 import { SUPPORTED_LANGUAGES, LANGUAGE_SHORT } from '@/i18n';
 import { FONT_LIST, DEFAULT_FONT_ID, loadFont, getFontById } from '@/plugins/font';
-import { WALLPAPER_NONE_ID, getWallpaperById, getWallpapersByMode } from '@/components/wallpapers';
+import { getWallpaperById, WALLPAPER_NONE_ID } from '@/components/wallpapers';
 import { useFindReplace } from './find-replace/FindReplaceContext';
 import styles from './SettingsSwitcher.module.less';
 
-type View = 'home' | 'font' | 'theme' | 'cursor' | 'wallpaper' | 'language';
+// 背景选择已独立成 /appearance 整页画廊（缩略图预览 + 即时生效），
+// 这里只留一个入口跳过去，不在下拉里再维护一份壁纸清单
+type View = 'home' | 'font' | 'theme' | 'cursor' | 'language';
 
 const BLACK_THEME_ID: ThemeId = 'black';
 
@@ -35,19 +38,11 @@ function SubHeader({ title, onBack }: { title: string; onBack: () => void }) {
 export default function SettingsSwitcher() {
   const { t } = useTranslation();
   const { globalFont, setGlobalFont, mode, setMode } = useEditorMode();
-  const {
-    theme,
-    themeColor,
-    isDarkMode,
-    setTheme,
-    wallpaper,
-    setWallpaper,
-    lightWallpaper,
-    setLightWallpaper,
-  } = useTheme();
+  const { theme, themeColor, isDarkMode, setTheme, wallpaper, lightWallpaper } = useTheme();
   const { cursorTheme, setCursorTheme } = useCursor();
   const { language, setLanguage } = useLanguage();
   const { setOpen: setFindOpen } = useFindReplace();
+  const navigate = useNavigate();
 
   const [open, setOpen] = useState(false);
   const [view, setView] = useState<View>('home');
@@ -69,43 +64,17 @@ export default function SettingsSwitcher() {
   const currentFontId = FONT_LIST.find((f) => f.family === globalFont)?.id || DEFAULT_FONT_ID;
   const currentTheme = THEME_PRESETS.find((p) => p.id === theme);
   const currentCursor = CURSOR_THEMES.find((c) => c.id === cursorTheme) ?? CURSOR_THEMES[0];
-  const currentWallpaper = wallpaper ? getWallpaperById(wallpaper) : undefined;
-  const currentLightWallpaper = lightWallpaper ? getWallpaperById(lightWallpaper) : undefined;
 
-  // 壁纸分两组展示：浅色（柔和护眼/质感纸纹/风景）与暗黑，点哪组自动切到对应模式
-  const lightPresets = getWallpapersByMode('light');
-  const darkPresets = getWallpapersByMode('dark');
+  // 入口行只显示"当前模式正在用的那张壁纸"的名字
+  const activeWallpaper = getWallpaperById(isDarkMode ? wallpaper : lightWallpaper);
+  const activeWallpaperLabel =
+    !activeWallpaper || activeWallpaper.id === WALLPAPER_NONE_ID ? '纯色底' : activeWallpaper.name;
 
-  // 浅色壁纸再按 group 分子组，避免一长条：柔和护眼（渐变）/ 质感纸纹 / 风景照片
-  const lightGroups = (() => {
-    const order: string[] = [];
-    const map = new Map<string, typeof lightPresets>();
-    lightPresets.forEach((w) => {
-      const g = w.group || '柔和护眼';
-      if (!map.has(g)) {
-        map.set(g, []);
-        order.push(g);
-      }
-      map.get(g)!.push(w);
-    });
-    return order.map((g) => ({ title: g, items: map.get(g)! }));
-  })();
-
-  const wallpaperName = (w?: { id: string; name: string }) =>
-    !w || w.id === WALLPAPER_NONE_ID ? '默认' : w.name;
-
-  // 入口行显示当前模式正在使用的壁纸
-  const activeWallpaperLabel = isDarkMode
-    ? wallpaperName(currentWallpaper)
-    : wallpaperName(currentLightWallpaper);
-
-  const pickLightWallpaper = (id: string) => {
-    setLightWallpaper(id);
-    if (theme === BLACK_THEME_ID) setTheme('blue');
-  };
-  const pickDarkWallpaper = (id: string) => {
-    setWallpaper(id);
-    if (theme !== BLACK_THEME_ID) setTheme(BLACK_THEME_ID);
+  /** 跳独立路由前先关掉下拉，否则返回时下拉还开着 */
+  const goAppearance = () => {
+    setOpen(false);
+    setView('home');
+    navigate('/appearance');
   };
 
   const openView = (v: View) => setView(v);
@@ -195,6 +164,13 @@ export default function SettingsSwitcher() {
                 </span>
                 <span className={styles.caret}>›</span>
               </button>
+              {/* 外观/背景是整页画廊，跳路由而不是在这里展开二级列表 */}
+              <button className={styles.rowItem} onClick={goAppearance}>
+                <span className={styles.rowIcon}>◧</span>
+                <span className={styles.rowLabel}>外观与背景</span>
+                <span className={styles.rowValue}>{activeWallpaperLabel}</span>
+                <span className={styles.caret}>›</span>
+              </button>
 
               <div className={styles.divider} />
 
@@ -271,62 +247,12 @@ export default function SettingsSwitcher() {
                   </div>
                 ))}
               </div>
-              {/* 任何主题下都可见：浅色选护眼/风景壁纸，黑色选暗黑壁纸 */}
-              <button className={styles.subEntry} onClick={() => openView('wallpaper')}>
+              {/* 背景选择在独立路由里做（缩略图画廊），这里只跳转 */}
+              <button className={styles.subEntry} onClick={goAppearance}>
                 <span>{t('settings.wallpaper')}</span>
                 <span className={styles.rowValue}>{activeWallpaperLabel}</span>
                 <span className={styles.caret}>›</span>
               </button>
-            </>
-          )}
-
-          {view === 'wallpaper' && (
-            <>
-              <SubHeader title={t('settings.wallpaper')} onBack={() => openView('theme')} />
-              <div className={styles.options}>
-                {lightGroups.map((grp) => (
-                  <div key={grp.title}>
-                    <div className={styles.sectionLabel}>
-                      {grp.title}
-                      {grp.title === '柔和护眼' && isDarkMode ? '（选择后自动切到浅色）' : ''}
-                    </div>
-                    {grp.items.map((w) => {
-                      const selected = lightWallpaper === w.id;
-                      return (
-                        <div
-                          key={w.id}
-                          className={`${styles.option} ${selected ? styles.optionActive : ''}`}
-                          onClick={() => pickLightWallpaper(w.id)}
-                        >
-                          <span className={styles.optionName}>{w.name}</span>
-                          {w.description && (
-                            <span className={styles.optionDesc}>{w.description}</span>
-                          )}
-                          {selected && <span className={styles.check}>✓</span>}
-                        </div>
-                      );
-                    })}
-                  </div>
-                ))}
-
-                <div className={styles.sectionLabel}>
-                  暗黑壁纸{!isDarkMode ? '，选择后自动切到黑色（暗黑）' : ''}
-                </div>
-                {darkPresets.map((w) => {
-                  const selected = wallpaper === w.id;
-                  return (
-                    <div
-                      key={w.id}
-                      className={`${styles.option} ${selected ? styles.optionActive : ''}`}
-                      onClick={() => pickDarkWallpaper(w.id)}
-                    >
-                      <span className={styles.optionName}>{w.name}</span>
-                      {w.description && <span className={styles.optionDesc}>{w.description}</span>}
-                      {selected && <span className={styles.check}>✓</span>}
-                    </div>
-                  );
-                })}
-              </div>
             </>
           )}
 

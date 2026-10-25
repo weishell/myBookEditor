@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import { Pagination } from 'antd';
 import {
   ARTICLE_PAGE_SIZE,
+  getAllArticles,
   getArticlesByCategory,
   getArticlesByTag,
   getCategory,
@@ -19,25 +20,42 @@ interface ListMeta {
   icon: string;
 }
 
-export default function ArticleList({ kind }: { kind: 'category' | 'tag' }) {
+export default function ArticleList({ kind }: { kind: 'category' | 'tag' | 'all' }) {
   const { name = '' } = useParams();
   const [page, setPage] = useState(1);
 
   const articles = useMemo(
-    () => (kind === 'category' ? getArticlesByCategory(name) : getArticlesByTag(name)),
+    () =>
+      kind === 'category'
+        ? getArticlesByCategory(name)
+        : kind === 'tag'
+          ? getArticlesByTag(name)
+          : getAllArticles(),
     [kind, name],
   );
 
-  const meta: ListMeta | null = useMemo(() => {
+  const meta: ListMeta = useMemo(() => {
     if (kind === 'category') {
       const c = getCategory(name);
-      return c ? { title: c.name, subtitle: c.desc, color: c.color, icon: c.icon } : null;
+      return c
+        ? { title: c.name, subtitle: c.desc, color: c.color, icon: c.icon }
+        : { title: '', subtitle: '', color: '', icon: '' };
     }
-    const t = getTag(name);
-    return t ? { title: t.name, subtitle: `# ${t.name}`, color: t.color, icon: '#' } : null;
+    if (kind === 'tag') {
+      const t = getTag(name);
+      return t
+        ? { title: t.name, subtitle: `# ${t.name}`, color: t.color, icon: '#' }
+        : { title: '', subtitle: '', color: '', icon: '' };
+    }
+    return {
+      title: '全部文章',
+      subtitle: '浏览全部文章',
+      color: 'var(--theme-primary)',
+      icon: '📚',
+    };
   }, [kind, name]);
 
-  if (!meta) return <NotFound />;
+  if (kind !== 'all' && !meta.title) return <NotFound />;
 
   const total = articles.length;
   const pageSize = ARTICLE_PAGE_SIZE;
@@ -55,7 +73,11 @@ export default function ArticleList({ kind }: { kind: 'category' | 'tag' }) {
         <Link to="/">首页</Link>
         <span className={styles.crumbSep}>/</span>
         <span style={{ color: meta.color }}>
-          {kind === 'category' ? `分类 · ${meta.title}` : `标签 · ${meta.title}`}
+          {kind === 'category'
+            ? `分类 · ${meta.title}`
+            : kind === 'tag'
+              ? `标签 · ${meta.title}`
+              : meta.title}
         </span>
       </div>
 
@@ -72,7 +94,7 @@ export default function ArticleList({ kind }: { kind: 'category' | 'tag' }) {
       </header>
 
       {pageArticles.length === 0 ? (
-        <div className={styles.empty}>该分类下暂时没有文章</div>
+        <div className={styles.empty}>{kind === 'all' ? '还没有文章' : '该分类下暂时没有文章'}</div>
       ) : (
         <>
           <div className={styles.list}>

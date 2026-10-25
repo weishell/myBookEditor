@@ -51,7 +51,7 @@ import { withColumns } from '@/plugins';
 import { initialValue as demoInitialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
-import { searchDecorate, useFindReplace } from '@/components/SettingsSwitcher/find-replace';
+import { searchDecorate, useFindReplace } from '@/components/find-replace';
 import FloatBar from '@/components/FloatBar';
 import { useEditorMode } from '@/context/EditorContext';
 import { useTheme } from '@/context/ThemeContext';

@@ -5,6 +5,11 @@ export function list(req, res) {
   res.json(articlesService.listArticles(req.query));
 }
 
+/** 全文搜索（含正文） */
+export function search(req, res) {
+  res.json(articlesService.searchArticles(req.query));
+}
+
 export function detail(req, res) {
   res.json(articlesService.getArticle(req.params.id));
 }

@@ -4,7 +4,7 @@ import { Modal } from 'antd';
 import type { Descendant } from 'slate';
 import BookEditor from '@/core';
 import { useEditorMode } from '@/context/EditorContext';
-import { getArticleById, getCategory, getTag } from '@/data/articles';
+import { getArticleById, getCategory } from '@/data/articles';
 import { canWrite, getCachedContent } from '@/data/store';
 import { deleteArticleById, loadArticleContent, saveArticleContent } from '@/data/bootstrap';
 import NotFound from './NotFound';
@@ -94,57 +94,33 @@ export default function Article() {
 
   return (
     <div className={styles.page}>
-      <div className={styles.crumb}>
-        <Link to="/">首页</Link>
-        <span className={styles.crumbSep}>/</span>
-        {cat && (
-          <>
-            <Link to={`/category/${cat.id}`} style={{ color: cat.color }}>
-              {cat.name}
-            </Link>
-            <span className={styles.crumbSep}>/</span>
-          </>
-        )}
-        <span className={styles.crumbCurrent}>正文</span>
-      </div>
-
-      <header className={styles.meta}>
-        {cat && (
-          <Link to={`/category/${cat.id}`} className={styles.catBadge} style={{ color: cat.color }}>
-            <span className={styles.catDot} style={{ background: cat.color }} />
-            {cat.icon} {cat.name}
-          </Link>
-        )}
-        <h1 className={styles.title}>{article.title}</h1>
-        <p className={styles.summary}>{article.summary}</p>
-        <div className={styles.subMeta}>
-          <span>{article.date}</span>
-          <span>{article.reads} 次阅读</span>
-          {article.tags.map((t) => {
-            const tag = getTag(t);
-            return tag ? (
-              <Link
-                key={t}
-                to={`/tag/${t}`}
-                className={styles.tagChip}
-                style={{ color: tag.color }}
-              >
-                # {tag.name}
+      <div className={styles.topBar}>
+        <div className={styles.crumb}>
+          <Link to="/">首页</Link>
+          <span className={styles.crumbSep}>/</span>
+          {cat && (
+            <>
+              <Link to={`/category/${cat.id}`} style={{ color: cat.color }}>
+                {cat.name}
               </Link>
-            ) : null;
-          })}
-          {writable && saveState !== 'idle' && (
-            <span className={styles.saveHint} data-state={saveState}>
-              {saveState === 'saving' ? '保存中…' : saveState === 'saved' ? '已保存' : '保存失败'}
-            </span>
+              <span className={styles.crumbSep}>/</span>
+            </>
           )}
-          {writable && (
+          <span className={styles.crumbCurrent}>正文</span>
+        </div>
+        {writable && (
+          <div className={styles.actions}>
+            {saveState !== 'idle' && (
+              <span className={styles.saveHint} data-state={saveState}>
+                {saveState === 'saving' ? '保存中…' : saveState === 'saved' ? '已保存' : '保存失败'}
+              </span>
+            )}
             <button type="button" className={styles.deleteBtn} onClick={() => setConfirmOpen(true)}>
               删除
             </button>
-          )}
-        </div>
-      </header>
+          </div>
+        )}
+      </div>
 
       <div className={styles.editorWrap}>
         {content ? (

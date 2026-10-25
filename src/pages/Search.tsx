@@ -2,17 +2,69 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Pagination } from 'antd';
 import { ARTICLE_PAGE_SIZE, getAllArticles, getCategory, getTag } from '@/data/articles';
+import { getDataState } from '@/data/store';
 import ArticleRow from './ArticleRow';
 import styles from './Search.module.less';
+
+/** 服务端全文搜索结果：比索引多 snippet（正文命中片段）与 matchedIn */
+interface SearchResult {
+  id: string;
+  title: string;
+  summary: string;
+  category: string;
+  tags: string[];
+  date: string;
+  reads: number;
+  updatedAt?: string;
+  snippet?: string;
+  matchedIn?: 'title' | 'summary' | 'body';
+}
 
 export default function Search() {
   const [params] = useSearchParams();
   const q = (params.get('q') ?? '').trim();
   const [page, setPage] = useState(1);
+  // api 数据源才走服务端全文搜索；static/demo 用本地索引过滤兜底
+  const isApi = getDataState().source === 'api';
+  const [serverResults, setServerResults] = useState<SearchResult[] | null>(null);
+
+  useEffect(() => {
+    setPage(1);
+  }, [q]);
+
+  useEffect(() => {
+    if (!q || !isApi) {
+      setServerResults(null);
+      return;
+    }
+    let alive = true;
+    fetch(`/api/articles/search?q=${encodeURIComponent(q)}`)
+      .then((res) => (res.ok ? res.json() : Promise.reject(new Error(String(res.status)))))
+      .then((list: SearchResult[]) => {
+        if (alive) setServerResults(Array.isArray(list) ? list : []);
+      })
+      .catch(() => {
+        if (alive) setServerResults(null); // 失败退回本地过滤
+      });
+    return () => {
+      alive = false;
+    };
+  }, [q, isApi]);
 
   const results = useMemo(() => {
     if (!q) return [];
     const needle = q.toLowerCase();
+    if (isApi && serverResults) {
+      // 服务端搜的是标题/摘要/正文；分类名、标签名命中的文章在这里补上，避免比旧的本地搜索更弱
+      const seen = new Set(serverResults.map((r) => r.id));
+      const extra = getAllArticles().filter(
+        (a) =>
+          !seen.has(a.id) &&
+          ((getCategory(a.category)?.name.toLowerCase().includes(needle) ?? false) ||
+            a.tags.some((t) => getTag(t)?.name.toLowerCase().includes(needle))),
+      );
+      return [...serverResults, ...extra];
+    }
     return getAllArticles().filter((a) => {
       if (a.title.toLowerCase().includes(needle)) return true;
       if (a.summary.toLowerCase().includes(needle)) return true;
@@ -20,11 +72,7 @@ export default function Search() {
       if (cat && cat.name.toLowerCase().includes(needle)) return true;
       return a.tags.some((t) => getTag(t)?.name.toLowerCase().includes(needle));
     });
-  }, [q]);
-
-  useEffect(() => {
-    setPage(1);
-  }, [q]);
+  }, [q, isApi, serverResults]);
 
   const total = results.length;
   const pageSize = ARTICLE_PAGE_SIZE;
@@ -55,7 +103,9 @@ export default function Search() {
           )}
         </h1>
         <p className={styles.subtitle}>
-          {q ? `找到 ${total} 篇相关文章` : '在顶部搜索框输入关键词'}
+          {q
+            ? `找到 ${total} 篇相关文章`
+            : '在顶部搜索框输入关键词，可搜标题、摘要、分类、标签与正文'}
         </p>
       </header>
 
@@ -65,7 +115,12 @@ export default function Search() {
         <>
           <div className={styles.list}>
             {pageResults.map((a) => (
-              <ArticleRow key={a.id} article={a} />
+              <div key={a.id}>
+                <ArticleRow
+                  article={a}
+                  snippet={'snippet' in a ? String(a.snippet ?? '') || undefined : undefined}
+                />
+              </div>
             ))}
           </div>
           {total > pageSize && (

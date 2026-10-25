@@ -1,0 +1,501 @@
+// 外观设置页样式
+// 关键原则：所有面板都用"半透明白 + 轻描边"，让用户选的背景能透出来 ——
+// 否则这一页会变成一堵白墙，反而看不见自己正在选什么。
+
+.page {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 0 64px;
+}
+
+/* ============ 页头 ============ */
+.head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+  padding: 28px 32px;
+  border-radius: 18px;
+  border: 1px solid rgba(31, 35, 41, 0.07);
+  background: rgba(255, 255, 255, 0.72);
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 12px 32px rgba(16, 24, 40, 0.06);
+}
+
+.backLink {
+  display: inline-block;
+  margin-bottom: 14px;
+  font-size: 13px;
+  color: #646a73;
+  text-decoration: none;
+  transition: color 0.15s;
+
+  &:hover {
+    color: var(--theme-primary);
+  }
+}
+
+.title {
+  margin: 0 0 8px;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: #1f2329;
+}
+
+.subtitle {
+  margin: 0;
+  max-width: 560px;
+  font-size: 13.5px;
+  line-height: 1.75;
+  color: #646a73;
+}
+
+/* 明暗切换：胶囊双段 */
+.modeSwitch {
+  display: inline-flex;
+  padding: 4px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 35, 41, 0.08);
+  background: rgba(255, 255, 255, 0.66);
+  flex-shrink: 0;
+}
+
+.modeBtn {
+  padding: 7px 20px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 13px;
+  color: #646a73;
+  cursor: var(--cursor-pointer, pointer);
+  transition: background-color 0.18s, color 0.18s, box-shadow 0.18s;
+
+  &:hover {
+    color: #1f2329;
+  }
+}
+
+.modeBtnActive {
+  background: var(--theme-primary);
+  color: #fff;
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--theme-primary) 32%, transparent);
+
+  &:hover {
+    color: #fff;
+  }
+}
+
+/* ============ 分区 ============ */
+.section {
+  margin-top: 40px;
+}
+
+.sectionTitle {
+  display: inline-block;
+  margin: 0 12px 0 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2329;
+}
+
+.sectionDesc {
+  font-size: 13px;
+  color: #8b929c;
+}
+
+.hint {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  color: #8b929c;
+
+  code {
+    font-family: Consolas, Menlo, monospace;
+    font-size: 12px;
+  }
+}
+
+/* ============ 主题色板 ============ */
+.swatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.swatch {
+  /* 外环颜色 = 该色板自己的颜色（由内联 --sw-color 传入），
+     否则所有选中环都会是继承来的文字色，分不出选的是哪一颗 */
+  --sw-ring-bg: #fff;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 2px solid var(--sw-ring-bg);
+  border-radius: 50%;
+  cursor: var(--cursor-pointer, pointer);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.16);
+  transition: transform 0.15s, box-shadow 0.15s;
+
+  &:hover {
+    transform: translateY(-2px);
+  }
+}
+
+/* 选中：内圈白（或深色底）开口 + 外圈本色环，比单纯描边清楚 */
+.swatchActive {
+  box-shadow:
+    0 0 0 2px var(--sw-ring-bg),
+    0 0 0 4px var(--sw-color),
+    0 2px 8px rgba(16, 24, 40, 0.2);
+}
+
+/* ============ 背景画廊 ============ */
+.group {
+  margin-top: 28px;
+}
+
+.groupTitle {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin: 0 0 14px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #3d434c;
+
+  /* 标题左侧一道短竖线，代替大标题分隔符 */
+  &::before {
+    content: '';
+    width: 3px;
+    height: 13px;
+    border-radius: 2px;
+    background: var(--theme-primary);
+    opacity: 0.72;
+  }
+}
+
+.groupNote {
+  font-size: 12px;
+  font-weight: 400;
+  color: #9aa1ab;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(196px, 1fr));
+  gap: 16px;
+}
+
+/* ============ 壁纸卡 ============ */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  text-align: left;
+  cursor: var(--cursor-pointer, pointer);
+  transition:
+    background-color 0.18s,
+    border-color 0.18s,
+    transform 0.18s,
+    box-shadow 0.18s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.82);
+    border-color: rgba(31, 35, 41, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(16, 24, 40, 0.07);
+  }
+
+  &:hover .thumb {
+    transform: scale(1.02);
+  }
+}
+
+.cardActive {
+  border-color: var(--theme-primary);
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--theme-primary) 30%, transparent);
+
+  &:hover {
+    border-color: var(--theme-primary);
+  }
+}
+
+.thumb {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  border-radius: 9px;
+  background-color: #eef1f5;
+  background-size: cover;
+  background-position: center;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 41, 0.06);
+  transition: transform 0.22s ease;
+  overflow: hidden;
+}
+
+/* 真壁纸渲染层：作为壁纸组件的定位参照，铺满缩略图 */
+.thumbLive {
+  position: absolute;
+  inset: 0;
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  pointer-events: none;
+}
+
+.check {
+  position: absolute;
+  right: 8px;
+  top: 8px;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--theme-primary);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  box-shadow: 0 2px 6px rgba(16, 24, 40, 0.24);
+}
+
+.cardName {
+  padding: 8px 4px 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  color: #1f2329;
+}
+
+.cardDesc {
+  padding: 0 4px 4px;
+  font-size: 12px;
+  line-height: 1.55;
+  color: #8b929c;
+  /* 描述最多两行，保证每张卡高度一致 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ============ 纯色底（无背景） ============ */
+.noneRow {
+  margin-top: 18px;
+}
+
+.noneCard {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  max-width: 420px;
+  padding: 10px 14px 10px 10px;
+  border: 1px solid rgba(31, 35, 41, 0.08);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.5);
+  font-family: inherit;
+  text-align: left;
+  cursor: var(--cursor-pointer, pointer);
+  transition: background-color 0.18s, border-color 0.18s;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.82);
+  }
+}
+
+/* 用灰白棋盘格暗示"没有东西" */
+.noneThumb {
+  flex-shrink: 0;
+  width: 64px;
+  height: 44px;
+  border-radius: 8px;
+  box-shadow: inset 0 0 0 1px rgba(31, 35, 41, 0.08);
+  background:
+    linear-gradient(45deg, #eef1f5 25%, transparent 25%) 0 0 / 12px 12px,
+    linear-gradient(-45deg, #eef1f5 25%, transparent 25%) 0 6px / 12px 12px,
+    linear-gradient(45deg, transparent 75%, #eef1f5 75%) 6px -6px / 12px 12px,
+    linear-gradient(-45deg, transparent 75%, #eef1f5 75%) -6px 0 / 12px 12px,
+    #fafbfc;
+}
+
+.noneMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+
+  .cardName {
+    padding: 0;
+  }
+
+  .cardDesc {
+    padding: 0;
+  }
+}
+
+.noneCheck {
+  margin-left: auto;
+  color: var(--theme-primary);
+  font-size: 15px;
+}
+
+/* ============ 页脚 ============ */
+.foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 48px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(31, 35, 41, 0.07);
+}
+
+.resetBtn {
+  padding: 9px 20px;
+  border: 1px solid rgba(31, 35, 41, 0.14);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.7);
+  font-family: inherit;
+  font-size: 13px;
+  color: #3d434c;
+  cursor: var(--cursor-pointer, pointer);
+  transition: border-color 0.15s, color 0.15s, background-color 0.15s;
+
+  &:hover {
+    border-color: var(--theme-primary);
+    color: var(--theme-primary);
+    background: #fff;
+  }
+}
+
+.footNote {
+  font-size: 12.5px;
+  color: #9aa1ab;
+}
+
+/* ============ 暗色模式 ============ */
+/* 深色下卡片改用半透明深底，否则白卡会把暗色壁纸整片盖住 */
+:global(.dark-mode) {
+  .head {
+    background: rgba(18, 23, 33, 0.7);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .title,
+  .sectionTitle,
+  .cardName {
+    color: #e5e7eb;
+  }
+
+  .subtitle,
+  .cardDesc {
+    color: #9ca3af;
+  }
+
+  .backLink,
+  .modeBtn {
+    color: #9ca3af;
+
+    &:hover {
+      color: #e5e7eb;
+    }
+  }
+
+  .modeSwitch {
+    background: rgba(30, 37, 50, 0.8);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+
+  .modeBtnActive,
+  .modeBtnActive:hover {
+    /* 深色下主题色可能是黑/深灰，用半透明白底 + 细描边才看得出"已选中" */
+    background: rgba(255, 255, 255, 0.16);
+    color: #fff;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.22);
+  }
+
+  .sectionDesc,
+  .hint,
+  .groupNote,
+  .footNote {
+    color: #6b7280;
+  }
+
+  .groupTitle {
+    color: #cbd2dc;
+  }
+
+  .card,
+  .noneCard {
+    background: rgba(23, 29, 41, 0.6);
+
+    &:hover {
+      background: rgba(30, 37, 50, 0.82);
+      border-color: rgba(255, 255, 255, 0.14);
+    }
+  }
+
+  .cardActive,
+  .cardActive:hover {
+    background: rgba(30, 37, 50, 0.9);
+    border-color: var(--theme-primary);
+  }
+
+  .thumb {
+    background-color: #1a2130;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .swatch {
+    --sw-ring-bg: #121721;
+  }
+
+  /* 纯色底的棋盘格也要压暗，否则在暗色页面上是一块刺眼的白 */
+  .noneThumb {
+    background:
+      linear-gradient(45deg, #1e2532 25%, transparent 25%) 0 0 / 12px 12px,
+      linear-gradient(-45deg, #1e2532 25%, transparent 25%) 0 6px / 12px 12px,
+      linear-gradient(45deg, transparent 75%, #1e2532 75%) 6px -6px / 12px 12px,
+      linear-gradient(-45deg, transparent 75%, #1e2532 75%) -6px 0 / 12px 12px,
+      #151b26;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.08);
+  }
+
+  .resetBtn {
+    background: rgba(23, 29, 41, 0.7);
+    border-color: rgba(255, 255, 255, 0.14);
+    color: #cbd2dc;
+
+    &:hover {
+      background: rgba(30, 37, 50, 0.9);
+    }
+  }
+
+  .foot {
+    border-top-color: rgba(255, 255, 255, 0.08);
+  }
+}
+
+@media (max-width: 720px) {
+  .head {
+    padding: 22px 20px;
+  }
+
+  .title {
+    font-size: 23px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 12px;
+  }
+}

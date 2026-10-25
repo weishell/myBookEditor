@@ -2,7 +2,12 @@
 // 写入顺序：先落文件，再更新索引 —— 索引丢了能重建，文件丢了才是真丢
 import crypto from 'node:crypto';
 import * as repo from '../repositories/articles.repo.js';
-import { readArticleFile, trashArticleFile, writeArticleFile } from '../storage/article-files.js';
+import {
+  listArticleFiles,
+  readArticleFile,
+  trashArticleFile,
+  writeArticleFile,
+} from '../storage/article-files.js';
 import { badRequest, conflict, notFound } from '../utils/http-error.js';
 import { assertSafeId } from '../utils/validators.js';
 
@@ -134,4 +139,68 @@ export function removeArticle(id) {
 
 export function countArticles() {
   return repo.countArticles();
+}
+
+/** 从 Slate 文档树里抽纯文本（正文全文搜索用） */
+function extractText(nodes) {
+  let out = '';
+  const walk = (list) => {
+    for (const node of list ?? []) {
+      if (typeof node.text === 'string') out += `${node.text}\n`;
+      if (Array.isArray(node.children)) walk(node.children);
+    }
+  };
+  walk(nodes);
+  return out;
+}
+
+/** 命中位置前后各取一段，做搜索结果摘要 */
+function excerpt(text, q) {
+  const lower = text.toLowerCase();
+  const idx = lower.indexOf(q);
+  if (idx < 0) return '';
+  const start = Math.max(0, idx - 40);
+  const end = Math.min(text.length, idx + q.length + 90);
+  return `${start > 0 ? '…' : ''}${text.slice(start, end).replace(/\s+/g, ' ').trim()}${end < text.length ? '…' : ''}`;
+}
+
+/**
+ * 全文搜索：扫 data/articles 下所有文件，标题 / 摘要 / 正文任一命中即返回。
+ * 索引库的 LIKE 只覆盖标题摘要，正文搜索必须走文件层。
+ */
+export function searchArticles(query = {}) {
+  const q = String(query.q ?? '')
+    .trim()
+    .toLowerCase();
+  if (!q) return [];
+
+  const hits = [];
+  for (const article of listArticleFiles()) {
+    const inTitle = article.title.toLowerCase().includes(q);
+    const inSummary = article.summary.toLowerCase().includes(q);
+    const bodyText = extractText(article.content);
+    const inBody = bodyText.toLowerCase().includes(q);
+    if (!inTitle && !inSummary && !inBody) continue;
+
+    hits.push({
+      id: article.id,
+      title: article.title,
+      summary: article.summary ?? '',
+      category: article.categoryId ?? '',
+      tags: article.tagIds ?? [],
+      date: String(article.createdAt ?? '').slice(0, 10),
+      reads: Number(article.reads ?? 0),
+      updatedAt: article.updatedAt,
+      matchedIn: inTitle ? 'title' : inSummary ? 'summary' : 'body',
+      snippet: excerpt(inTitle || inSummary ? article.summary || bodyText : bodyText, q),
+    });
+  }
+
+  // 标题命中 > 摘要命中 > 正文命中，同分按更新时间倒序
+  const weight = { title: 2, summary: 1, body: 0 };
+  hits.sort((a, b) => {
+    const d = (weight[b.matchedIn] ?? 0) - (weight[a.matchedIn] ?? 0);
+    return d !== 0 ? d : String(b.updatedAt ?? '').localeCompare(String(a.updatedAt ?? ''));
+  });
+  return hits;
 }

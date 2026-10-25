@@ -77,15 +77,73 @@ const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 const DEFAULT_WALLPAPER = 'none';
 
+/**
+ * 默认浅色壁纸：首次访问就给一层"水墨远山"，而不是纯白。
+ * 纯白页面在现在的审美里太像后台管理，给个克制的氛围底更像"书"。
+ */
+const DEFAULT_LIGHT_WALLPAPER = 'art-ink-mountain';
+
+/* ---------------- 持久化 ----------------
+   外观属于"用户偏好"，必须跨刷新保留；存 localStorage 而不是服务端，
+   因为它是纯客户端表现层设置，换设备重设一下也不心疼。 */
+const APPEARANCE_STORAGE_KEY = 'mybook:appearance:v1';
+
+interface StoredAppearance {
+  theme?: ThemeId;
+  wallpaper?: string;
+  lightWallpaper?: string;
+}
+
+/** 只认合法的主题 id：老的 key 可能残留已删除的主题，避免脏数据把界面搞崩 */
+function isThemeId(value: unknown): value is ThemeId {
+  return typeof value === 'string' && THEME_PRESETS.some((preset) => preset.id === value);
+}
+
+function readStoredAppearance(): StoredAppearance {
+  try {
+    const raw = window.localStorage.getItem(APPEARANCE_STORAGE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as Record<string, unknown>;
+    const next: StoredAppearance = {};
+    if (isThemeId(parsed.theme)) next.theme = parsed.theme;
+    if (typeof parsed.wallpaper === 'string') next.wallpaper = parsed.wallpaper;
+    if (typeof parsed.lightWallpaper === 'string') next.lightWallpaper = parsed.lightWallpaper;
+    return next;
+  } catch {
+    // 隐私模式禁用 storage、或历史数据不是合法 JSON —— 一律退回默认值，不影响启动
+    return {};
+  }
+}
+
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setTheme] = useState<ThemeId>(DEFAULT_THEME);
-  // 壁纸 ID：仅在暗黑模式下生效；默认选中一张（用户可切到"默认"即 none 关掉）
-  const [wallpaper, setWallpaper] = useState<string>(DEFAULT_WALLPAPER);
-  // 浅色模式壁纸（柔和护眼底色），与暗黑壁纸互不干扰、分别记忆
-  const [lightWallpaper, setLightWallpaper] = useState<string>(DEFAULT_WALLPAPER);
+  // 惰性初始化：三个状态共用一次解析，避免各读一遍 JSON
+  const [initial] = useState(readStoredAppearance);
+
+  const [theme, setTheme] = useState<ThemeId>(initial.theme ?? DEFAULT_THEME);
+  // 壁纸 ID：暗黑/浅色两套互不干扰，分别记忆
+  const [wallpaper, setWallpaper] = useState<string>(initial.wallpaper ?? DEFAULT_WALLPAPER);
+  const [lightWallpaper, setLightWallpaper] = useState<string>(
+    initial.lightWallpaper ?? DEFAULT_LIGHT_WALLPAPER,
+  );
+
+  // 任一偏好变化就落盘（quota 满或隐私模式失败时静默忽略，不能因为存不了就报错）
+  useEffect(() => {
+    try {
+      window.localStorage.setItem(
+        APPEARANCE_STORAGE_KEY,
+        JSON.stringify({ theme, wallpaper, lightWallpaper }),
+      );
+    } catch {
+      /* 忽略写入失败 */
+    }
+  }, [theme, wallpaper, lightWallpaper]);
 
   const themeColor = useMemo(() => {
-    return THEME_PRESETS.find((t) => t.id === theme)?.color ?? '#1890ff';
+    const base = THEME_PRESETS.find((t) => t.id === theme)?.color ?? '#1890ff';
+    // 「黑色」这个主题本质是"切换暗黑模式"，它的色值 #1f1f1f 当强调色等于没有：
+    // 选中边框、章节竖线、激活按钮会整片沉进暗底。暗黑模式下一律换成亮蓝，
+    // 保证所有靠 --theme-primary 上色的地方在深色界面上依然可辨。
+    return theme === 'black' ? '#7aa2ff' : base;
   }, [theme]);
 
   // 当 theme === 'black' 时进入暗黑模式

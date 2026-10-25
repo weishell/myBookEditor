@@ -3,7 +3,8 @@
   padding: 16px 18px;
   border-radius: 12px;
   border: 1px solid @border-color-light;
-  background: @bg-base;
+  /* 浅色壁纸下用半透明纸面，别让卡片变成一块死白 */
+  background: var(--lw-paper, @bg-base);
   text-decoration: none;
   transition:
     transform 0.15s ease,
@@ -33,6 +34,22 @@
   font-size: 13px;
   line-height: 1.7;
   color: @text-secondary;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* 全文搜索的正文命中片段：淡底小字，和摘要区分开 */
+.rowSnippet {
+  margin: -4px 0 10px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, @color-primary 5%, transparent);
+  border-left: 2px solid color-mix(in srgb, @color-primary 45%, transparent);
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: @text-tertiary;
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
@@ -94,6 +111,11 @@
 :global(.dark-mode) .rowSummary,
 :global(.dark-mode) .tagChip {
   color: var(--dm-text-secondary, #9ca3af);
+}
+
+:global(.dark-mode) .rowSnippet {
+  background: color-mix(in srgb, @color-primary 12%, transparent);
+  color: var(--dm-text-tertiary, #6b7280);
 }
 
 :global(.dark-mode) .tagChip {

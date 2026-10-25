@@ -4,12 +4,19 @@
   padding: 8px 0 48px;
 }
 
-/* ========== 面包屑 ========== */
+/* ========== 顶部：面包屑 + 保存状态/删除 ========== */
+.topBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
 .crumb {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 18px;
   font-size: 13px;
   color: @text-tertiary;
 }
@@ -32,99 +39,23 @@
   color: @text-secondary;
 }
 
-/* ========== 文章元信息 ========== */
-.meta {
-  position: relative;
-  margin-bottom: 24px;
-  padding: 28px 30px 24px;
-  border-radius: 16px;
-  border: 1px solid @border-color-light;
-  background: @bg-base;
-  box-shadow: var(--shadow-card);
-  overflow: hidden;
-}
-
-/* 顶部一抹主题色细线，给标题区一点“封面感”而不喧宾夺主 */
-.meta::before {
-  content: '';
-  position: absolute;
-  inset: 0 0 auto 0;
-  height: 3px;
-  background: linear-gradient(90deg, var(--theme-primary), color-mix(in srgb, var(--theme-primary) 40%, #c026a5));
-  opacity: 0.9;
-}
-
-.catBadge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  font-weight: 600;
-  text-decoration: none;
-  transition: opacity 0.15s;
-}
-
-.catBadge:hover {
-  opacity: 0.75;
-}
-
-.catDot {
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-}
-
-.title {
-  margin: 14px 0 10px;
-  font-size: 30px;
-  font-weight: 800;
-  line-height: 1.32;
-  letter-spacing: -0.01em;
-  color: @text-primary;
-}
-
-.summary {
-  margin: 0 0 16px;
-  font-size: 15px;
-  line-height: 1.85;
-  color: @text-secondary;
-}
-
-.subMeta {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 10px;
-  font-size: 12.5px;
-  color: @text-tertiary;
-}
-
-.tagChip {
-  padding: 3px 11px;
-  border-radius: 999px;
-  background: color-mix(in srgb, @color-primary 9%, transparent);
-  font-weight: 600;
-  text-decoration: none;
-  transition:
-    opacity 0.15s,
-    background-color 0.15s;
-}
-
-.tagChip:hover {
-  opacity: 1;
-  background: color-mix(in srgb, @color-primary 16%, transparent);
-}
-
 /* ========== 正文（编辑器） ========== */
 .editorWrap {
   border-radius: 16px;
   overflow: hidden;
   border: 1px solid @border-color-light;
-  background: @bg-base;
+  /* 浅色壁纸下跟着纸面一起半透明，不要压成纯白一块 */
+  background: var(--lw-paper, @bg-base);
   box-shadow: var(--shadow-lift);
 }
 
 /* ========== 保存状态 / 删除 / 加载态 ========== */
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
 .saveHint {
   font-size: 12px;
   color: @text-tertiary;
@@ -139,7 +70,6 @@
 }
 
 .deleteBtn {
-  margin-left: auto;
   padding: 3px 12px;
   border: 1px solid #f0d5d5;
   border-radius: 6px;
@@ -178,24 +108,7 @@
   color: var(--dm-text-secondary, #9ca3af);
 }
 
-:global(.dark-mode) .meta,
 :global(.dark-mode) .editorWrap {
   background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
   border-color: var(--dm-border-light, #202837);
-}
-
-:global(.dark-mode) .title {
-  color: var(--dm-text-primary, #e5e7eb);
-}
-
-:global(.dark-mode) .summary {
-  color: var(--dm-text-secondary, #9ca3af);
-}
-
-:global(.dark-mode) .subMeta {
-  color: var(--dm-text-tertiary, #6b7280);
-}
-
-:global(.dark-mode) .tagChip {
-  background: color-mix(in srgb, @color-primary 14%, transparent);
 }

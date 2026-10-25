@@ -8,7 +8,13 @@ export type { Article, ArticleIndex, ArticleInput, Category, Tag } from './types
 /** 列表每页加载篇数 */
 export const ARTICLE_PAGE_SIZE = 50;
 
-export const getAllArticles = (): ArticleIndex[] => getDataState().articles;
+/** 列表按更新时间倒序（updatedAt 优先，缺则用 date），保证“最近更新”与“全部文章”顺序一致 */
+export const getAllArticles = (): ArticleIndex[] =>
+  [...getDataState().articles].sort((a, b) => {
+    const da = a.updatedAt || a.date || '';
+    const db = b.updatedAt || b.date || '';
+    return db.localeCompare(da);
+  });
 
 export const getArticleById = (id: string): ArticleIndex | undefined =>
   getDataState().articles.find((a) => a.id === id);

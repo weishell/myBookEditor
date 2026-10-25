@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useEditorMode } from '@/context/EditorContext';
 import { useHeadings } from './useHeadings';
 import { BlockElementType } from '@/enums';
@@ -17,6 +18,7 @@ function extractNodeText(node: any): string {
 
 export function Outline() {
   const { editor } = useEditorMode();
+  const { pathname } = useLocation();
   const { headings, activeId, scrollToHeading } = useHeadings(editor);
   const [isMobile, setIsMobile] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -51,6 +53,12 @@ export function Outline() {
     if (h1?.text) return h1.text;
     return '';
   }, [editor, headings]);
+
+  // 目录只属于「当前正在看的那篇文档」。离开 /article/:id 或 /demo 后，
+  // editor 实例仍挂在 EditorContext 上（路由切换不会卸载它），headings 也还在，
+  // 不做路由判断的话退回首页时右侧目录会一直挂着，看着像页面卡住了。
+  const isDocRoute = pathname.startsWith('/article/') || pathname === '/demo';
+  if (!isDocRoute) return null;
 
   // 移动端显示为悬浮按钮
   if (isMobile) {

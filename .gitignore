@@ -7,7 +7,11 @@ demo/
 # 分类标签：data/meta.json —— 同样是真相，必须提交
 # 媒体：data/media/**（图片/附件/视频）—— 必须提交，否则线上图片 404
 # 删除的文章会进 data/.trash/，留几天再清理，不用提交
+# 注意：这里没进仓库 = 换个机器恢复时被删的文章找不回来，是有意取舍
 data/.trash/
+
+# 原子写的中间产物（writeArticleFile 先写 .tmp 再 rename），异常中断会残留
+data/articles/*.tmp
 
 # 索引库：database/mybook.db 只是 SQLite 索引缓存，启动时从上面的文件全量重建，
 # 删了、坏了都不影响数据，所以不进仓库（也避免二进制文件污染 diff）
@@ -15,6 +19,14 @@ database/*.db
 database/*.db-wal
 database/*.db-shm
 
+# 早期遗留的旧索引库，代码里已无引用（现在用的是 database/mybook.db），
+# 历史上被误提交过，记得 git rm --cached 一次
+data/index.db
+
 # 构建时由 scripts/export-static-data.mjs 生成，不进仓库
 public/data/
 public/media/
+
+# 视觉自验产物：scripts/shot.mjs 的截图与无头 Chrome 临时 profile
+.shot-*.png
+.chrome-shot-profile/

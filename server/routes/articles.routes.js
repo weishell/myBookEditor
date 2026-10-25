@@ -5,6 +5,8 @@ import * as controller from '../controllers/articles.controller.js';
 const router = Router();
 
 router.get('/', controller.list);
+// 注意：/search 必须注册在 /:id 之前，否则会被当成 id 吞掉
+router.get('/search', controller.search);
 router.post('/', controller.create);
 router.get('/:id', controller.detail);
 router.put('/:id', controller.update);

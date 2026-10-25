@@ -26,7 +26,68 @@
   font-weight: 600;
   color: @text-primary;
   text-decoration: none;
+  white-space: nowrap;
   transition: color 0.2s;
+}
+
+/* logo + 主导航：导航贴着 logo 放，右侧只留搜索 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navLink {
+  position: relative;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #5b6472;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
+
+  &:hover {
+    color: var(--theme-primary);
+    background: color-mix(in srgb, var(--theme-primary) 7%, transparent);
+  }
+}
+
+/* 当前页：主题色文字 + 底部一小段色条，比整块实底更安静 */
+.navLinkActive {
+  color: var(--theme-primary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--theme-primary);
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand {
+    gap: 12px;
+  }
+
+  .navLink {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
 }
 
 .controls {
@@ -78,7 +139,47 @@
 
 @media (max-width: 860px) {
   .searchBox input {
-    width: 160px;
+    width: 140px;
+  }
+
+  .nav {
+    gap: 0;
+  }
+
+  .navLink {
+    padding: 6px 7px;
+    font-size: 12.5px;
+  }
+}
+
+/* 窄屏：logo 缩小、导航再瘦一圈，保证「logo + 导航 + 搜索」能塞进一行 */
+@media (max-width: 600px) {
+  .header {
+    padding: 10px 14px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+
+  .logo {
+    font-size: 15px;
+  }
+
+  .navLink {
+    padding: 6px 6px;
+    font-size: 12px;
+  }
+
+  .navLinkActive::after {
+    left: 6px;
+    right: 6px;
+  }
+
+  .searchBox input {
+    width: 106px;
+    padding-left: 28px;
+    padding-right: 8px;
   }
 }
 
@@ -86,20 +187,28 @@
   position: relative;
   z-index: 1;
   flex: 1;
-  padding: 24px;
+  padding: 24px 32px;
   transition: background-color 0.2s;
 }
 
-// 宽屏桌面：左侧给固定目录留出空间，右侧最小间距，保证内容能达到 1200px
+// 宽屏桌面：两侧对称留白，首页/列表页可以把内容铺得宽一些
 @media (min-width: 1500px) {
   .main {
+    padding: 24px 56px;
+  }
+}
+
+/* 文档路由专属：左侧要给 200px 的固定目录让出空间。
+   ⚠️ 必须只在文档路由生效 —— 首页也用这条规则的话，
+   回来后会空出一条 240px 的竖向空白，看着像目录没消失。 */
+@media (min-width: 1500px) {
+  .mainDoc {
     padding: 24px 60px 24px 240px;
   }
 }
 
-// 超宽屏：恢复对称留白
 @media (min-width: 1700px) {
-  .main {
+  .mainDoc {
     padding: 24px 240px;
   }
 }
@@ -124,6 +233,20 @@
 /* main 区域背景透明，直接露出壁纸 */
 :global(.dark-mode) .main {
   background-color: transparent;
+}
+
+/* 顶栏导航暗色：黑主题下 theme-primary 被换成亮蓝，文字用"主题色提亮 + 白"的混合 */
+:global(.dark-mode) .navLink {
+  color: var(--dm-text-secondary, #9ca3af);
+
+  &:hover {
+    color: color-mix(in srgb, var(--theme-primary) 70%, #fff);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+:global(.dark-mode) .navLinkActive {
+  color: color-mix(in srgb, var(--theme-primary) 72%, #fff);
 }
 
 /* ================ 浅色壁纸（柔和护眼）透出 =================== */

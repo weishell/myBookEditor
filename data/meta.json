@@ -5,42 +5,48 @@
       "name": "前端开发",
       "color": "#2f6fed",
       "icon": "🖥️",
-      "desc": "框架、工程化与浏览器技术"
+      "desc": "框架、工程化与浏览器技术",
+      "cover": null
     },
     {
       "id": "backend",
       "name": "后端架构",
       "color": "#00a66c",
       "icon": "⚙️",
-      "desc": "服务端、数据库与分布式"
+      "desc": "服务端、数据库与分布式",
+      "cover": null
     },
     {
       "id": "ai",
       "name": "人工智能",
       "color": "#7c3aed",
       "icon": "🤖",
-      "desc": "模型应用与大模型实践"
+      "desc": "模型应用与大模型实践",
+      "cover": null
     },
     {
       "id": "design",
       "name": "设计创意",
       "color": "#e05b3f",
       "icon": "🎨",
-      "desc": "视觉、交互与产品设计"
+      "desc": "视觉、交互与产品设计",
+      "cover": null
     },
     {
       "id": "tools",
       "name": "效率工具",
       "color": "#d4a017",
       "icon": "🧰",
-      "desc": "软件工具与工作流搭建"
+      "desc": "软件工具与工作流搭建",
+      "cover": null
     },
     {
       "id": "growth",
       "name": "职场成长",
       "color": "#c026a5",
       "icon": "🌱",
-      "desc": "方法论、沟通与职业发展"
+      "desc": "方法论、沟通与职业发展",
+      "cover": null
     }
   ],
   "tags": [

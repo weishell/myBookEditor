@@ -26,6 +26,16 @@ import {
   LaidPaperWallpaper,
   TwillWallpaper,
 } from './textures';
+import {
+  InkMountainWallpaper,
+  InkBambooWallpaper,
+  BluePorcelainWallpaper,
+  TechGridWallpaper,
+  TechStreamWallpaper,
+  DarkTechNeonWallpaper,
+  MoonLakeWallpaper,
+  AutumnMistWallpaper,
+} from './artistic';
 
 export type WallpaperKind = 'svg' | 'image';
 export type WallpaperMode = 'dark' | 'light';
@@ -56,6 +66,9 @@ export interface WallpaperPreset {
   chrome?: string;
   /** 选择弹框里的缩略图背景（任意 CSS background 值） */
   thumbCss?: string;
+  /** 缩略图放大倍数：细线类壁纸（网格/数据流/织物）缩到 200px 宽时线会消失，
+   *  放大后裁中间一块，细节才看得出来。默认 1 */
+  thumbScale?: number;
   /** kind='image'：覆盖在照片上的柔化遮罩（任意 CSS background 值）。
    *  作用是把照片压柔、降低对正文的干扰，保证可读性 */
   veil?: string;
@@ -103,6 +116,134 @@ export const WALLPAPER_PRESETS: WallpaperPreset[] = [
     mode: 'dark',
     component: MeteorNightSky,
     description: '深冷星空，流星不时划过夜空',
+  },
+  {
+    id: 'dark-tech-neon',
+    name: '赛博网格',
+    kind: 'svg',
+    mode: 'dark',
+    component: DarkTechNeonWallpaper,
+    group: '科技极客',
+    description: '深空网格与青色光点，冷峻的科技感',
+  },
+
+  /* ---------------- 浅色模式 · 古风雅韵 ----------------
+     三款都是"大面积留白 + 局部元素"的构图：首页的文案区（左中）保持干净，
+     视觉重量全部压在右下/右侧边缘，这样文字直接压上去也不会糊 */
+  {
+    id: 'art-ink-mountain',
+    name: '水墨远山',
+    kind: 'svg',
+    mode: 'light',
+    component: InkMountainWallpaper,
+    group: '古风雅韵',
+    description: '宣纸底、三层淡墨山峦，一枚朱印点题',
+    tint: '#ece7d9',
+    paper: 'rgba(251,249,242,0.62)',
+    chrome: 'rgba(251,249,242,0.76)',
+    thumbCss:
+      'linear-gradient(180deg, transparent 0 56%, rgba(135,151,142,0.42) 56% 72%, rgba(99,115,107,0.5) 72%),' +
+      'linear-gradient(180deg, #f8f5ec 0%, #eceee7 100%)',
+  },
+  {
+    id: 'art-ink-bamboo',
+    name: '墨竹疏影',
+    kind: 'svg',
+    mode: 'light',
+    component: InkBambooWallpaper,
+    group: '古风雅韵',
+    description: '淡青纸底，右侧几竿修竹，左侧留白',
+    tint: '#e6ebe4',
+    paper: 'rgba(247,250,246,0.62)',
+    chrome: 'rgba(247,250,246,0.76)',
+    thumbCss:
+      'repeating-linear-gradient(90deg, transparent 0 76%, rgba(111,138,114,0.5) 76% 78%, transparent 78% 88%, rgba(111,138,114,0.4) 88% 89.5%),' +
+      'linear-gradient(180deg, #f3f6f1, #e7ece6)',
+  },
+  {
+    id: 'art-blue-porcelain',
+    name: '青花缠枝',
+    kind: 'svg',
+    mode: 'light',
+    component: BluePorcelainWallpaper,
+    group: '古风雅韵',
+    description: '泛青白瓷底，上下缘缠枝青花',
+    tint: '#e6eef5',
+    paper: 'rgba(249,252,254,0.6)',
+    chrome: 'rgba(249,252,254,0.74)',
+    thumbCss:
+      'repeating-linear-gradient(0deg, transparent 0 86%, rgba(53,97,140,0.26) 86% 88%, transparent 88% 100%),' +
+      'linear-gradient(180deg, #f7fafc, #e9f0f6)',
+  },
+
+  /* ---------------- 浅色模式 · 科技极客 ----------------
+     科技感用"结构"表达而不是压暗底色：仍然保持浅底，避免首页深色文字失去对比 */
+  {
+    id: 'art-tech-grid',
+    name: '星链网格',
+    kind: 'svg',
+    mode: 'light',
+    component: TechGridWallpaper,
+    group: '科技极客',
+    description: '冷白细网格与节点连线，克制的结构感',
+    tint: '#e3edf8',
+    paper: 'rgba(247,251,254,0.64)',
+    chrome: 'rgba(247,251,254,0.78)',
+    thumbScale: 2.4,
+    thumbCss:
+      'radial-gradient(circle at 82% 14%, rgba(88,150,232,0.28), transparent 52%),' +
+      'repeating-linear-gradient(0deg, rgba(72,116,178,0.1) 0 1px, transparent 1px 9%),' +
+      'repeating-linear-gradient(90deg, rgba(72,116,178,0.1) 0 1px, transparent 1px 9%),' +
+      'linear-gradient(180deg, #f7fafd, #e8f0f9)',
+  },
+  {
+    id: 'art-tech-stream',
+    name: '数据流',
+    kind: 'svg',
+    mode: 'light',
+    component: TechStreamWallpaper,
+    group: '科技极客',
+    description: '斜向流线与缓动光带，数据在链路上跑',
+    tint: '#e2ecf8',
+    paper: 'rgba(246,250,254,0.64)',
+    chrome: 'rgba(246,250,254,0.78)',
+    thumbScale: 2.4,
+    thumbCss:
+      'repeating-linear-gradient(135deg, transparent 0 6px, rgba(79,134,201,0.18) 6px 7px),' +
+      'radial-gradient(circle at 74% 26%, rgba(86,168,236,0.32), transparent 56%),' +
+      'linear-gradient(150deg, #f6fafe, #e5eef9)',
+  },
+
+  /* ---------------- 浅色模式 · 山水意境 ---------------- */
+  {
+    id: 'art-moon-lake',
+    name: '水月清辉',
+    kind: 'svg',
+    mode: 'light',
+    component: MoonLakeWallpaper,
+    group: '山水意境',
+    description: '冷调月夜，月影落在湖面',
+    tint: '#e2ebf4',
+    paper: 'rgba(246,250,254,0.64)',
+    chrome: 'rgba(246,250,254,0.78)',
+    thumbCss:
+      'radial-gradient(circle at 70% 22%, #ffffff 0 7%, rgba(255,255,255,0.45) 7% 15%, transparent 16%),' +
+      'linear-gradient(180deg, #eef3f8 0%, #e4ecf4 48%, #cfdce9 100%)',
+  },
+  {
+    id: 'art-autumn-mist',
+    name: '秋山薄雾',
+    kind: 'svg',
+    mode: 'light',
+    component: AutumnMistWallpaper,
+    group: '山水意境',
+    description: '暖褐层峦，雾带横在山腰',
+    tint: '#f2e5d2',
+    paper: 'rgba(253,247,238,0.62)',
+    chrome: 'rgba(253,247,238,0.76)',
+    thumbCss:
+      'linear-gradient(180deg, transparent 0 54%, rgba(201,168,130,0.36) 54% 66%, rgba(181,143,102,0.46) 66% 82%, rgba(142,111,77,0.5) 82%),' +
+      'linear-gradient(180deg, #faf3e7, #f0e1ca)',
   },
 
   /* ---------------- 浅色模式（柔和护眼） ---------------- */

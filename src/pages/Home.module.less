@@ -1,67 +1,227 @@
 .page {
-  max-width: 980px;
+  max-width: 1180px;
   margin: 0 auto;
-  padding: 24px 0 56px;
+  padding: 28px 0 72px;
+}
+
+/* 只读模式提示条：告诉用户为什么没有新建/管理入口、怎么开启 */
+.readonlyTip {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 18px;
+  padding: 12px 18px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #f0a020 35%, transparent);
+  background: color-mix(in srgb, #f0a020 7%, #fff);
+  font-size: 13px;
+  line-height: 1.7;
+  color: #8a5a12;
+
+  b {
+    flex-shrink: 0;
+  }
+
+  code {
+    padding: 1px 7px;
+    border-radius: 5px;
+    background: color-mix(in srgb, #f0a020 14%, transparent);
+    font-family: Consolas, Menlo, monospace;
+    font-size: 12.5px;
+  }
 }
 
 /* ========== Hero ==========
-   清雅方向：浅色纸面 + 极淡晕染 + 细线圆环装饰，文字用墨色，
-   去掉原来的紫粉大渐变，让内容本身成为主角。 */
+   整幅氛围背景铺底（背景由 pages/home/scenes.tsx 用 SVG 画，零图片资源），
+   左侧再压一层可读性遮罩，保证大标题在任何场景上都清楚。
+
+   文字颜色不写死：全部走 --hero-* 变量，浅色场景用深字、深色场景（.heroDark）
+   换成浅字。切换背景只切换 tone，不必给每个子元素各写两套颜色。 */
 .hero {
+  --hero-text: #1f2329;
+  --hero-sub: rgba(31, 35, 41, 0.66);
+  --hero-hint: rgba(31, 35, 41, 0.48);
+  --hero-line: rgba(31, 35, 41, 0.13);
+  --hero-glass: rgba(255, 255, 255, 0.5);
+  --hero-glass-border: rgba(255, 255, 255, 0.78);
+  --hero-glass-shadow: 0 10px 28px rgba(31, 41, 55, 0.1);
+  /* 遮罩用暖白（宣纸色）而不是纯白：纯白会把水墨场景洗成"文档白底"，古意全丢 */
+  --hero-veil: linear-gradient(
+    100deg,
+    rgba(255, 252, 244, 0.94) 0%,
+    rgba(255, 252, 244, 0.86) 32%,
+    rgba(255, 252, 244, 0.42) 58%,
+    rgba(255, 252, 244, 0) 80%
+  );
+
   position: relative;
+  isolation: isolate;
   overflow: hidden;
-  border-radius: 16px;
-  padding: 52px 56px 46px;
   margin-bottom: 44px;
+  border-radius: 24px;
   border: 1px solid rgba(31, 35, 41, 0.07);
-  background:
-    radial-gradient(640px 300px at 92% -30%, color-mix(in srgb, var(--theme-primary) 8%, transparent), transparent 62%),
-    radial-gradient(520px 320px at -12% 130%, rgba(65, 181, 132, 0.07), transparent 60%),
-    linear-gradient(180deg, #fdfdfe 0%, #f7f9fc 100%);
-  box-shadow: var(--shadow-card);
+  box-shadow:
+    0 1px 2px rgba(16, 24, 40, 0.05),
+    0 24px 60px -24px rgba(16, 24, 40, 0.3);
+  color: var(--hero-text);
 }
 
-/* 两只细线圆环：像信纸角落的压印，克制地增加层次 */
-.hero::before,
-.hero::after {
-  content: '';
+/* 深色场景：字色提亮，玻璃件改成"白雾"，遮罩反过来压暗左侧 */
+.heroDark {
+  --hero-text: #f3f6fb;
+  --hero-sub: rgba(226, 234, 245, 0.84);
+  --hero-hint: rgba(214, 224, 238, 0.68);
+  --hero-line: rgba(255, 255, 255, 0.16);
+  --hero-glass: rgba(255, 255, 255, 0.09);
+  --hero-glass-border: rgba(255, 255, 255, 0.2);
+  --hero-glass-shadow: 0 12px 34px rgba(0, 0, 0, 0.34);
+  --hero-veil: linear-gradient(
+    100deg,
+    rgba(4, 9, 16, 0.88) 0%,
+    rgba(4, 9, 16, 0.72) 34%,
+    rgba(4, 9, 16, 0.26) 62%,
+    rgba(4, 9, 16, 0) 84%
+  );
+  border-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 24px 60px -24px rgba(2, 6, 14, 0.75);
+}
+
+/* 可读性遮罩：只压左半边，右半边留给场景本身 */
+.heroVeil {
   position: absolute;
-  border-radius: 50%;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 16%, transparent);
+  inset: 0;
+  background: var(--hero-veil);
   pointer-events: none;
 }
 
-.hero::before {
-  right: -90px;
-  top: -140px;
-  width: 340px;
-  height: 340px;
-}
-
-.hero::after {
-  right: 60px;
-  bottom: -120px;
-  width: 220px;
-  height: 220px;
-  border-color: color-mix(in srgb, var(--theme-primary) 10%, transparent);
-}
-
-.hero > * {
+.heroInner {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 196px;
+  align-items: center;
+  gap: 44px;
+  min-height: 396px;
+  padding: 54px 52px 50px 56px;
+}
+
+.heroCopy {
+  min-width: 0;
+  max-width: 600px;
+}
+
+/* 右侧数据卡：玻璃质感，让整幅背景不至于只有文字那么单调 */
+.heroAside {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statCard {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 16px 18px;
+  border-radius: 16px;
+  border: 1px solid var(--hero-glass-border);
+  background: var(--hero-glass);
+  box-shadow: var(--hero-glass-shadow);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  transition: transform 0.18s ease, border-color 0.18s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--theme-primary) 45%, var(--hero-glass-border));
+  }
+
+  b {
+    font-size: 30px;
+    font-weight: 700;
+    line-height: 1;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
+    color: var(--hero-text);
+  }
+
+  span {
+    font-size: 12.5px;
+    color: var(--hero-sub);
+  }
+}
+
+/* ========== 背景切换器 ==========
+   直接做在 Hero 里：选完立刻看得见效果，不用跳到设置页来回试。
+   圆点用场景代表色，选中态用一圈文字色描边（深浅场景都够显眼）。 */
+.sceneBar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+  padding-top: 18px;
+  border-top: 1px solid var(--hero-line);
+  max-width: 460px;
+}
+
+.sceneLabel {
+  font-size: 12px;
+  letter-spacing: 0.12em;
+  color: var(--hero-sub);
+}
+
+.sceneDots {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.sceneDot {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 2px solid rgba(255, 255, 255, 0.9);
+  border-radius: 50%;
+  cursor: var(--cursor-pointer, pointer);
+  box-shadow: 0 1px 4px rgba(16, 24, 40, 0.28);
+  transition: transform 0.16s ease, box-shadow 0.16s ease;
+
+  &:hover {
+    transform: scale(1.14);
+  }
+}
+
+.sceneDotActive {
+  transform: scale(1.06);
+  box-shadow:
+    0 0 0 2px var(--hero-text),
+    0 2px 8px rgba(16, 24, 40, 0.3);
+}
+
+/* 深色场景下白色描边会把深色圆点整颗"漂白"成亮点，压低到半透明 */
+.heroDark .sceneDot {
+  border-color: rgba(255, 255, 255, 0.34);
+}
+
+.sceneName {
+  font-size: 12px;
+  color: var(--hero-sub);
+  min-width: 52px;
 }
 
 .heroBadge {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 14px;
+  padding: 5px 14px;
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--theme-primary) 22%, transparent);
-  background: color-mix(in srgb, var(--theme-primary) 5%, #fff);
-  color: var(--theme-primary);
+  border: 1px solid color-mix(in srgb, var(--theme-primary) 26%, var(--hero-glass-border));
+  background: var(--hero-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: color-mix(in srgb, var(--theme-primary) 78%, var(--hero-text));
   font-size: 12px;
-  letter-spacing: 2px;
+  letter-spacing: 0.14em;
 }
 
 .heroBadge::before {
@@ -74,73 +234,38 @@
 
 .heroTitle {
   position: relative;
-  margin: 18px 0 12px;
-  font-size: 34px;
-  font-weight: 700;
-  line-height: 1.3;
-  letter-spacing: 0.02em;
-  color: #1f2329;
+  margin: 20px 0 14px;
+  font-size: 42px;
+  font-weight: 600;
+  line-height: 1.24;
+  letter-spacing: 0.015em;
+  color: var(--hero-text);
 }
 
 .heroDesc {
-  max-width: 480px;
+  max-width: 470px;
   margin: 0;
-  font-size: 14px;
-  line-height: 1.8;
-  color: #646a73;
+  font-size: 14.5px;
+  line-height: 1.85;
+  color: var(--hero-sub);
 }
 
-/* 数据改为“细字 + 竖线分隔”的排版，去掉一排胶囊 */
-.heroStats {
-  display: flex;
-  flex-wrap: wrap;
-  margin-top: 26px;
-}
-
-.heroStats span {
-  position: relative;
-  padding: 0 20px;
-  font-size: 13px;
-  color: #646a73;
-
-  &:first-child {
-    padding-left: 0;
-  }
-
-  & + span::before {
-    content: '';
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 1px;
-    height: 12px;
-    background: #d8dde5;
-  }
-
-  b {
-    font-weight: 700;
-    font-size: 16px;
-    color: #1f2329;
-    margin-right: 2px;
-  }
-}
-
+/* 统计数据已收进右侧玻璃卡（.statCard），这里不再保留一行胶囊 */
 .heroActions {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   gap: 12px;
-  margin-top: 26px;
+  margin-top: 28px;
 }
 
-/* 按钮统一收敛为 8px 圆角的矩形，比胶囊更沉静 */
+/* 按钮统一收敛为 10px 圆角的矩形，比胶囊更沉静 */
 .heroBtn,
 .heroBtnPrimary,
 .heroBtnGhost {
   display: inline-block;
   padding: 10px 24px;
-  border-radius: 8px;
+  border-radius: 10px;
   font-size: 14px;
   font-weight: 500;
   text-decoration: none;
@@ -167,12 +292,14 @@
   }
 }
 
-/* 次级 / 示例入口：白底细边 */
+/* 次级 / 示例入口：玻璃底 + 细边，跟着场景色调走 */
 .heroBtnGhost,
 .heroBtn {
-  border: 1px solid #dfe3ea;
-  background: #fff;
-  color: #3f4753;
+  border: 1px solid var(--hero-glass-border);
+  background: var(--hero-glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  color: var(--hero-text);
 }
 
 .heroBtn {
@@ -187,13 +314,15 @@
 .heroBtnGhost:hover,
 .heroBtn:hover {
   transform: translateY(-1px);
-  border-color: color-mix(in srgb, var(--theme-primary) 45%, #dfe3ea);
-  color: var(--theme-primary);
+  border-color: color-mix(in srgb, var(--theme-primary) 55%, var(--hero-glass-border));
+  color: color-mix(in srgb, var(--theme-primary) 82%, var(--hero-text));
 }
 
 .heroHint {
+  display: block;
+  margin-top: 14px;
   font-size: 12.5px;
-  color: #8f959e;
+  color: var(--hero-hint);
 }
 
 /* ========== 最近更新 ========== */
@@ -202,8 +331,8 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  border: 1px solid #e8ebf0;
-  background: #fff;
+  border: 1px solid rgba(31, 35, 41, 0.07);
+  background: rgba(255, 255, 255, 0.76);
   box-shadow: var(--shadow-card);
 }
 
@@ -214,15 +343,17 @@
   padding: 14px 22px;
   color: #1f2329;
   text-decoration: none;
-  border-bottom: 1px solid #f2f4f7;
-  transition: background-color 0.15s ease;
+  border-bottom: 1px solid rgba(31, 35, 41, 0.055);
+  transition: background-color 0.15s ease, box-shadow 0.15s ease;
 
   &:last-child {
     border-bottom: none;
   }
 
   &:hover {
-    background: #f7f9fc;
+    background: rgba(255, 255, 255, 0.92);
+    /* 左侧一道主题色细条：比整行变色更克制，也给了明确的"当前行"锚点 */
+    box-shadow: inset 3px 0 0 var(--theme-primary);
 
     .latestIndex {
       color: var(--theme-primary);
@@ -301,6 +432,37 @@
   color: #8f959e;
 }
 
+/* “更多”入口：挤到章节标题行最右，与左侧标题形成平衡 */
+.moreLink {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(31, 35, 41, 0.09);
+  background: rgba(255, 255, 255, 0.7);
+  font-size: 13px;
+  font-weight: 500;
+  color: #526070;
+  text-decoration: none;
+  transition:
+    border-color 0.15s ease,
+    color 0.15s ease,
+    background-color 0.15s ease;
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
+    background: color-mix(in srgb, var(--theme-primary) 5%, #fff);
+    color: var(--theme-primary);
+  }
+}
+
+.moreArrow {
+  font-size: 15px;
+  line-height: 1;
+}
+
 /* ========== 分类卡片 ==========
    白底细边 + 图标收进淡色圆角块，去掉整卡染色 */
 .categoryGrid {
@@ -321,8 +483,8 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  border: 1px solid #e8ebf0;
-  background: #fff;
+  border: 1px solid rgba(31, 35, 41, 0.07);
+  background: rgba(255, 255, 255, 0.8);
   text-decoration: none;
   box-shadow: var(--shadow-card);
   transition:
@@ -411,8 +573,8 @@
   gap: 8px;
   padding: 7px 15px;
   border-radius: 999px;
-  border: 1px solid #e8ebf0;
-  background: #fff;
+  border: 1px solid rgba(31, 35, 41, 0.09);
+  background: rgba(255, 255, 255, 0.74);
   text-decoration: none;
   transition:
     transform 0.15s ease,
@@ -442,70 +604,100 @@
   color: #a4abb6;
 }
 
+/* ========== 窄屏 ========== */
+@media (max-width: 980px) {
+  /* 右栏数据卡在中等宽度就改成一行横排，否则正文被挤成一条窄柱 */
+  .heroInner {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 28px;
+    min-height: 0;
+    padding: 40px 32px 36px;
+  }
+
+  .heroAside {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+
+  .statCard {
+    flex: 1 1 120px;
+    padding: 13px 16px;
+
+    b {
+      font-size: 24px;
+    }
+  }
+
+  /* 竖排后左遮罩不遮右半边，改成整体压一层，否则右侧数据卡压在山脊上看不清 */
+  .heroVeil {
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.9) 0%,
+      rgba(255, 255, 255, 0.55) 60%,
+      rgba(255, 255, 255, 0.3) 100%
+    );
+  }
+
+  .heroDark .heroVeil {
+    background: linear-gradient(
+      180deg,
+      rgba(4, 9, 16, 0.86) 0%,
+      rgba(4, 9, 16, 0.6) 60%,
+      rgba(4, 9, 16, 0.4) 100%
+    );
+  }
+}
+
+@media (max-width: 720px) {
+  .page {
+    padding: 18px 0 48px;
+  }
+
+  .hero {
+    border-radius: 16px;
+    margin-bottom: 32px;
+  }
+
+  .heroInner {
+    padding: 30px 22px 26px;
+  }
+
+  .heroTitle {
+    font-size: 28px;
+  }
+
+  .heroDesc {
+    font-size: 13.5px;
+  }
+
+  .sceneBar {
+    margin-top: 24px;
+  }
+
+  .block {
+    margin-bottom: 34px;
+  }
+}
+
 /* ========== 暗黑模式 ========== */
-:global(.dark-mode) .hero {
-  border-color: var(--dm-border-light, #202837);
-  background:
-    radial-gradient(640px 300px at 92% -30%, color-mix(in srgb, var(--theme-primary) 12%, transparent), transparent 62%),
-    linear-gradient(180deg, var(--dm-bg-base, #121721) 0%, var(--dm-bg-subtle, #0f141d) 100%);
-  box-shadow: none;
-}
-
-:global(.dark-mode) .hero::before,
-:global(.dark-mode) .hero::after {
-  border-color: color-mix(in srgb, var(--theme-primary) 20%, transparent);
-}
-
-:global(.dark-mode) .heroBadge {
-  border-color: color-mix(in srgb, var(--theme-primary) 30%, transparent);
-  background: color-mix(in srgb, var(--theme-primary) 12%, transparent);
-  color: color-mix(in srgb, var(--theme-primary) 60%, #fff);
-}
-
-:global(.dark-mode) .heroTitle {
-  color: var(--dm-text-primary, #e5e7eb);
-}
-
-:global(.dark-mode) .heroDesc {
-  color: var(--dm-text-secondary, #9ca3af);
-}
-
-:global(.dark-mode) .heroStats span {
-  color: var(--dm-text-secondary, #9ca3af);
-
-  & + span::before {
-    background: var(--dm-border, #2b3240);
-  }
-
-  b {
-    color: var(--dm-text-primary, #e5e7eb);
-  }
-}
-
-:global(.dark-mode) .heroBtnGhost,
-:global(.dark-mode) .heroBtn {
-  border-color: var(--dm-border, #2b3240);
-  background: var(--dm-bg-subtle, #0f141d);
-  color: var(--dm-text-primary, #e5e7eb);
-
-  &:hover {
-    border-color: color-mix(in srgb, var(--theme-primary) 55%, transparent);
-    color: color-mix(in srgb, var(--theme-primary) 70%, #fff);
-  }
-}
+/* ⚠️ Hero 不参与暗黑模式换色：它的前景/背景是一整套自带色调的场景（scenes.tsx），
+   浅色场景（水墨/青绿/竹影）配深字、深色场景（星河/科技/极光）配浅字，
+   由 .heroDark 那套变量决定。若再按 .dark-mode 覆盖文字色，
+   就会出现"暗色主题 + 水墨背景 + 白字"的白字看不见问题。 */
 
 :global(.dark-mode) .latestList {
-  border-color: var(--dm-border-light, #202837);
-  background: var(--dm-bg-base, #121721);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
   box-shadow: none;
 }
 
 :global(.dark-mode) .latestRow {
-  border-bottom-color: var(--dm-border-light, #202837);
+  border-bottom-color: rgba(255, 255, 255, 0.07);
   color: var(--dm-text-primary, #e5e7eb);
 
   &:hover {
-    background: var(--dm-bg-hover, #1e2532);
+    background: color-mix(in srgb, var(--dm-bg-hover, #1e2532) 88%, transparent);
   }
 }
 
@@ -526,9 +718,31 @@
   color: var(--dm-text-tertiary, #6b7280);
 }
 
+:global(.dark-mode) .moreLink {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
+  color: var(--dm-text-secondary, #9ca3af);
+
+  &:hover {
+    border-color: color-mix(in srgb, var(--theme-primary) 55%, transparent);
+    background: color-mix(in srgb, var(--theme-primary) 16%, transparent);
+    color: color-mix(in srgb, var(--theme-primary) 70%, #fff);
+  }
+}
+
+:global(.dark-mode) .readonlyTip {
+  border-color: color-mix(in srgb, #f0a020 40%, transparent);
+  background: color-mix(in srgb, #f0a020 10%, transparent);
+  color: #e0b060;
+
+  code {
+    background: color-mix(in srgb, #f0a020 18%, transparent);
+  }
+}
+
 :global(.dark-mode) .categoryCard {
-  border-color: var(--dm-border-light, #202837);
-  background: var(--dm-bg-base, #121721);
+  border-color: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
   box-shadow: none;
 }
 
@@ -544,9 +758,14 @@
   color: var(--dm-text-tertiary, #6b7280);
 }
 
+/* 分类封面多为浅色默认图，深色下会变成一块白斑，压暗后融进背景 */
+:global(.dark-mode) .categoryCover {
+  filter: brightness(0.72) saturate(0.85);
+}
+
 :global(.dark-mode) .tagCard {
-  border-color: var(--dm-border-light, #202837);
-  background: var(--dm-bg-base, #121721);
+  border-color: rgba(255, 255, 255, 0.1);
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 80%, transparent);
 }
 
 :global(.dark-mode) .tagName {

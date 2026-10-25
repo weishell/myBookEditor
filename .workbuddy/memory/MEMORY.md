@@ -56,14 +56,16 @@
 
 - 文件唯一真相：`data/articles/<id>.json` 一篇一文件（元数据+Slate 正文，进 git）；`data/index.db`(`node:sqlite`,gitignore) 启动时由文件全量重建，丢了不影响数据。索引只存元数据，**正文永不入库**。
 - 目录分开：`data/articles` / `data/drawboards` / `data/media/{images,files,videos}`，库与文档只存相对地址。
-- 后端 `server/` 零依赖（`node:http`+`node:sqlite`），端口 3001，vite 代理 `/api` 与 `/media`；文章正文每次请求现读文件（`article-files.js`），改完不用重启服务端。
+- 后端 `server/` 用 express（routes/controllers/services/repositories/storage 分层）+ `node:sqlite`，端口 3001，vite 代理 `/api` 与 `/media`；文章正文每次请求现读文件（`article-files.js`），改完不用重启服务端。
+- ⚠️ `pnpm dev` = `node scripts/dev.mjs`，**同时**起后端(3001)+vite(5173)，任一退出整体关闭。只跑 `vite` 会静默回退内置示例数据 → 只读（新建/管理分类标签入口直接消失）、搜索只剩 1 篇示例 → 用户会以为功能是摆设。排查「按钮不见 / 搜不到文章」先看 `getDataState().source` 是否 `api`。
+- 搜索：`GET /api/articles/search?q=`（`services/articles.service.js#searchArticles`）扫 `data/articles/*.json` 全文，**含正文**（递归抽 Slate text），返回带 `snippet`/`matchedIn`；路由必须注册在 `/:id` 之前。前端 `Search.tsx` 在 api 源走该接口，再把「分类名/标签名命中」的本地结果合并进去；static/demo 退回本地过滤。
 - 删除必须 `rename` 到 `data/.trash/`，不要 `unlink`（本机 safe-delete shim 拦截 unlink，**且裸 Node 脚本 `fs.writeFileSync` 覆盖写已有文件也会被 shim 先移进 `.trash` 且不保证写回**）。⚠️ 批量改文章 JSON 请用 Edit/Write 工具，别用裸脚本覆盖写。写文件用 `.tmp`+`rename` 原子替换。
 - 前端 `src/data/{types,store,demo-data,bootstrap,articles}.ts`。`main.tsx` 先 `bootstrapData()` 再 render。
 - 底部评论按文档隔离：CommentSection 接 `{storageKey, seed?}`，键 `mybook-document-comments:<文章id>`；
   种子评论（`@/data/comments` 的 SEED_COMMENTS）**只由 `/demo` 路由注入**，真实文档不传 seed、从空评论开始。
 - 文章页 `persistKey=""` 关 localStorage 只走服务端；`/demo` 仍用 localStorage。`canWrite()`=数据源 api 才可写，static 自动只读。
 - 导出 `pnpm export:data` → `public/data/{meta.json,articles.json,articles/<id>.json}`（只导 published）；`public/data`、`public/media` 产物 gitignore。
-- Netlify 必须有 `/* → /index.html 200`；`/data/*` 短缓存。本地起服务 `pnpm dev:server` + `pnpm dev`。
+- Netlify 必须有 `/* → /index.html 200`；`/data/*` 短缓存。本地开发直接 `pnpm dev`（已含后端，不用再单独 `dev:server`）。
 
 ## 分类 / 标签（2026-10-17 起可编辑）
 
@@ -72,3 +74,11 @@
 - 写接口返回完整 meta，前端 `applyTaxonomy` 直接覆盖 store。
 - `TaxonomyManager` 的 `onChanged` 由 Home 内联传入→组件内用 ref 持有、`refresh` 稳定，否则 `refresh↔setState` 死循环。
 - `public/_redirects`（`/* /index.html 200`）与 `netlify.toml` 的 redirect 是两份（前者随构建进 `dist`，给拖拽部署用），改规则两处一起改。
+
+## 站点外壳 / 路由（2026-10-24 起）
+
+- 顶栏 = logo + `首页 / 全部文章 / 设置` 三个 NavLink + 搜索。**没有设置下拉**（原 `SettingsSwitcher` 已删，别再加回来）。
+- 设置是独立路由 `/settings`（`src/pages/Settings.tsx`）：左侧分组导航 + 右侧单页切换（背景/主题色/字体/光标/语言/阅读模式）。`/appearance` 只是 `<Navigate>` 兜底。
+- `.main` 的 240px 左栏留白只属于文档路由（`.mainDoc`，`/article/:id` 与 `/demo`）；首页/列表页不要留，否则像目录没消失。
+- 首页 Hero 用 `src/pages/home/scenes.tsx` 的 6 套场景（自带 light/dark 色调）+ `useHeroScene`（`mybook:home-scene:v1`），与全局壁纸是两套独立偏好。
+- 视觉自验：`pnpm shot --url … --size 1440x900 --out x.png`（`scripts/shot.mjs`，CDP；验证持久化加 `--reload`）。

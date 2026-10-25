@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev.mjs",
     "dev:server": "node --watch server/index.js",
     "start:server": "node server/index.js",
     "seed": "node scripts/seed-data.mjs",
@@ -12,6 +12,7 @@
     "build": "node scripts/export-static-data.mjs && tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "shot": "node scripts/shot.mjs",
     "prepare": "husky"
   },
   "dependencies": {
