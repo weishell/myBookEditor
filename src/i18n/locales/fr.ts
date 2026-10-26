@@ -301,6 +301,8 @@ export default {
     file: 'Fichier',
     video: 'Vidéo',
     emptyVideo: 'Aucune URL vidéo disponible',
+    unsupportedVideo:
+      'Ce format vidéo (WMV/AVI/MKV) n’est pas lisible dans le navigateur. Convertissez-le en MP4 ou téléchargez-le ci-dessus.',
     loading: 'Chargement…',
     previewFailed: 'Impossible d’afficher',
     unsupported:

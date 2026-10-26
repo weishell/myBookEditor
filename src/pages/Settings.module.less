@@ -920,3 +920,206 @@
     gap: 10px;
   }
 }
+
+/* ========== 资源维护（清理无引用资源） ==========
+   视觉上沿用本页的"浅玻璃"语言：半透明白底 + 极浅描边；
+   危险动作（清理）用低饱和红，避免和主题色按钮混淆。 */
+.maintNotice {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  border: 1px solid rgba(31, 35, 41, 0.08);
+  background: color-mix(in srgb, var(--theme-primary) 5%, rgba(255, 255, 255, 0.62));
+  font-size: 13px;
+  line-height: 1.75;
+  color: #4b5563;
+
+  b {
+    color: #1f2329;
+    font-weight: 600;
+  }
+}
+
+.maintStats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+@media (max-width: 760px) {
+  .maintStats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+.maintStat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border-radius: 12px;
+  border: 1px solid rgba(31, 35, 41, 0.07);
+  background: rgba(255, 255, 255, 0.55);
+
+  b {
+    font-size: 20px;
+    font-weight: 600;
+    color: #1f2329;
+    font-variant-numeric: tabular-nums;
+  }
+
+  span {
+    font-size: 12px;
+    color: #8f959e;
+  }
+}
+
+.maintActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.maintBtn,
+.maintDanger {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: var(--cursor-pointer);
+  transition:
+    background-color 0.15s ease,
+    border-color 0.15s ease,
+    opacity 0.15s ease;
+
+  &:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+}
+
+.maintBtn {
+  border: 1px solid rgba(31, 35, 41, 0.12);
+  background: rgba(255, 255, 255, 0.72);
+  color: #1f2329;
+
+  &:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.92);
+  }
+}
+
+.maintDanger {
+  border: 1px solid color-mix(in srgb, #e5484d 42%, transparent);
+  background: color-mix(in srgb, #e5484d 10%, #fff);
+  color: #b42318;
+
+  &:hover:not(:disabled) {
+    background: color-mix(in srgb, #e5484d 16%, #fff);
+  }
+}
+
+.maintHint {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #b42318;
+}
+
+.maintOk {
+  margin: 12px 0 0;
+  font-size: 12.5px;
+  line-height: 1.7;
+  color: #0f7b5f;
+}
+
+.maintConfirm {
+  margin-top: 16px;
+  padding: 14px 16px;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, #e5484d 30%, transparent);
+  background: color-mix(in srgb, #e5484d 6%, rgba(255, 255, 255, 0.7));
+
+  p {
+    margin: 0 0 6px;
+    font-size: 13px;
+    line-height: 1.75;
+    color: #4b5563;
+
+    b {
+      color: #1f2329;
+      font-weight: 600;
+    }
+  }
+
+  .maintActions {
+    margin-top: 10px;
+  }
+}
+
+.maintWarn {
+  color: #b42318;
+}
+
+:global(.dark-mode) {
+  .maintNotice {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+    color: #9ca3af;
+
+    b {
+      color: #e5e7eb;
+    }
+  }
+
+  .maintStat {
+    background: rgba(255, 255, 255, 0.04);
+    border-color: rgba(255, 255, 255, 0.08);
+
+    b {
+      color: #e5e7eb;
+    }
+
+    span {
+      color: #6b7280;
+    }
+  }
+
+  .maintBtn {
+    background: rgba(255, 255, 255, 0.06);
+    border-color: rgba(255, 255, 255, 0.12);
+    color: #e5e7eb;
+
+    &:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  .maintDanger {
+    background: color-mix(in srgb, #e5484d 18%, transparent);
+    border-color: color-mix(in srgb, #e5484d 45%, transparent);
+    color: #ffb4b4;
+  }
+
+  .maintConfirm {
+    background: color-mix(in srgb, #e5484d 12%, transparent);
+    border-color: color-mix(in srgb, #e5484d 40%, transparent);
+
+    p {
+      color: #9ca3af;
+
+      b {
+        color: #e5e7eb;
+      }
+    }
+  }
+
+  .maintOk {
+    color: #6ee7b7;
+  }
+
+  .maintHint,
+  .maintWarn {
+    color: #fca5a5;
+  }
+}

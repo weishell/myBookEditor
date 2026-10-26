@@ -317,6 +317,8 @@ export default {
     file: '文件',
     video: '视频',
     emptyVideo: '暂无可播放的视频地址',
+    unsupportedVideo:
+      '当前浏览器不支持该视频格式（如 WMV / AVI / MKV），请转成 MP4 后重新上传，或点右上角下载观看',
     loading: '加载中…',
     previewFailed: '无法预览',
     unsupported: '该文件类型不支持行内预览，点击右上角放大查看或下载',

@@ -25,6 +25,7 @@
     "antd": "^6.5.0",
     "axios": "1.20.0",
     "cors": "^2.8.6",
+    "docx-preview": "^0.4.1",
     "drawui-core": "0.5.3",
     "drawui-react": "0.5.3",
     "echarts": "^6.1.0",

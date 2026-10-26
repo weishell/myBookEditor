@@ -5,9 +5,9 @@
   "categoryId": "tools",
   "tagIds": ["notes", "tools"],
   "createdAt": "2026-10-17T09:00:00.000Z",
-  "reads": 0,
+  "reads": 3,
   "status": "published",
-  "updatedAt": "2026-10-25T10:03:02.743Z",
+  "updatedAt": "2026-10-25T23:15:20.214Z",
   "content": [
     {
       "type": "heading-title",
@@ -82,6 +82,15 @@
       "children": [
         {
           "text": "在首页点「新建文档」，填标题选类型就能开一篇；正文改完会自动保存，刷新不会丢。删除入口在文章页右上角。"
+        }
+      ]
+    },
+    {
+      "type": "paragraph",
+      "id": "57ad8e34-4fef-4c56-b66d-a86a7d57c9e4",
+      "children": [
+        {
+          "text": ""
         }
       ]
     }

@@ -4,8 +4,9 @@ import ReactDOM from 'react-dom';
 import { formatBytes, isImageFile } from './MediaBlock';
 import type { MediaKind, MediaAttrs } from './MediaBlock';
 import { lockPageScroll } from '@/utils/scroll-lock';
-import { toMediaUrl } from '@/data/media';
+import { isBrowserPlayableVideo, toMediaUrl } from '@/data/media';
 import { FileCode, isTextualFile } from './file-code';
+import DocxPreview, { isDocxFile, isLocalDocxSrc, toAbsoluteUrl } from './DocxPreview';
 import styles from './MediaBlock.module.less';
 
 interface MediaPreviewProps {
@@ -41,8 +42,8 @@ function getOfficePreview(name = '', src = ''): OfficePreview {
     default:
       break;
   }
-  // 在线预览要求文件是公网可访问的 http(s) 地址；本地/内网地址无法被预览服务抓取
-  const publicSrc = kind && /^https?:\/\//i.test(src) ? src : null;
+  // 在线预览要求文件能被微软服务器从公网抓取；localhost / 内网地址抓不到
+  const publicSrc = kind && src && !isLocalDocxSrc(src) ? toAbsoluteUrl(src) : null;
   return {
     kind,
     url: publicSrc
@@ -59,6 +60,8 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
   const isImage = kind === 'file' && isImageFile(attrs?.name, attrs?.mimeType);
   const isText = kind === 'file' && !isImage && isTextualFile(attrs?.name, attrs?.mimeType);
   const office = getOfficePreview(attrs?.name, attrs?.src);
+  // 本地/内网 .docx 用 docx-preview 渲染；线上地址走 Office 在线预览
+  const isLocalDocx = isDocxFile(attrs?.name, attrs?.mimeType) && isLocalDocxSrc(attrs?.src || '');
 
   // 全屏预览期间锁住页面滚动，隐藏背景页的滚动条，避免误拖
   useEffect(() => lockPageScroll(), []);
@@ -130,13 +133,20 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
           <div className={styles.fullPageBody}>
             {kind === 'video' ? (
               attrs?.src ? (
-                <video
-                  className={styles.fullPageVideo}
-                  src={toMediaUrl(attrs.src)}
-                  controls
-                  autoPlay
-                  preload="metadata"
-                />
+                isBrowserPlayableVideo(attrs.src) ? (
+                  <video
+                    className={styles.fullPageVideo}
+                    src={toMediaUrl(attrs.src)}
+                    controls
+                    autoPlay
+                    preload="metadata"
+                  />
+                ) : (
+                  <div className={styles.fullPageEmpty}>
+                    当前浏览器不支持该视频格式（如 WMV / AVI / MKV），请转成 MP4
+                    后重新上传，或点下方链接下载观看
+                  </div>
+                )
               ) : (
                 <div className={styles.fullPageEmpty}>暂无可播放的视频地址</div>
               )
@@ -162,6 +172,12 @@ const MediaPreview: React.FC<MediaPreviewProps> = ({ kind, attrs, onClose }) => 
                   name={attrs?.name}
                   mimeType={attrs?.mimeType}
                 />
+              )
+            ) : isLocalDocx ? (
+              attrs?.src ? (
+                <DocxPreview src={attrs.src} variant="full" />
+              ) : (
+                <div className={styles.fullPageEmpty}>暂无可预览的文件地址</div>
               )
             ) : office?.url ? (
               <iframe

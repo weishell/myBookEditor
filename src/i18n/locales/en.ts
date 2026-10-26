@@ -369,6 +369,8 @@ export default {
     file: 'File',
     video: 'Video',
     emptyVideo: 'No playable video URL yet',
+    unsupportedVideo:
+      'This video format (WMV/AVI/MKV) cannot be played in the browser. Convert it to MP4 and re-upload, or download it above.',
     loading: 'Loading…',
     previewFailed: 'Cannot preview',
     unsupported: 'This file type can’t be previewed inline. Use the preview or download actions',

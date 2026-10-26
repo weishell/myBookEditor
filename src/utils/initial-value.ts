@@ -842,7 +842,8 @@ export const initialValue: Descendant[] = [
     id: uuidv4(),
     attrs: {
       kind: 'file',
-      src: 'https://raw.githubusercontent.com/weishell/myBookEditor/main/public/eg.docx',
+      // 用随应用发布的本地文件，别再指向 GitHub raw：国内网络经常抓不到，预览会直接 Failed to fetch
+      src: '/eg.docx',
       name: 'eg.docx',
       size: 11233,
       mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',

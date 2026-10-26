@@ -5,9 +5,9 @@
   "categoryId": "frontend",
   "tagIds": [],
   "createdAt": "2026-10-25T10:42:42.305Z",
-  "reads": 4,
+  "reads": 15,
   "status": "published",
-  "updatedAt": "2026-10-25T10:55:46.068Z",
+  "updatedAt": "2026-10-26T12:47:47.397Z",
   "content": [
     {
       "type": "heading-title",
@@ -27,7 +27,7 @@
       "id": "57f05086-e4f9-4f78-a5d3-a1419eba6396",
       "children": [
         {
-          "text": "QWEW1"
+          "text": "QWEW11221"
         }
       ]
     },
@@ -41,22 +41,33 @@
       ]
     },
     {
-      "type": "file-block",
-      "id": "e5856dbb-1b7b-44ca-a56c-c0263fca5d3e",
+      "type": "image-block",
+      "id": "3bbb49f2-121c-47a0-83b6-87c672d0f2e9",
       "attrs": {
-        "kind": "file",
-        "src": "media/images/1792924991722-9b72a4aa579693ddbddfbb5984709a07.jpg",
-        "name": "9b72a4aa579693ddbddfbb5984709a07.jpg",
-        "size": 202080,
-        "mimeType": "image/jpeg",
-        "layer": "card",
-        "align": "left"
+        "url": "/media/images/1792970884367-Snipaste_2025-10-05_20-37-45.webp",
+        "width": 805,
+        "height": 464,
+        "align": "center",
+        "name": "Snipaste_2025-10-05_20-37-45.webp",
+        "offsetLeft": 0,
+        "offsetTop": 0,
+        "offsetWidth": 0,
+        "offsetHeight": 0
       },
       "children": [
         {
           "text": ""
         }
       ]
+    },
+    {
+      "children": [
+        {
+          "text": ""
+        }
+      ],
+      "type": "paragraph",
+      "id": "fedb7b4e-443e-4830-a52e-0d9fd198a83e"
     },
     {
       "type": "file-block",
@@ -77,14 +88,16 @@
       ]
     },
     {
-      "type": "image-block",
-      "id": "02a2e432-8a6d-4f9b-9615-88d1061e0482",
+      "type": "video-block",
+      "id": "5dee4e4d-bb4b-4d9c-aaae-4b1f0f9bd6a7",
       "attrs": {
-        "url": "media/images/1792924991722-9b72a4aa579693ddbddfbb5984709a07.jpg",
-        "width": 256.51251220703125,
-        "height": 342.12356315612794,
-        "align": "center",
-        "name": "9b72a4aa579693ddbddfbb5984709a07.jpg"
+        "kind": "video",
+        "src": "media/videos/1792925010980-Video_2026-01-02_114013.wmv",
+        "name": "Video_2026-01-02_114013.wmv",
+        "size": 898621,
+        "mimeType": "video/x-ms-wmv",
+        "layer": "card",
+        "align": "left"
       },
       "children": [
         {
@@ -94,13 +107,31 @@
     },
     {
       "type": "video-block",
-      "id": "5dee4e4d-bb4b-4d9c-aaae-4b1f0f9bd6a7",
+      "id": "51350dfa-1b7a-4db4-9760-72f491217395",
       "attrs": {
         "kind": "video",
-        "src": "media/videos/1792925010980-Video_2026-01-02_114013.wmv",
+        "src": "media/videos/1792968675448-463e4f5c39aafc4e.wmv",
         "name": "Video_2026-01-02_114013.wmv",
         "size": 898621,
         "mimeType": "video/x-ms-wmv",
+        "layer": "card",
+        "align": "left"
+      },
+      "children": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    {
+      "type": "video-block",
+      "id": "51ce75ef-c8ca-485a-9f2f-fe5a08346477",
+      "attrs": {
+        "kind": "video",
+        "src": "/media/videos/1792969231077-6-2_适配器模式-演示.mp4",
+        "name": "6-2 适配器模式-演示.mp4",
+        "size": 3965462,
+        "mimeType": "video/mp4",
         "layer": "view",
         "align": "left"
       },

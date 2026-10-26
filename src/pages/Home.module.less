@@ -331,9 +331,10 @@
   flex-direction: column;
   overflow: hidden;
   border-radius: 12px;
-  border: 1px solid rgba(31, 35, 41, 0.07);
-  background: rgba(255, 255, 255, 0.76);
-  box-shadow: var(--shadow-card);
+  border: 1px solid rgba(31, 35, 41, 0.06);
+  // 与 hero 玻璃面板同一档透明度：原来的 0.76 在浅色背景上明显更亮、像贴上去的一块
+  background: rgba(255, 255, 255, 0.5);
+  box-shadow: 0 6px 18px rgba(31, 41, 55, 0.05);
 }
 
 .latestRow {
@@ -351,7 +352,8 @@
   }
 
   &:hover {
-    background: rgba(255, 255, 255, 0.92);
+    // hover 只比容器亮一点点（原来 0.92 会突然闪出一整条白），靠左侧主题色细条做锚点
+    background: rgba(255, 255, 255, 0.62);
     /* 左侧一道主题色细条：比整行变色更克制，也给了明确的"当前行"锚点 */
     box-shadow: inset 3px 0 0 var(--theme-primary);
 

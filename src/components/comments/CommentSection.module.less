@@ -1,17 +1,12 @@
 // 全文评论 - 底部评论区样式（对齐飞书文档底部评论）
-// 白背景卡片、标题 + 分隔线、32px 圆头像、灰色时间戳、圆角输入框聚焦高亮主题色
+// 注意：评论区现在和正文同属一张「纸」（在 data-paper 内部），
+// 所以这里不再自己限宽 / 加水平内边距 —— 由纸张的 padding(40px 65px) 统一控制，
+// 背景与壁纸也就自然连成一体，中间不会出现色差或边框接缝。
 .section {
   box-sizing: border-box;
-  max-width: 1000px;
-  margin: 0 auto;
-  padding: 8px 0 40px;
+  margin: 24px 0 0;
+  padding: 0;
   pointer-events: auto;
-
-  // 与内容区文字对齐（编辑器纸张水平内边距为 65px）
-  @media (min-width: 1140px) {
-    padding-left: 65px;
-    padding-right: 65px;
-  }
 }
 
 // 标题栏 + 分隔线
@@ -176,20 +171,28 @@
 }
 
 // 输入区
+// 不用纯白：纸面可能是暖色 / 护眼绿 / 插画底图，纯白会像贴了一块补丁。
+// 改成半透明白 + 极浅边框，让纸面底色透上来，视觉上"长在纸上"。
 .inputBox {
   display: flex;
   align-items: flex-start;
   gap: 8px;
   margin-top: 10px;
   padding: 8px 10px;
-  border: 1px solid #dee0e3;
-  border-radius: 6px;
-  background-color: #fff;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  border: 1px solid color-mix(in srgb, #1f2329 12%, transparent);
+  border-radius: 8px; // 与纸张圆角一致
+  background-color: color-mix(in srgb, #ffffff 62%, transparent);
+  transition: background-color 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+
+  &:hover {
+    background-color: color-mix(in srgb, #ffffff 72%, transparent);
+    border-color: color-mix(in srgb, #1f2329 18%, transparent);
+  }
 
   &.focused {
-    border-color: var(--theme-primary, #3370ff);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--theme-primary, #3370ff) 12%, transparent);
+    background-color: color-mix(in srgb, #ffffff 82%, transparent);
+    border-color: color-mix(in srgb, var(--theme-primary, #3370ff) 55%, transparent);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, #3370ff) 10%, transparent);
   }
 }
 
@@ -297,6 +300,17 @@
   .inputBox {
     background-color: transparent;
     border-color: #2b3240;
+
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.04);
+      border-color: #3a4353;
+    }
+
+    &.focused {
+      background-color: rgba(255, 255, 255, 0.06);
+      border-color: color-mix(in srgb, var(--theme-primary, #3370ff) 60%, transparent);
+      box-shadow: 0 0 0 3px color-mix(in srgb, var(--theme-primary, #3370ff) 14%, transparent);
+    }
   }
 
   .itemConfirming {

@@ -325,6 +325,83 @@
   cursor: zoom-in;
 }
 
+/* Word 文档预览（docx-preview 渲染出的 DOM） */
+.docxView {
+  position: relative;
+  width: 100%;
+  max-height: 560px;
+  overflow: auto;
+  padding: 8px 6px;
+  box-sizing: border-box;
+  background: #f3f4f6;
+  border-radius: 4px;
+
+  /* 覆盖 docx-preview 默认的灰色画布 + 阴影，改成贴合文档正文的浅底 */
+  :global(.docx-embed-wrapper) {
+    display: block;
+    width: 100%;
+    padding: 0;
+    background: transparent;
+    box-sizing: border-box;
+  }
+
+  :global(.docx-embed-wrapper > section.docx-embed) {
+    width: 100% !important;
+    min-height: 0 !important;
+    margin: 0 auto 12px;
+    box-shadow: none;
+    border: 1px solid #e5e7eb;
+    box-sizing: border-box;
+  }
+
+  :global(.docx-embed-wrapper > section.docx-embed:last-child) {
+    margin-bottom: 0;
+  }
+
+  :global(.docx-embed img) {
+    max-width: 100%;
+    height: auto;
+  }
+}
+
+.docxViewFull {
+  max-height: none;
+  height: calc(100vh - 140px);
+  padding: 12px;
+}
+
+.docxBody {
+  width: 100%;
+}
+
+/* 公网文件直连失败时的 Office 在线预览（iframe） */
+.docxOffice {
+  display: block;
+  width: 100%;
+  height: 520px;
+  border: 0;
+  background: #fff;
+}
+
+.docxViewFull .docxOffice {
+  height: calc(100vh - 220px);
+}
+
+.docxHint {
+  padding: 24px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+.docxHintUrl {
+  margin: 6px 0;
+  font-size: 12px;
+  word-break: break-all;
+  opacity: 0.8;
+}
+
 .textContent {
   margin: 0;
   height: 100%;
@@ -537,6 +614,18 @@
 
   .viewImageWrap {
     background: #141a26;
+  }
+
+  .docxView {
+    background: #141a26;
+
+    :global(.docx-embed-wrapper > section.docx-embed) {
+      border-color: #2b3240;
+    }
+  }
+
+  .docxHint {
+    color: #6b7280;
   }
 
   .viewName {

@@ -16,8 +16,9 @@ import { uploadProgressStore } from '@/plugins/image/uploadImage';
 import { AlignIcon } from '@/components/AlignIndentPanel';
 import { TrashIcon, CopyIcon } from '@/components/icons/lineIcons';
 import MediaPreview from './MediaPreview';
+import DocxPreview, { isDocxFile, isLegacyDocFile } from './DocxPreview';
 import { FileCode, isTextualFile } from './file-code';
-import { toMediaUrl } from '@/data/media';
+import { isBrowserPlayableVideo, toMediaUrl } from '@/data/media';
 import styles from './MediaBlock.module.less';
 
 export type MediaKind = 'file' | 'video';
@@ -253,9 +254,12 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   }, [showToolbar, isSelected, layer, align, updateToolbarLeft]);
 
   const isImage = kind === 'file' && isImageFile(attrs?.name, attrs?.mimeType);
-  const isTextFile = kind === 'file' && !isImage && isTextualFile(attrs?.name, attrs?.mimeType);
-  // 预览模式（readOnly）下，文本文件/图片直接展开，不需要再点小眼睛打开全局预览
-  const effectiveLayer: MediaLayer = readOnly && (isTextFile || isImage) ? 'view' : layer;
+  const isWord = kind === 'file' && isDocxFile(attrs?.name, attrs?.mimeType);
+  const isLegacyWord = kind === 'file' && isLegacyDocFile(attrs?.name, attrs?.mimeType);
+  const isTextFile =
+    kind === 'file' && !isImage && !isWord && isTextualFile(attrs?.name, attrs?.mimeType);
+  // 预览模式（readOnly）下，文本文件/图片/Word 直接展开，不需要再点小眼睛打开全局预览
+  const effectiveLayer: MediaLayer = readOnly && (isTextFile || isImage || isWord) ? 'view' : layer;
 
   const getElementPath = useCallback(() => {
     try {
@@ -582,12 +586,17 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
           >
             {kind === 'video' ? (
               attrs?.src ? (
-                <video
-                  className={styles.video}
-                  src={toMediaUrl(attrs.src)}
-                  controls
-                  preload="metadata"
-                />
+                isBrowserPlayableVideo(attrs.src) ? (
+                  <video
+                    className={styles.video}
+                    src={toMediaUrl(attrs.src)}
+                    controls
+                    preload="metadata"
+                  />
+                ) : (
+                  // wmv / avi / mkv 等浏览器解不了的格式：别显示黑框，直接告诉用户怎么办
+                  <div className={styles.emptyView}>{t('media.unsupportedVideo')}</div>
+                )
               ) : (
                 <div className={styles.emptyView}>{t('media.emptyVideo')}</div>
               )
@@ -601,6 +610,12 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                     onClick={() => setPreviewOpen(true)}
                   />
                 </div>
+              ) : (
+                <div className={styles.emptyView}>{t('media.unsupported')}</div>
+              )
+            ) : isWord ? (
+              attrs?.src ? (
+                <DocxPreview src={attrs.src} />
               ) : (
                 <div className={styles.emptyView}>{t('media.unsupported')}</div>
               )
@@ -626,7 +641,11 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
                     />
                   )}
                   {!textLoading && !textError && textContent === null && !isTextFile && (
-                    <div className={styles.emptyView}>{t('media.unsupported')}</div>
+                    <div className={styles.emptyView}>
+                      {isLegacyWord
+                        ? '旧版 .doc 暂不支持在线预览，请下载后在本地查看（或另存为 .docx 再上传）。'
+                        : t('media.unsupported')}
+                    </div>
                   )}
                 </div>
               </>

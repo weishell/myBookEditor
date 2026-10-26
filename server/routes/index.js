@@ -5,6 +5,7 @@ import trashRoutes from './trash.routes.js';
 import taxonomyRoutes from './taxonomy.routes.js';
 import mediaRoutes from './media.routes.js';
 import commentsRoutes from './comments.routes.js';
+import maintenanceRoutes from './maintenance.routes.js';
 import systemRoutes from './system.routes.js';
 import * as taxonomyController from '../controllers/taxonomy.controller.js';
 
@@ -16,6 +17,7 @@ router.get('/meta', taxonomyController.meta);
 router.use('/articles', articlesRoutes);
 router.use('/trash', trashRoutes);
 router.use('/comments', commentsRoutes);
+router.use('/maintenance', maintenanceRoutes);
 router.use('/', taxonomyRoutes);
 router.use('/', mediaRoutes);
 router.use('/', systemRoutes);

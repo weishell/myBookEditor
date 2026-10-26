@@ -298,6 +298,8 @@ export default {
     file: '파일',
     video: '동영상',
     emptyVideo: '재생 가능한 동영상 주소가 없습니다',
+    unsupportedVideo:
+      '이 동영상 형식(WMV/AVI/MKV)은 브라우저에서 재생할 수 없습니다. MP4로 변환해 다시 업로드하거나 오른쪽 위에서 다운로드하세요.',
     loading: '불러오는 중…',
     previewFailed: '미리볼 수 없음',
     unsupported:

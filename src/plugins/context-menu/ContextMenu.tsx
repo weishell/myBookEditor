@@ -262,6 +262,22 @@ export const ContextMenu = () => {
   const handleDelete = () => {
     const path = getTargetPath();
     if (!path) return;
+
+    // 文档只剩最后一个块时不能直接 remove（children 为空会让 Slate 抛错），
+    // 这种情况把它替换成一个空段落，等价于"清空这一块"。
+    if ((editor.children || []).length <= 1) {
+      Editor.withoutNormalizing(editor, () => {
+        Transforms.removeNodes(editor, { at: path });
+        Transforms.insertNodes(
+          editor,
+          { type: BlockElementType.PARAGRAPH, children: [{ text: '' }] } as any,
+          { at: [0] },
+        );
+      });
+      moveCaretToIndex(0);
+      return;
+    }
+
     removeBlockAtPath(path);
   };
 
@@ -370,10 +386,32 @@ export const ContextMenu = () => {
 
   const isConvertibleBlock = !!targetNode && CONVERTIBLE_BLOCK_TYPES.includes(targetNode.type);
 
+  /**
+   * 是否文本类块（段落 / 标题 / 引用 / 提示 / 待办 / 代码）。
+   * 图片、视频、文件、画板、流程图这类「整块型」块没有文字格式可调，
+   * 菜单里就不该出现标题、列表、字体、颜色、缩进这些项 —— 是隐藏，不是置灰。
+   */
+  const isTextualBlock = !!targetNode && CONVERTIBLE_BLOCK_TYPES.includes(targetNode.type);
+
+  /**
+   * 结构性子块不能整块删（删了表格 / 分栏会残缺），其余块都允许删。
+   * 之前只有「可转换块」能删，导致图片 / 视频 / 文件块根本删不掉。
+   */
+  const UNREMOVABLE_BLOCK_TYPES: string[] = [
+    BlockElementType.TABLE_ROW,
+    BlockElementType.TABLE_CELL,
+    BlockElementType.COLUMN,
+    BlockElementType.CODE_LINE,
+    BlockElementType.LIST_ITEM,
+  ];
+  const canRemoveBlock = !!targetNode && !UNREMOVABLE_BLOCK_TYPES.includes(targetNode.type);
+
   const DISABLED_ACTIONS = [
     'code',
-    // 不可删的块（结构性子块等）也不能剪切 —— 剪切 = 复制 + 删除
-    ...(!isConvertibleBlock ? ['cut', 'delete', ...CONVERT_ACTIONS] : []),
+    // 文本格式转换只对文本块有意义（非文本块这些按钮已隐藏，这里留作兜底）
+    ...(!isConvertibleBlock ? CONVERT_ACTIONS : []),
+    // 剪切 = 复制 + 删除，所以能否剪切跟能否删除保持一致
+    ...(!canRemoveBlock ? ['cut', 'delete'] : []),
   ];
 
   // 当前目标块的"激活态"判定：基于 hover 块的 type + attrs 独立判断，
@@ -683,225 +721,236 @@ export const ContextMenu = () => {
         onMouseLeave={() => setHoveringMenu(false)}
       >
         {renderEmbedFlow()}
-        <div className={styles.toolbar}>
-          <button
-            onClick={() => handleMenuClick('text')}
-            className={isConvertActive('text') ? styles.btnPrimary : styles.btnToolBold}
-            disabled={DISABLED_ACTIONS.includes('text')}
-          >
-            T
-          </button>
-          {[1, 2, 3, 4, 5].map((n) => (
-            <button
-              key={n}
-              onClick={() => handleMenuClick(`h${n}` as DocBarConvertTarget)}
-              className={
-                isConvertActive(`h${n}` as DocBarConvertTarget)
-                  ? styles.btnPrimary
-                  : styles.btnToolBold
+        {/* 文本块专属：标题 / 列表 / 待办 / 代码 / 引用 / 提示 */}
+        {isTextualBlock && (
+          <>
+            <div className={styles.toolbar}>
+              <button
+                onClick={() => handleMenuClick('text')}
+                className={isConvertActive('text') ? styles.btnPrimary : styles.btnToolBold}
+                disabled={DISABLED_ACTIONS.includes('text')}
+              >
+                T
+              </button>
+              {[1, 2, 3, 4, 5].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handleMenuClick(`h${n}` as DocBarConvertTarget)}
+                  className={
+                    isConvertActive(`h${n}` as DocBarConvertTarget)
+                      ? styles.btnPrimary
+                      : styles.btnToolBold
+                  }
+                  disabled={DISABLED_ACTIONS.includes(`h${n}`)}
+                >
+                  H{n}
+                </button>
+              ))}
+            </div>
+            <div className={styles.toolbar}>
+              {[6, 7, 8, 9].map((n) => (
+                <button
+                  key={n}
+                  onClick={() => handleMenuClick(`h${n}` as DocBarConvertTarget)}
+                  className={
+                    isConvertActive(`h${n}` as DocBarConvertTarget)
+                      ? styles.btnPrimary
+                      : styles.btnToolBold
+                  }
+                  disabled={DISABLED_ACTIONS.includes(`h${n}`)}
+                >
+                  H{n}
+                </button>
+              ))}
+              <button
+                onClick={() => handleMenuClick('numbered-list')}
+                className={isConvertActive('numbered-list') ? styles.btnPrimary : styles.btnTool}
+                disabled={DISABLED_ACTIONS.includes('numbered-list')}
+                title={t('blockPicker.numberedList')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('numbered');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+              <button
+                onClick={() => handleMenuClick('bulleted-list')}
+                className={isConvertActive('bulleted-list') ? styles.btnPrimary : styles.btnTool}
+                disabled={DISABLED_ACTIONS.includes('bulleted-list')}
+                title={t('blockPicker.bulletedList')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('bulleted');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+            </div>
+            <div className={styles.divider} />
+            <div className={styles.toolbar}>
+              <button
+                onClick={() => handleMenuClick('checkbox')}
+                className={isConvertActive('checkbox') ? styles.btnPrimary : styles.btnTool}
+                disabled={DISABLED_ACTIONS.includes('checkbox')}
+                title={t('blockMenu.todoTitle')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('todo');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+              <button
+                onClick={() => handleMenuClick('code-block')}
+                className={isConvertActive('code-block') ? styles.btnPrimary : styles.btnToolMono}
+                disabled={DISABLED_ACTIONS.includes('code-block')}
+                title={t('blockPicker.codeBlock')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('code-block');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+              <button
+                onClick={() => handleMenuClick('quote')}
+                className={isConvertActive('quote') ? styles.btnPrimary : styles.btnTool}
+                disabled={DISABLED_ACTIONS.includes('quote')}
+                title={t('blockMenu.quoteTitle')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('quote');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+              <button
+                onClick={() => handleMenuClick('hint')}
+                className={isConvertActive('hint') ? styles.btnPrimary : styles.btnTool}
+                disabled={DISABLED_ACTIONS.includes('hint')}
+                title={t('blockPicker.hintBlock')}
+              >
+                {(() => {
+                  const Cmp = blockTypeIconComponent('hint');
+                  return Cmp ? <Cmp size={16} /> : null;
+                })()}
+              </button>
+            </div>
+            <div className={styles.divider} />
+          </>
+        )}
+
+        {/* 文本块专属：缩进对齐 / 字体 / 颜色 */}
+        {isTextualBlock && (
+          <>
+            <Popover
+              open={indentOpen}
+              onOpenChange={(open) => {
+                setIndentOpen(open);
+                setHoveringMenu(open);
+              }}
+              overlayInnerStyle={{ padding: 0 }}
+              content={
+                <div
+                  className={styles.alignFlyout}
+                  onMouseEnter={() => setHoveringMenu(true)}
+                  onMouseLeave={() => setHoveringMenu(false)}
+                >
+                  <AlignIndentPanel
+                    disabled={!isTextFormatable}
+                    align={currentAlign}
+                    indent={currentIndent}
+                    maxIndent={MAX_INDENT}
+                    onAlign={handleAlign}
+                    onIndentChange={handleIndent}
+                  />
+                </div>
               }
-              disabled={DISABLED_ACTIONS.includes(`h${n}`)}
+              trigger="click"
+              placement="right"
             >
-              H{n}
-            </button>
-          ))}
-        </div>
-        <div className={styles.toolbar}>
-          {[6, 7, 8, 9].map((n) => (
-            <button
-              key={n}
-              onClick={() => handleMenuClick(`h${n}` as DocBarConvertTarget)}
-              className={
-                isConvertActive(`h${n}` as DocBarConvertTarget)
-                  ? styles.btnPrimary
-                  : styles.btnToolBold
+              <button
+                className={`${styles.btnAction} ${indentOpen ? styles.btnActionActive : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setIndentOpen(!indentOpen);
+                  setHoveringMenu(true);
+                }}
+              >
+                <span className={styles.actionIcon}>
+                  <IndentAlignIcon size={16} />
+                </span>
+                <span>{t('blockMenu.indentAlign')}</span>
+                <span className={styles.actionArrow}>{indentOpen ? '⌄' : '›'}</span>
+              </button>
+            </Popover>
+            <Popover
+              open={fontOpen}
+              onOpenChange={(open) => {
+                setFontOpen(open);
+                setHoveringMenu(open);
+              }}
+              content={
+                <div
+                  onMouseEnter={() => setHoveringMenu(true)}
+                  onMouseLeave={() => setHoveringMenu(false)}
+                >
+                  <FontPicker onFontChange={handleFontChange} />
+                </div>
               }
-              disabled={DISABLED_ACTIONS.includes(`h${n}`)}
+              trigger="click"
+              placement="right"
             >
-              H{n}
-            </button>
-          ))}
-          <button
-            onClick={() => handleMenuClick('numbered-list')}
-            className={isConvertActive('numbered-list') ? styles.btnPrimary : styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('numbered-list')}
-            title={t('blockPicker.numberedList')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('numbered');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-          <button
-            onClick={() => handleMenuClick('bulleted-list')}
-            className={isConvertActive('bulleted-list') ? styles.btnPrimary : styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('bulleted-list')}
-            title={t('blockPicker.bulletedList')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('bulleted');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-        </div>
-        <div className={styles.divider} />
-        <div className={styles.toolbar}>
-          <button
-            onClick={() => handleMenuClick('checkbox')}
-            className={isConvertActive('checkbox') ? styles.btnPrimary : styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('checkbox')}
-            title={t('blockMenu.todoTitle')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('todo');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-          <button
-            onClick={() => handleMenuClick('code-block')}
-            className={isConvertActive('code-block') ? styles.btnPrimary : styles.btnToolMono}
-            disabled={DISABLED_ACTIONS.includes('code-block')}
-            title={t('blockPicker.codeBlock')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('code-block');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-          <button
-            onClick={() => handleMenuClick('quote')}
-            className={isConvertActive('quote') ? styles.btnPrimary : styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('quote')}
-            title={t('blockMenu.quoteTitle')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('quote');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-          <button
-            onClick={() => handleMenuClick('hint')}
-            className={isConvertActive('hint') ? styles.btnPrimary : styles.btnTool}
-            disabled={DISABLED_ACTIONS.includes('hint')}
-            title={t('blockPicker.hintBlock')}
-          >
-            {(() => {
-              const Cmp = blockTypeIconComponent('hint');
-              return Cmp ? <Cmp size={16} /> : null;
-            })()}
-          </button>
-        </div>
-        <div className={styles.divider} />
-        <Popover
-          open={indentOpen}
-          onOpenChange={(open) => {
-            setIndentOpen(open);
-            setHoveringMenu(open);
-          }}
-          overlayInnerStyle={{ padding: 0 }}
-          content={
-            <div
-              className={styles.alignFlyout}
-              onMouseEnter={() => setHoveringMenu(true)}
-              onMouseLeave={() => setHoveringMenu(false)}
+              <button
+                className={`${styles.btnAction} ${fontOpen ? styles.btnActionActive : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setFontOpen(!fontOpen);
+                  setHoveringMenu(true);
+                }}
+              >
+                <span className={styles.actionIcon}>Aa</span>
+                <span>{t('blockMenu.font')}</span>
+                <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
+              </button>
+            </Popover>
+            <Popover
+              open={colorOpen}
+              onOpenChange={(open) => {
+                setColorOpen(open);
+                setHoveringMenu(open);
+              }}
+              // 让 ColorPickerPanel 自己控制内边距（embedded 模式下无自带外观）
+              overlayInnerStyle={{ padding: 0 }}
+              content={
+                <div
+                  className={styles.colorFlyout}
+                  onMouseEnter={() => setHoveringMenu(true)}
+                  onMouseLeave={() => setHoveringMenu(false)}
+                >
+                  <ColorPickerPanel
+                    embedded
+                    onTextColorChange={handleTextColorChange}
+                    onBackgroundColorChange={handleBackgroundColorChange}
+                  />
+                </div>
+              }
+              trigger="click"
+              placement="right"
             >
-              <AlignIndentPanel
-                disabled={!isTextFormatable}
-                align={currentAlign}
-                indent={currentIndent}
-                maxIndent={MAX_INDENT}
-                onAlign={handleAlign}
-                onIndentChange={handleIndent}
-              />
-            </div>
-          }
-          trigger="click"
-          placement="right"
-        >
-          <button
-            className={`${styles.btnAction} ${indentOpen ? styles.btnActionActive : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setIndentOpen(!indentOpen);
-              setHoveringMenu(true);
-            }}
-          >
-            <span className={styles.actionIcon}>
-              <IndentAlignIcon size={16} />
-            </span>
-            <span>{t('blockMenu.indentAlign')}</span>
-            <span className={styles.actionArrow}>{indentOpen ? '⌄' : '›'}</span>
-          </button>
-        </Popover>
-        <Popover
-          open={fontOpen}
-          onOpenChange={(open) => {
-            setFontOpen(open);
-            setHoveringMenu(open);
-          }}
-          content={
-            <div
-              onMouseEnter={() => setHoveringMenu(true)}
-              onMouseLeave={() => setHoveringMenu(false)}
-            >
-              <FontPicker onFontChange={handleFontChange} />
-            </div>
-          }
-          trigger="click"
-          placement="right"
-        >
-          <button
-            className={`${styles.btnAction} ${fontOpen ? styles.btnActionActive : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setFontOpen(!fontOpen);
-              setHoveringMenu(true);
-            }}
-          >
-            <span className={styles.actionIcon}>Aa</span>
-            <span>{t('blockMenu.font')}</span>
-            <span className={styles.actionArrow}>{fontOpen ? '⌄' : '›'}</span>
-          </button>
-        </Popover>
-        <Popover
-          open={colorOpen}
-          onOpenChange={(open) => {
-            setColorOpen(open);
-            setHoveringMenu(open);
-          }}
-          // 让 ColorPickerPanel 自己控制内边距（embedded 模式下无自带外观）
-          overlayInnerStyle={{ padding: 0 }}
-          content={
-            <div
-              className={styles.colorFlyout}
-              onMouseEnter={() => setHoveringMenu(true)}
-              onMouseLeave={() => setHoveringMenu(false)}
-            >
-              <ColorPickerPanel
-                embedded
-                onTextColorChange={handleTextColorChange}
-                onBackgroundColorChange={handleBackgroundColorChange}
-              />
-            </div>
-          }
-          trigger="click"
-          placement="right"
-        >
-          <button
-            className={`${styles.btnAction} ${colorOpen ? styles.btnActionActive : ''}`}
-            onClick={(e) => {
-              e.stopPropagation();
-              setColorOpen(!colorOpen);
-              setHoveringMenu(true);
-            }}
-          >
-            <span className={styles.actionIcon}>
-              <DropletIcon size={16} />
-            </span>
-            <span>{t('blockMenu.color')}</span>
-            <span className={styles.actionArrow}>{colorOpen ? '⌄' : '›'}</span>
-          </button>
-        </Popover>
+              <button
+                className={`${styles.btnAction} ${colorOpen ? styles.btnActionActive : ''}`}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setColorOpen(!colorOpen);
+                  setHoveringMenu(true);
+                }}
+              >
+                <span className={styles.actionIcon}>
+                  <DropletIcon size={16} />
+                </span>
+                <span>{t('blockMenu.color')}</span>
+                <span className={styles.actionArrow}>{colorOpen ? '⌄' : '›'}</span>
+              </button>
+            </Popover>
+          </>
+        )}
         <div className={styles.divider} />
         <button
           onClick={handleComment}
@@ -944,22 +993,25 @@ export const ContextMenu = () => {
           <span>{t('blockMenu.delete')}</span>
         </button>
         <div className={styles.divider} />
-        <button
-          className={styles.btnAction}
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={(e) => {
-            e.stopPropagation();
-            const path = getTargetPath();
-            if (!path) return;
-            setEmbedInsertPath(getInsertPathAfter(path));
-            forceCloseMenu();
-          }}
-        >
-          <span className={styles.actionIcon}>
-            <GlobeIcon size={16} />
-          </span>
-          <span>{t('blockPicker.embed')}</span>
-        </button>
+        {/* 内嵌网页：文本块里插入嵌入块才有意义 */}
+        {isTextualBlock && (
+          <button
+            className={styles.btnAction}
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={(e) => {
+              e.stopPropagation();
+              const path = getTargetPath();
+              if (!path) return;
+              setEmbedInsertPath(getInsertPathAfter(path));
+              forceCloseMenu();
+            }}
+          >
+            <span className={styles.actionIcon}>
+              <GlobeIcon size={16} />
+            </span>
+            <span>{t('blockPicker.embed')}</span>
+          </button>
+        )}
         {canInsertBelow && (
           <>
             <div className={styles.divider} />

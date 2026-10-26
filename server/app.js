@@ -18,8 +18,10 @@ export function createApp() {
   app.use(express.json({ limit: MAX_BODY_BYTES }));
 
   // /media/** → data/media/ 下的文件（图片、附件、视频）
+  // HEAD 也要挂：播放器/浏览器会先探测 Content-Length 与 Range 支持
   const mediaStatic = Router();
   mediaStatic.get('/*splat', mediaController.serve);
+  mediaStatic.head('/*splat', mediaController.serve);
   app.use('/media', mediaStatic);
 
   // 所有接口

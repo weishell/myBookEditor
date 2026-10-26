@@ -298,6 +298,8 @@ export default {
     file: 'ファイル',
     video: '動画',
     emptyVideo: '再生可能な動画URLがありません',
+    unsupportedVideo:
+      'この動画形式（WMV/AVI/MKV）はブラウザで再生できません。MP4 に変換して再アップロードするか、右上からダウンロードしてください。',
     loading: '読み込み中…',
     previewFailed: 'プレビューできません',
     unsupported:

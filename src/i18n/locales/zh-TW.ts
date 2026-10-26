@@ -297,6 +297,8 @@ export default {
     file: '檔案',
     video: '影片',
     emptyVideo: '暫無可播放的影片位址',
+    unsupportedVideo:
+      '目前瀏覽器不支援此影片格式（如 WMV / AVI / MKV），請轉成 MP4 後重新上傳，或點右上角下載觀看',
     loading: '載入中…',
     previewFailed: '無法預覽',
     unsupported: '該檔案類型不支援行內預覽，點擊右上角放大查看或下載',

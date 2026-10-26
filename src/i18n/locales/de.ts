@@ -299,6 +299,8 @@ export default {
     file: 'Datei',
     video: 'Video',
     emptyVideo: 'Keine abspielbare Video-Adresse',
+    unsupportedVideo:
+      'Dieses Videoformat (WMV/AVI/MKV) kann der Browser nicht abspielen. Bitte in MP4 umwandeln und erneut hochladen oder oben herunterladen.',
     loading: 'Wird geladen…',
     previewFailed: 'Vorschau nicht möglich',
     unsupported:

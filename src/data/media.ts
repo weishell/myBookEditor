@@ -11,6 +11,18 @@ export const toMediaUrl = (path?: string): string => {
   return `/${path.replace(/^\.\//, '')}`;
 };
 
+/**
+ * 浏览器（Chromium 内核）能直接播放的视频格式。
+ * wmv / avi / mkv / flv / rmvb 这类只有系统播放器能解，<video> 会显示黑框，
+ * 所以这些格式要降级成「下载观看」提示，而不是硬塞进 <video>。
+ */
+const BROWSER_PLAYABLE_VIDEO = /\.(mp4|m4v|webm|ogv|ogg)(?:$|[?#])/i;
+
+export const isBrowserPlayableVideo = (path?: string): boolean => {
+  if (!path) return false;
+  return BROWSER_PLAYABLE_VIDEO.test(path);
+};
+
 /** 上传结果：path 为文档里保存的相对路径，file 为实际入库的文件（可能已压缩） */
 export interface UploadedMedia {
   path: string;

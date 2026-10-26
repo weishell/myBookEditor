@@ -6,7 +6,7 @@
 // - 设置是"低频、想一次看全"的操作，做成整页 + 左侧分组最直观，
 //   而且地址栏有 /settings，可以直接分享/收藏
 // - 顶栏因此只剩 logo + 导航 + 搜索，干净很多
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
@@ -15,6 +15,13 @@ import { useLanguage } from '@/context/LanguageContext';
 import { useEditorMode } from '@/context/EditorContext';
 import { SUPPORTED_LANGUAGES, LANGUAGE_SHORT, type AppLanguage } from '@/i18n';
 import { FONT_LIST, DEFAULT_FONT_ID, loadFont, getFontById } from '@/plugins/font';
+import { canWrite } from '@/data/store';
+import {
+  fetchOrphanInspection,
+  runOrphanCleanup,
+  formatBytes,
+  type OrphanInspection,
+} from '@/data/maintenance';
 import {
   WALLPAPER_NONE_ID,
   getWallpapersByMode,
@@ -22,7 +29,7 @@ import {
 } from '@/components/wallpapers';
 import styles from './Settings.module.less';
 
-type TabId = 'appearance' | 'theme' | 'font' | 'cursor' | 'language' | 'mode';
+type TabId = 'appearance' | 'theme' | 'font' | 'cursor' | 'language' | 'mode' | 'maintenance';
 
 const TABS: { id: TabId; label: string; note: string; icon: string }[] = [
   { id: 'appearance', label: '外观与背景', note: '壁纸 · 明暗', icon: '◧' },
@@ -31,6 +38,7 @@ const TABS: { id: TabId; label: string; note: string; icon: string }[] = [
   { id: 'cursor', label: '光标', note: '指针样式', icon: '↖' },
   { id: 'language', label: '语言', note: '界面语言', icon: '文' },
   { id: 'mode', label: '阅读模式', note: '编辑 / 只读', icon: '☰' },
+  { id: 'maintenance', label: '资源维护', note: '清理无引用资源', icon: '⌫' },
 ];
 
 // 字体没有自带中文名（i18n 里才有），这里给一份兜底，翻译缺失时不至于显示成 id
@@ -110,6 +118,56 @@ export default function Settings() {
   const { globalFont, setGlobalFont, mode, setMode } = useEditorMode();
 
   const [tab, setTab] = useState<TabId>('appearance');
+
+  /* ---------- 资源维护：只读体检 + 手动清理 ----------
+     清理是危险操作，所以这里只做「展示 + 发起」：
+     能不能清由后端判定（回收站必须为空），前端禁用按钮只是第一道门。 */
+  const writable = canWrite();
+  const [inspection, setInspection] = useState<OrphanInspection | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const [confirming, setConfirming] = useState(false);
+  const [cleaning, setCleaning] = useState(false);
+  const [cleanupMsg, setCleanupMsg] = useState<string | null>(null);
+  const [cleanupError, setCleanupError] = useState<string | null>(null);
+
+  const orphanTotal =
+    (inspection?.orphanMedia.length ?? 0) + (inspection?.orphanComments.length ?? 0);
+
+  const scanOrphans = useCallback(async () => {
+    setScanning(true);
+    setCleanupError(null);
+    try {
+      setInspection(await fetchOrphanInspection());
+    } catch (err) {
+      setCleanupError(err instanceof Error ? err.message : '扫描失败');
+    } finally {
+      setScanning(false);
+    }
+  }, []);
+
+  // 进入「资源维护」时自动体检一次（只读，不会改任何文件）
+  useEffect(() => {
+    if (tab === 'maintenance' && writable && !inspection && !scanning) void scanOrphans();
+  }, [tab, writable, inspection, scanning, scanOrphans]);
+
+  const doCleanup = async () => {
+    setCleaning(true);
+    setCleanupError(null);
+    setCleanupMsg(null);
+    try {
+      const result = await runOrphanCleanup();
+      setCleanupMsg(
+        `已清理 ${result.removed} 个文件，释放 ${formatBytes(result.freedBytes)}` +
+          (result.failed ? `（${result.failed} 个删除失败，见服务端日志）` : ''),
+      );
+      setConfirming(false);
+      await scanOrphans();
+    } catch (err) {
+      setCleanupError(err instanceof Error ? err.message : '清理失败');
+    } finally {
+      setCleaning(false);
+    }
+  };
 
   const lightGroups = useMemo(
     () => groupPresets(getWallpapersByMode('light').filter((p) => p.id !== WALLPAPER_NONE_ID)),
@@ -249,7 +307,7 @@ export default function Settings() {
 
       <div className={styles.body}>
         <nav className={styles.side} aria-label="设置分组">
-          {TABS.map((item) => (
+          {TABS.filter((item) => item.id !== 'maintenance' || writable).map((item) => (
             <button
               key={item.id}
               type="button"
@@ -480,6 +538,105 @@ export default function Settings() {
                   </span>
                 </button>
               </div>
+            </>
+          )}
+
+          {tab === 'maintenance' && (
+            <>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle}>资源维护</h2>
+                <span className={styles.sectionDesc}>
+                  清理已删除文档遗留的图片 / 视频 / 画板 / 评论
+                </span>
+              </div>
+
+              <p className={styles.maintNotice}>
+                仅删除「没有任何文档引用」的文件；正文、分类标签和索引库都不受影响。
+                为避免误删待恢复文档的资源，<b>回收站必须为空</b>才允许清理，且需要二次确认。
+              </p>
+
+              <div className={styles.maintStats}>
+                <div className={styles.maintStat}>
+                  <b>{inspection ? inspection.trashCount : '—'}</b>
+                  <span>回收站文件</span>
+                </div>
+                <div className={styles.maintStat}>
+                  <b>{inspection ? inspection.orphanMedia.length : '—'}</b>
+                  <span>无引用媒体</span>
+                </div>
+                <div className={styles.maintStat}>
+                  <b>{inspection ? inspection.orphanComments.length : '—'}</b>
+                  <span>无引用评论</span>
+                </div>
+                <div className={styles.maintStat}>
+                  <b>{inspection ? formatBytes(inspection.totalBytes) : '—'}</b>
+                  <span>可释放空间</span>
+                </div>
+              </div>
+
+              <div className={styles.maintActions}>
+                <button
+                  type="button"
+                  className={styles.maintBtn}
+                  onClick={() => void scanOrphans()}
+                  disabled={scanning || cleaning}
+                >
+                  {scanning ? '扫描中…' : '重新扫描'}
+                </button>
+                <button
+                  type="button"
+                  className={styles.maintDanger}
+                  onClick={() => {
+                    setConfirming(true);
+                    setCleanupMsg(null);
+                    setCleanupError(null);
+                  }}
+                  disabled={!inspection || !inspection.canCleanup || orphanTotal === 0 || cleaning}
+                >
+                  清理无引用资源
+                </button>
+              </div>
+
+              {inspection && !inspection.canCleanup && (
+                <p className={styles.maintHint}>
+                  回收站里还有 {inspection.trashCount} 个文件，请先在回收站里恢复或清空后再清理。
+                </p>
+              )}
+              {inspection && inspection.canCleanup && orphanTotal === 0 && (
+                <p className={styles.maintHint}>当前没有可清理的资源，磁盘很干净。</p>
+              )}
+
+              {confirming && inspection && (
+                <div className={styles.maintConfirm}>
+                  <p>
+                    将永久删除 <b>{inspection.orphanMedia.length}</b> 个媒体文件、
+                    <b>{inspection.orphanComments.length}</b> 个评论文件，释放约{' '}
+                    <b>{formatBytes(inspection.totalBytes)}</b>。
+                  </p>
+                  <p className={styles.maintWarn}>此操作不可恢复，确定继续？</p>
+                  <div className={styles.maintActions}>
+                    <button
+                      type="button"
+                      className={styles.maintBtn}
+                      onClick={() => setConfirming(false)}
+                      disabled={cleaning}
+                    >
+                      取消
+                    </button>
+                    <button
+                      type="button"
+                      className={styles.maintDanger}
+                      onClick={() => void doCleanup()}
+                      disabled={cleaning}
+                    >
+                      {cleaning ? '清理中…' : '确认清理'}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {cleanupMsg && <p className={styles.maintOk}>{cleanupMsg}</p>}
+              {cleanupError && <p className={styles.maintHint}>{cleanupError}</p>}
             </>
           )}
         </section>

@@ -301,9 +301,10 @@ export default function BookEditor({
                 />
                 {/* 尾部幽灵空行：悬浮最后一个 block 下方显示 +，点击才真正生成空段落（仅编辑模式） */}
                 {!readOnly && <TrailingAddZone />}
+                {/* 全文评论：和正文同属一张「纸」，背景（含壁纸染色）连续，
+                    不会在正文和评论之间出现纸张边框 / 色差接缝 */}
+                <CommentSection storageKey={commentKey} seed={commentSeed} />
               </div>
-              {/* 全文评论：位于内容纸张下方，编辑/阅读模式均可交互；按 commentKey 隔离存储 */}
-              <CommentSection storageKey={commentKey} seed={commentSeed} />
             </InlineCommentProvider>
           </DocBarProvider>
         </MenuProvider>
