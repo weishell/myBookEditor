@@ -4,11 +4,15 @@ import { BlockElementType } from '@/enums';
 export interface MentionAttrs {
   /** 显示名称（如"产品需求文档"） */
   name: string;
-  /** 类型：category 分类 / doc 文章 */
-  kind: 'category' | 'doc';
-  /** 唯一标识（分类 id 或文档 id） */
+  /** 类型：category 分类 / tag 标签 / doc 文章 */
+  kind: 'category' | 'tag' | 'doc';
+  /** 唯一标识（分类 id、标签 id 或文章 id） */
   targetId: string;
-  /** 跳转链接（可选） */
+  /** 展示图标 */
+  icon?: string;
+  /** 主题色（分类 / 标签） */
+  color?: string;
+  /** 跳转链接 */
   url?: string;
 }
 

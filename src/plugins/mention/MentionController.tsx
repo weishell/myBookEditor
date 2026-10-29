@@ -79,6 +79,9 @@ export const MentionController = ({ isDark = false }: MentionControllerProps) =>
           name: item.name,
           kind: item.kind,
           targetId: item.id,
+          icon: item.icon,
+          color: item.color,
+          url: item.url,
         },
         range,
       );

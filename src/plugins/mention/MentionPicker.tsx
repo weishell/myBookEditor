@@ -101,14 +101,15 @@ export const MentionPicker = ({
     };
   }, [onClose]);
 
-  // 按类型分组
-  const { categories, docs } = useMemo(() => {
+  // 按类型分组：分类 → 标签 → 文章
+  const { categories, tags, docs } = useMemo(() => {
     const cats = results.filter((r) => r.kind === 'category');
+    const tgs = results.filter((r) => r.kind === 'tag');
     const ds = results.filter((r) => r.kind === 'doc');
-    return { categories: cats, docs: ds };
+    return { categories: cats, tags: tgs, docs: ds };
   }, [results]);
 
-  const flatItems = [...categories, ...docs];
+  const flatItems = [...categories, ...tags, ...docs];
 
   // 弹层位置修正：避免超出视口底部
   const adjustedTop = useMemo(() => {
@@ -116,6 +117,30 @@ export const MentionPicker = ({
     const maxTop = window.innerHeight - estimatedHeight - 8;
     return Math.min(position.top, maxTop);
   }, [position.top, flatItems.length]);
+
+  const renderItem = (item: MentionItem, flatIdx: number) => (
+    <div
+      key={`${item.kind}-${item.id}`}
+      ref={(el) => {
+        itemRefs.current[flatIdx] = el;
+      }}
+      className={`${styles.item} ${activeIndex === flatIdx ? styles.active : ''}`}
+      onMouseEnter={() => setActiveIndex(flatIdx)}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onSelect(item);
+      }}
+    >
+      <span className={styles.icon} style={item.color ? { color: item.color } : undefined}>
+        {item.icon || '📄'}
+      </span>
+      <div className={styles.content}>
+        <span className={styles.name}>{item.name}</span>
+        {item.description && <span className={styles.desc}>{item.description}</span>}
+      </div>
+      {activeIndex === flatIdx && <span className={styles.tab}>Tab</span>}
+    </div>
+  );
 
   return (
     <div
@@ -131,73 +156,27 @@ export const MentionPicker = ({
           <>
             {categories.length > 0 && (
               <>
-                {searchText.trim() === '' && <div className={styles.groupTitle}>分类</div>}
-                {categories.map((item, idx) => {
-                  const flatIdx = idx;
-                  return (
-                    <div
-                      key={item.id}
-                      ref={(el) => {
-                        itemRefs.current[flatIdx] = el;
-                      }}
-                      className={`${styles.item} ${activeIndex === flatIdx ? styles.active : ''}`}
-                      onMouseEnter={() => setActiveIndex(flatIdx)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        onSelect(item);
-                      }}
-                    >
-                      <span className={styles.icon}>📁</span>
-                      <div className={styles.content}>
-                        <span className={styles.name}>{item.name}</span>
-                        {item.description && (
-                          <span className={styles.desc}>{item.description}</span>
-                        )}
-                      </div>
-                      {activeIndex === flatIdx && <span className={styles.tab}>Tab</span>}
-                    </div>
-                  );
-                })}
+                <div className={styles.groupTitle}>分类</div>
+                {categories.map((item, idx) => renderItem(item, idx))}
+              </>
+            )}
+            {tags.length > 0 && (
+              <>
+                <div className={styles.groupTitle}>标签</div>
+                {tags.map((item, idx) => renderItem(item, categories.length + idx))}
               </>
             )}
             {docs.length > 0 && (
               <>
-                {(searchText.trim() === '' || categories.length > 0) && (
-                  <div className={styles.groupTitle}>文档</div>
-                )}
-                {docs.map((item, idx) => {
-                  const flatIdx = categories.length + idx;
-                  return (
-                    <div
-                      key={item.id}
-                      ref={(el) => {
-                        itemRefs.current[flatIdx] = el;
-                      }}
-                      className={`${styles.item} ${activeIndex === flatIdx ? styles.active : ''}`}
-                      onMouseEnter={() => setActiveIndex(flatIdx)}
-                      onMouseDown={(e) => {
-                        e.preventDefault();
-                        onSelect(item);
-                      }}
-                    >
-                      <span className={styles.icon}>📄</span>
-                      <div className={styles.content}>
-                        <span className={styles.name}>{item.name}</span>
-                        {item.description && (
-                          <span className={styles.desc}>{item.description}</span>
-                        )}
-                      </div>
-                      {activeIndex === flatIdx && <span className={styles.tab}>Tab</span>}
-                    </div>
-                  );
-                })}
+                <div className={styles.groupTitle}>文章</div>
+                {docs.map((item, idx) => renderItem(item, categories.length + tags.length + idx))}
               </>
             )}
           </>
         )}
       </div>
       <div className={styles.footer}>
-        <span>输入关键词搜索</span>
+        <span className={styles.footerText}>输入关键词</span>
         <div className={styles.footerKeys}>
           <span className={styles.keyHint}>
             <span className={styles.keyCap}>↑↓</span> 选择

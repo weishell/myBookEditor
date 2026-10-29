@@ -9,4 +9,4 @@ export {
 } from './mention-utils';
 export type { MentionElement, MentionAttrs } from './mention-utils';
 export type { MentionItem } from './mention-data';
-export { searchMentions, allMentionItems } from './mention-data';
+export { searchMentions, getMentionItems } from './mention-data';

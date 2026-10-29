@@ -136,17 +136,17 @@ export const initialValue: Descendant[] = [
       {
         type: BlockElementType.MENTION,
         id: uuidv4(),
-        attrs: { name: '产品需求文档 V2.0', kind: 'doc', targetId: 'doc-prd-v2' },
+        attrs: { name: '前端开发', kind: 'category', targetId: 'frontend' },
         children: [{ text: '' }],
       },
       { text: ' 或 ' },
       {
         type: BlockElementType.MENTION,
         id: uuidv4(),
-        attrs: { name: '技术开发', kind: 'category', targetId: 'cat-dev' },
+        attrs: { name: '设计创意', kind: 'category', targetId: 'design' },
         children: [{ text: '' }],
       },
-      { text: ' 来引用相关文档和分类。在段落中输入 @ 即可调出选择器。' },
+      { text: ' 来引用相关分类。在段落中输入 @ 即可按真实分类、标签和文章选择。' },
     ],
   },
   {
