@@ -1,0 +1,232 @@
+[
+  {
+    "id": "shape_1793284083653_drl3ru5xe",
+    "type": "rounded-rectangle",
+    "x": 965.6000366210938,
+    "y": 313,
+    "width": 142.4000244140625,
+    "height": 104,
+    "borderRadius": 9.4933349609375,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284085420_z1fppzuwz",
+    "type": "arrow",
+    "x": 1036.800048828125,
+    "y": 313,
+    "points": [
+      { "x": 1036.800048828125, "y": 313 },
+      { "x": 1124.0000610351562, "y": 335.3999938964844 }
+    ],
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "transparent",
+      "strokeWidth": 2,
+      "strokeDash": null
+    },
+    "startBinding": { "toShapeId": "shape_1793284083653_drl3ru5xe", "handle": "right" },
+    "connectionType": "polyline",
+    "arrowHead": "end",
+    "dashed": false,
+    "endBinding": { "toShapeId": "shape_1793284086262_sjy40c6rh", "handle": "left", "auto": false }
+  },
+  {
+    "id": "shape_1793284086262_sjy40c6rh",
+    "type": "rounded-rectangle",
+    "x": 1195.2000732421875,
+    "y": 335.3999938964844,
+    "width": 142.4000244140625,
+    "height": 104,
+    "borderRadius": 8,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284092070_id10odqj9",
+    "type": "arrow",
+    "x": 1195.2000732421875,
+    "y": 387.3999938964844,
+    "points": [
+      { "x": 1195.2000732421875, "y": 387.3999938964844 },
+      { "x": 1178.4000244140625, "y": 502.60003662109375 }
+    ],
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "transparent",
+      "strokeWidth": 2,
+      "strokeDash": null
+    },
+    "startBinding": { "toShapeId": "shape_1793284086262_sjy40c6rh", "handle": "bottom" },
+    "connectionType": "polyline",
+    "arrowHead": "end",
+    "dashed": false,
+    "endBinding": { "toShapeId": "shape_1793284093563_pda2vyueh", "handle": "top", "auto": false }
+  },
+  {
+    "id": "shape_1793284093563_pda2vyueh",
+    "type": "circle",
+    "x": 1178.4000244140625,
+    "y": 542.6000366210938,
+    "radius": 40,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284098751_dwofw7hno",
+    "type": "rounded-rectangle",
+    "x": -1834.000015258789,
+    "y": 166.19998931884766,
+    "width": 160.80001831054688,
+    "height": 143.1999969482422,
+    "borderRadius": 10.720001220703125,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284100490_8c2asosf3",
+    "type": "arrow",
+    "x": -1753.6000061035156,
+    "y": 166.19998931884766,
+    "points": [
+      { "x": -1753.6000061035156, "y": 166.19998931884766 },
+      { "x": -1657.2000274658203, "y": 175.39999389648438 }
+    ],
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "transparent",
+      "strokeWidth": 2,
+      "strokeDash": null
+    },
+    "startBinding": { "toShapeId": "shape_1793284098751_dwofw7hno", "handle": "right" },
+    "connectionType": "polyline",
+    "arrowHead": "end",
+    "dashed": false,
+    "endBinding": { "toShapeId": "shape_1793284101443_4k45mrq1m", "handle": "left", "auto": false }
+  },
+  {
+    "id": "shape_1793284101443_4k45mrq1m",
+    "type": "rounded-rectangle",
+    "x": -1576.8000183105469,
+    "y": 175.39999389648438,
+    "width": 160.80001831054688,
+    "height": 143.1999969482422,
+    "borderRadius": 8,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284109735_qf983i9u3",
+    "type": "mind-map",
+    "x": -3664.0000915527344,
+    "y": -69.4000244140625,
+    "width": 208,
+    "height": 152,
+    "root": {
+      "id": "mm_root_1793284109735_ncjslw",
+      "text": "中心主题",
+      "children": [
+        { "id": "mm_b1_1793284109735_i8fdh5", "text": "分支主题" },
+        { "id": "mm_b2_1793284109735_3bpj15", "text": "分支主题" },
+        { "id": "mm_b3_1793284109735_d0vksp", "text": "分支主题" }
+      ]
+    },
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#ffffff",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284115559_0pabv5i96",
+    "type": "rounded-rectangle",
+    "x": -5281.600128173828,
+    "y": -233.00009155273438,
+    "width": 80,
+    "height": 96.79998779296875,
+    "borderRadius": 8,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  },
+  {
+    "id": "shape_1793284117283_desmopv83",
+    "type": "arrow",
+    "x": -5241.600128173828,
+    "y": -233.00009155273438,
+    "points": [
+      { "x": -5241.600128173828, "y": -233.00009155273438 },
+      { "x": -5113.600128173828, "y": -229.40008544921875 }
+    ],
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "transparent",
+      "strokeWidth": 2,
+      "strokeDash": null
+    },
+    "startBinding": { "toShapeId": "shape_1793284115559_0pabv5i96", "handle": "right" },
+    "connectionType": "polyline",
+    "arrowHead": "end",
+    "dashed": false,
+    "endBinding": { "toShapeId": "shape_1793284118079_usnhco23v", "handle": "left", "auto": false }
+  },
+  {
+    "id": "shape_1793284118079_usnhco23v",
+    "type": "rounded-rectangle",
+    "x": -5073.600128173828,
+    "y": -229.40008544921875,
+    "width": 80,
+    "height": 96.79998779296875,
+    "borderRadius": 8,
+    "rotation": 0,
+    "style": {
+      "strokeColor": "#1f2937",
+      "fillColor": "#f8fafc",
+      "fillOpacity": 0.9,
+      "strokeWidth": 2,
+      "strokeDash": null
+    }
+  }
+]

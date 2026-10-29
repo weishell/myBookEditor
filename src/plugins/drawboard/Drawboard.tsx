@@ -45,6 +45,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   elementRef.current = element;
   const editorRef = useRef(editor);
   editorRef.current = editor;
+  const editingRef = useRef(false);
+  editingRef.current = editing;
 
   const width = attrs?.width || 720;
   const height = attrs?.height || 400;
@@ -53,9 +55,13 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
 
   // 图形数据：编辑中实时保存在 liveData（不写 Slate 历史，避免每次笔触都产生撤销记录）；
   // 关闭编辑器时一次性上传到 data/media/drawboards，文档节点只保留相对路径 attrs.src。
+  //
+  // ⚠️ 编辑期间只写 liveDataRef、不 setState（见 handleEditorDataChange）：
+  //    这个组件是 Slate 元素，每帧 setState 会让整棵子树重渲染，
+  //    并触发缩略图的全量重绘 + PNG 编码 —— 实测 40 个图形拖拽从 60fps 掉到 6fps。
+  //    ref 不能像以前那样「每次渲染都从 state 同步」，否则编辑中的最新笔迹会被覆盖回旧值。
   const [liveData, setLiveData] = useState<Shape[] | undefined>(attrs?.data);
   const liveDataRef = useRef<Shape[] | undefined>(attrs?.data);
-  liveDataRef.current = liveData;
 
   // 旧文档可能只有 attrs.src（数据在独立文件里），进页面时按路径懒加载
   const [remoteShapes, setRemoteShapes] = useState<Shape[] | null>(null);
@@ -79,9 +85,10 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
     };
   }, [attrs?.data, attrs?.src]);
 
-  // 编辑器内图形变化：实时更新缩略图
+  // 编辑器内图形变化：编辑期间只记 ref（不触发重渲染），关闭时统一刷新缩略图
   const handleEditorDataChange = useCallback((shapes: Shape[]) => {
     liveDataRef.current = shapes;
+    if (editingRef.current) return;
     setLiveData(shapes);
   }, []);
 
@@ -115,8 +122,14 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   }, []);
 
   const handleClose = useCallback(() => {
-    void commitShapes();
+    const finalShapes = liveDataRef.current;
+    void commitShapes(finalShapes);
     setEditing(false);
+    // 先把全屏层撤掉、这一帧画完，再生成缩略图：
+    // 否则「全量重绘 + PNG 编码」会堵在关闭动作里，用户感觉退出卡一下。
+    if (finalShapes) {
+      window.setTimeout(() => setLiveData(finalShapes), 0);
+    }
   }, [commitShapes]);
 
   const previewShapes = liveData ?? attrs?.data ?? remoteShapes ?? undefined;
