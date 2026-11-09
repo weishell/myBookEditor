@@ -47,7 +47,8 @@
   z-index: 1300;
   width: 300px;
   max-width: calc(100vw - 24px);
-  background: var(--lw-paper, #fff);
+  /* 必须用不透明底色：--lw-paper 在壁纸主题下是半透明白，正文会透上来导致评论看不清 */
+  background: #fff;
   border: 1px solid var(--lw-border, rgba(0, 0, 0, 0.12));
   border-radius: 10px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.16);

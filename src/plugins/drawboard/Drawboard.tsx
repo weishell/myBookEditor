@@ -1,5 +1,5 @@
 // 画板（drawui）块主组件 - 文档内渲染预览卡（含图形缩略图回显），点击/按键进入全屏编辑态
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { Transforms } from 'slate';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,9 @@ import { type DrawboardAttrs } from './drawboard-utils';
 import type { Shape } from 'drawui-core';
 import { canWrite } from '@/data/store';
 import { loadDrawboard, saveDrawboard } from '@/data/media';
+import { useEditorMode } from '@/context/EditorContext';
+import { useInlineComments } from '../inline-comment';
+import { blockRangeKey } from '../inline-comment/store';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import styles from './Drawboard.module.less';
 
@@ -27,6 +30,11 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const isSelected = useSelected();
   const { t } = useTranslation();
   const { attrs } = element;
+
+  // 阅读模式：只保留「评论」一个操作（对齐/编辑/删除隐藏），进详情靠双击
+  const { mode } = useEditorMode();
+  const readMode = mode === 'read';
+  const { threads, toggleBlockComment } = useInlineComments();
 
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
@@ -52,6 +60,12 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const height = attrs?.height || 400;
   const effW = dragSize?.w ?? width;
   const effH = dragSize?.h ?? height;
+
+  // 当前画板的未解决评论数（块级评论会话以 block:<id> 为 rangeKey）
+  const blockCommentCount = useMemo(
+    () => threads.filter((t) => t.rangeKey === blockRangeKey(element.id) && !t.resolved).length,
+    [threads, element.id],
+  );
 
   // 图形数据：编辑中实时保存在 liveData（不写 Slate 历史，避免每次笔触都产生撤销记录）；
   // 关闭编辑器时一次性上传到 data/media/drawboards，文档节点只保留相对路径 attrs.src。
@@ -122,22 +136,24 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   }, []);
 
   const handleClose = useCallback(() => {
+    setEditing(false);
+    // 阅读模式下打开的是只读预览：没有任何改动，不回写、也不触发保存
+    if (readMode) return;
     const finalShapes = liveDataRef.current;
     void commitShapes(finalShapes);
-    setEditing(false);
     // 先把全屏层撤掉、这一帧画完，再生成缩略图：
     // 否则「全量重绘 + PNG 编码」会堵在关闭动作里，用户感觉退出卡一下。
     if (finalShapes) {
       window.setTimeout(() => setLiveData(finalShapes), 0);
     }
-  }, [commitShapes]);
+  }, [commitShapes, readMode]);
 
   const previewShapes = liveData ?? attrs?.data ?? remoteShapes ?? undefined;
 
   // 画板块被选中时，在窗口捕获阶段拦截 Enter → 进入全屏编辑。
   // 选捕获阶段在根节点 React/Slate 处理之前触发，preventDefault 会让 Slate 跳过插入换行等默认行为。
   useEffect(() => {
-    if (!isSelected) return;
+    if (!isSelected || readMode) return;
     const onKeyDownCapture = (e: KeyboardEvent) => {
       if (e.key !== 'Enter' || e.shiftKey || e.metaKey || e.ctrlKey || e.altKey) return;
       if (e.defaultPrevented) return;
@@ -147,13 +163,15 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
     };
     window.addEventListener('keydown', onKeyDownCapture, true);
     return () => window.removeEventListener('keydown', onKeyDownCapture, true);
-  }, [isSelected]);
+  }, [isSelected, readMode]);
 
   const openEditor = useCallback(() => setEditing(true), []);
 
   // 点击卡片 → 把 Slate 选区落到当前画板块上（非文本块默认不随点击选中，
   // 需要手动 select 才能让「选中后按 Enter/方向键」的键盘链路生效）
   const handleSelect = useCallback(() => {
+    // 阅读模式不做块选中（正文只读），双击才是进详情
+    if (readMode) return;
     try {
       const path = ReactEditor.findPath(editor, element as any);
       Transforms.select(editor, path);
@@ -161,7 +179,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
     } catch {
       /* ignore */
     }
-  }, [editor, element]);
+  }, [editor, element, readMode]);
 
   const handleRemove = useCallback(() => {
     try {
@@ -171,6 +189,16 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
       /* ignore */
     }
   }, [editor, element]);
+
+  // 评论按钮：以按钮位置弹出评论面板；同一画板重复点 = 追加到同一会话
+  const handleComment = useCallback(
+    (e: React.MouseEvent<HTMLButtonElement>) => {
+      e.stopPropagation();
+      const rect = e.currentTarget.getBoundingClientRect();
+      toggleBlockComment(element.id, t('drawboard.title'), rect.left, rect.bottom + 6);
+    },
+    [element.id, t, toggleBlockComment],
+  );
 
   // 松开鼠标：把拖动得到的尺寸写回 attrs
   useEffect(() => {
@@ -237,52 +265,93 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {(showToolbar || isSelected) && (
+        {(showToolbar || (!readMode && isSelected)) && (
           <div
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <BlockAlignButtons
-              align={align}
-              onAlign={setAlign}
-              btnClass={styles.toolbarButton}
-              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
-            />
-            <div className={styles.toolbarDivider} />
-            <button className={styles.toolbarButton} onClick={openEditor}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M15 3h2a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h2" />
-                <rect x="8" y="8" width="8" height="8" rx="1" />
-              </svg>
-              {t('drawboard.edit')}
-            </button>
-            <div className={styles.toolbarDivider} />
-            <button className={styles.toolbarButton} onClick={handleRemove}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              {t('drawboard.delete')}
-            </button>
+            {readMode ? (
+              <button className={styles.toolbarButton} onClick={handleComment} title="添加评论">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                </svg>
+                评论
+                {blockCommentCount > 0 && (
+                  <span className={styles.commentCount}>{blockCommentCount}</span>
+                )}
+              </button>
+            ) : (
+              <>
+                <BlockAlignButtons
+                  align={align}
+                  onAlign={setAlign}
+                  btnClass={styles.toolbarButton}
+                  btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+                />
+                <div className={styles.toolbarDivider} />
+                <button className={styles.toolbarButton} onClick={handleComment} title="添加评论">
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" />
+                  </svg>
+                  评论
+                  {blockCommentCount > 0 && (
+                    <span className={styles.commentCount}>{blockCommentCount}</span>
+                  )}
+                </button>
+                <button className={styles.toolbarButton} onClick={openEditor}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M15 3h2a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4h2" />
+                    <rect x="8" y="8" width="8" height="8" rx="1" />
+                  </svg>
+                  {t('drawboard.edit')}
+                </button>
+                <div className={styles.toolbarDivider} />
+                <button className={styles.toolbarButton} onClick={handleRemove}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  {t('drawboard.delete')}
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -345,15 +414,17 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                     <line x1="17.5" y1="14" x2="11.5" y2="14" />
                   </svg>
                 </div>
-                <span className={styles.emptyText}>{t('drawboard.clickToEdit')}</span>
-                <span className={styles.hint}>{t('drawboard.hint')}</span>
+                <span className={styles.emptyText}>
+                  {readMode ? t('drawboard.doubleClickTitle') : t('drawboard.clickToEdit')}
+                </span>
+                {!readMode && <span className={styles.hint}>{t('drawboard.hint')}</span>}
               </>
             )}
           </div>
         </div>
 
         {/* 选中时显示缩放手柄（放在 .wrapper 内，避免被 .card 的 overflow:hidden 裁掉） */}
-        {isSelected && bounds && (
+        {!readMode && isSelected && bounds && (
           <ResizeHandle
             bounds={bounds}
             aspectRatio={effW / effH}
@@ -375,6 +446,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
           initialData={attrs?.data ?? liveData ?? remoteShapes ?? undefined}
           onDataChange={handleEditorDataChange}
           onClose={handleClose}
+          readOnly={readMode}
         />
       )}
     </ElementWrapper>

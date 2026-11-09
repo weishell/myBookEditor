@@ -1,30 +1,138 @@
-﻿.mention {
+.mention {
   display: inline-flex;
   align-items: center;
   height: 22px;
   padding: 0 6px;
   margin: 0 2px;
   border-radius: 4px;
-  background: rgba(24, 144, 255, 0.1);
-  color: var(--theme-primary, #1890ff);
+  // 底色由组件按当前主题色算出（--mention-tint*），不再写死蓝色，
+  // 这样换主题时标签色跟着走，不会出现"绿主题配蓝标签"的突兀感
+  background: var(--mention-tint, rgba(24, 144, 255, 0.08));
+  color: var(--dm-text-primary, #262626);
   font-size: 14px;
   line-height: 22px;
   vertical-align: baseline;
   cursor: var(--cursor-pointer);
   user-select: none;
-  transition: background 0.15s ease;
+  transition: background 0.15s ease, color 0.15s ease;
 
+  // 平时是"安分"的浅色引用块，悬停才提升为主题色，点击前给一个明确的可跳转反馈
   &:hover {
-    background: rgba(24, 144, 255, 0.18);
+    background: var(--mention-tint-hover, rgba(24, 144, 255, 0.14));
+    color: var(--theme-primary, #1890ff);
   }
 }
 
 .selected {
-  background: rgba(24, 144, 255, 0.25) !important;
+  background: var(--mention-tint-selected, rgba(24, 144, 255, 0.22)) !important;
 }
 
 .icon {
   margin-right: 4px;
   font-size: 12px;
-  opacity: 0.7;
+  opacity: 0.75;
+  color: var(--theme-primary, #1890ff);
+}
+
+/* -------------------- 悬停预览小窗 -------------------- */
+.preview {
+  position: fixed;
+  z-index: 10030;
+  box-sizing: border-box;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.98);
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.14);
+  backdrop-filter: blur(10px);
+  // 只是"看一眼"的信息卡，不抢鼠标，否则会打断正在进行的选中/输入
+  pointer-events: none;
+  user-select: none;
+  font-family: inherit;
+  text-align: left;
+  animation: previewIn 0.14s ease-out;
+}
+
+@keyframes previewIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.previewTitle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+  color: var(--dm-text-primary, #1f2329);
+}
+
+.previewIcon {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.previewName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.previewTag {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--mention-tint, rgba(24, 144, 255, 0.08));
+  color: var(--theme-primary, #1890ff);
+  font-size: 11px;
+  line-height: 16px;
+}
+
+.previewSummary {
+  margin: 8px 0 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--dm-text-secondary, #595959);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.previewMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(15, 23, 42, 0.07);
+  font-size: 11px;
+  color: var(--dm-text-tertiary, #8c8c8c);
+}
+
+.previewHint {
+  margin-top: 6px;
+  font-size: 11px;
+  color: var(--theme-primary, #1890ff);
+  opacity: 0.85;
+}
+
+/* 暗黑模式：暗底 + 降低描边与阴影的存在感 */
+:global(.dark-mode) .preview {
+  background: rgba(24, 31, 44, 0.98);
+  border-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.55);
+}
+
+:global(.dark-mode) .previewMeta {
+  border-top-color: rgba(255, 255, 255, 0.08);
 }

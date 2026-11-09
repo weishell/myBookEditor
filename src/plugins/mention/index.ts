@@ -10,3 +10,5 @@ export {
 export type { MentionElement, MentionAttrs } from './mention-utils';
 export type { MentionItem } from './mention-data';
 export { searchMentions, getMentionItems } from './mention-data';
+export { findDocRefs, hasConvertibleDocRefs, convertDocRefsInBlock } from './mention-convert';
+export type { DocRef } from './mention-convert';

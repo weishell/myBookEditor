@@ -39,6 +39,7 @@ import {
   CONVERTIBLE_BLOCK_TYPES,
 } from '@/plugins/docbar/docbar-commands';
 import { getLilist, sortLilist } from '@/plugins/lilist';
+import { hasConvertibleDocRefs, convertDocRefsInBlock } from '@/plugins/mention';
 import { blockTypeIconComponent } from '@/components/FloatBar/blockTypeIcons';
 import AlignIndentPanel from '@/components/AlignIndentPanel';
 import {
@@ -952,6 +953,20 @@ export const ContextMenu = () => {
           </>
         )}
         <div className={styles.divider} />
+        {/* 交叉引用：把本块里的《文档标题》就地转成可点击的 @文档 */}
+        {isTextualBlock && targetPath && hasConvertibleDocRefs(editor, targetPath) && (
+          <button
+            className={styles.btnAction}
+            onClick={() => {
+              const path = getTargetPath();
+              closeAfterAction();
+              if (path) convertDocRefsInBlock(editor, path);
+            }}
+          >
+            <span className={styles.actionIcon}>@</span>
+            <span>转为 @文档</span>
+          </button>
+        )}
         <button
           onClick={handleComment}
           className={styles.btnAction}

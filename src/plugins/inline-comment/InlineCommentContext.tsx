@@ -1,5 +1,6 @@
 // 行内评论全局状态：会话列表 + 新建/弹层 UI 状态
 // 锚定 = 把评论 id 写进文档 text 的 "comments" mark，见 mark.ts。
+// 无文本块（画板等）走块级评论：会话以稳定的 block:<blockId> 作为 rangeKey，不写 mark。
 import {
   createContext,
   useContext,
@@ -17,6 +18,7 @@ import {
   genId,
   newCommentId,
   makeRangeKey,
+  blockRangeKey,
   loadThreads,
   saveThreads,
 } from './store';
@@ -34,6 +36,8 @@ interface InlineCommentApi {
   create: CommentCreateState | null;
   popover: CommentPopoverState | null;
   createFromSelection: () => boolean;
+  /** 块级评论（画板等无文本块）：已有会话则继续在该会话下追加，否则新建 */
+  toggleBlockComment: (blockId: string, label: string, x: number, y: number) => void;
   submitComment: (content: string) => void;
   reply: (threadId: string, content: string) => void;
   deleteThread: (threadId: string) => void;
@@ -112,6 +116,22 @@ export function InlineCommentProvider({
     return true;
   }, [onCommentChange]);
 
+  // 块级评论：无文本可加 mark，改用稳定的 block:<id> 作为 rangeKey。
+  // 同一个块再次点「评论」= 追加到已有会话，与"重选同一段文字"的行为保持一致。
+  const toggleBlockComment = useCallback((blockId: string, label: string, x: number, y: number) => {
+    const rangeKey = blockRangeKey(blockId);
+    const existing = threadsRef.current.find((t) => t.rangeKey === rangeKey);
+    setPopover(null);
+    setCreate({
+      threadId: existing ? existing.id : newCommentId(),
+      quotedText: existing?.quotedText || label,
+      x,
+      y,
+      existing: !!existing,
+      blockId,
+    });
+  }, []);
+
   const submitComment = useCallback(
     (content: string) => {
       const c = create;
@@ -129,13 +149,13 @@ export function InlineCommentProvider({
           {
             id: c.threadId,
             quotedText: c.quotedText,
-            rangeKey: '',
+            rangeKey: c.blockId ? blockRangeKey(c.blockId) : '',
             messages: [msg],
           },
         ]);
       }
-      // 记录 rangeKey 用于再次选中判定（新会话第一次在此补充）
-      if (!c.existing) {
+      // 记录 rangeKey 用于再次选中判定（新会话第一次在此补充）；块级评论已在创建时写死
+      if (!c.existing && !c.blockId) {
         const { selection } = editorRef.current;
         if (selection) {
           const rk = makeRangeKey(selection.anchor, selection.focus);
@@ -183,7 +203,7 @@ export function InlineCommentProvider({
   // 取消新建：若已把 id 写进了正文，去掉这个临时 id，避免留下"无会话的孤儿标记"
   const closeCreate = useCallback(() => {
     setCreate((c) => {
-      if (c && !c.existing) {
+      if (c && !c.existing && !c.blockId) {
         removeCommentId(editorRef.current, c.threadId);
         onCommentChange?.();
       }
@@ -197,6 +217,7 @@ export function InlineCommentProvider({
       create,
       popover,
       createFromSelection,
+      toggleBlockComment,
       submitComment,
       reply,
       deleteThread,
@@ -211,6 +232,7 @@ export function InlineCommentProvider({
       create,
       popover,
       createFromSelection,
+      toggleBlockComment,
       submitComment,
       reply,
       deleteThread,

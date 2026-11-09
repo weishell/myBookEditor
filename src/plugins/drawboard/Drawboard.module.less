@@ -21,6 +21,8 @@
   border-radius: @radius-sm;
   background: var(--lw-paper, @bg-base);
   cursor: var(--cursor-pointer);
+  /* 阅读模式下正文纸面整体 pointer-events:none，卡片自行恢复可交互（悬浮评论 / 双击进详情） */
+  pointer-events: auto;
 
   &:hover {
     border-color: @color-primary;
@@ -114,6 +116,8 @@
   z-index: 10000;
   box-shadow: @shadow-md;
   white-space: nowrap;
+  /* 阅读模式下纸面禁用了指针事件，工具条自身需要恢复，否则点不到评论按钮 */
+  pointer-events: auto;
 }
 
 .toolbarButton {
@@ -150,6 +154,22 @@
   height: 20px;
   background-color: @border-color-light;
   margin: @spacing-xs 2px;
+}
+
+// 评论按钮上的未解决会话数角标（跟随主题色，夜间模式同样适用）
+.commentCount {
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(51, 112, 255, 0.14);
+  color: var(--lw-primary, #3370ff);
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 // 全屏编辑器
@@ -196,6 +216,17 @@
   text-align: right;
   font-size: @font-size-xs;
   color: @text-placeholder;
+}
+
+// 阅读模式的只读预览区：避开 44px 退出栏，预览图等比铺满
+.previewBody {
+  position: absolute;
+  top: 44px;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  background: #fff;
 }
 
 .headerClose {

@@ -1,10 +1,11 @@
-// 画板（drawui）全屏编辑器 - 全屏即编辑态
+// 画板（drawui）全屏层：编辑模式下是 CanvasBoard 编辑器；阅读模式下是只读预览
 import React, { useCallback, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { CanvasBoard } from 'drawui-react';
 import type { Editor, Shape, EditorData } from 'drawui-core';
 import { useTranslation } from 'react-i18next';
 import { lockPageScroll } from '@/utils/scroll-lock';
+import DrawboardPreview from './DrawboardPreview';
 import 'drawui-react/styles.css';
 import styles from './Drawboard.module.less';
 
@@ -16,6 +17,11 @@ interface DrawboardEditorProps {
   /** 关闭前对主画布整幅截图（PNG dataURL）：缩略图直接回显编辑器当前视图 */
   onSnapshot?: (dataUrl: string) => void;
   onClose: () => void;
+  /**
+   * 只读预览：drawui 的 CanvasBoard 没有只读参数，阅读模式下不挂载画布，
+   * 改为展示静态预览图，从根上避免「只读文档里还能改图」。
+   */
+  readOnly?: boolean;
 }
 
 const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
@@ -23,6 +29,7 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
   onDataChange,
   onSnapshot,
   onClose,
+  readOnly = false,
 }) => {
   const onCloseRef = useRef(onClose);
   onCloseRef.current = onClose;
@@ -85,44 +92,63 @@ const DrawboardEditor: React.FC<DrawboardEditorProps> = ({
     return () => window.removeEventListener('keydown', onKey, true);
   }, [doClose]);
 
+  const header = (
+    <div className={styles.header}>
+      <span className={styles.headerTitle}>
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <rect x="3" y="3" width="7" height="7" rx="1" />
+          <rect x="14" y="3" width="7" height="7" rx="1" />
+          <rect x="8" y="14" width="9" height="7" rx="1" />
+          <line x1="6.5" y1="10" x2="6.5" y2="14" />
+          <line x1="17.5" y1="10" x2="17.5" y2="14" />
+        </svg>
+        {t('drawboard.title')}
+      </span>
+      <span className={styles.headerHint}>
+        {readOnly ? '只读预览 · Esc 退出' : t('drawboard.escToExit')}
+      </span>
+      <button className={styles.headerClose} onClick={doClose} title={t('drawboard.exitTitle')}>
+        <svg
+          width="18"
+          height="18"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+        >
+          <line x1="18" y1="6" x2="6" y2="18" />
+          <line x1="6" y1="6" x2="18" y2="18" />
+        </svg>
+      </button>
+    </div>
+  );
+
+  // 阅读模式：不挂载 drawui 画布，只展示只读预览图（无法编辑、无法新增图形）
+  if (readOnly) {
+    return createPortal(
+      <div className={styles.fullscreen}>
+        {header}
+        <div className={styles.previewBody}>
+          <DrawboardPreview shapes={initialData ?? []} />
+        </div>
+      </div>,
+      document.body,
+    );
+  }
+
   return createPortal(
     <div className={styles.fullscreen}>
-      <div className={styles.header}>
-        <span className={styles.headerTitle}>
-          <svg
-            width="16"
-            height="16"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <rect x="3" y="3" width="7" height="7" rx="1" />
-            <rect x="14" y="3" width="7" height="7" rx="1" />
-            <rect x="8" y="14" width="9" height="7" rx="1" />
-            <line x1="6.5" y1="10" x2="6.5" y2="14" />
-            <line x1="17.5" y1="10" x2="17.5" y2="14" />
-          </svg>
-          {t('drawboard.title')}
-        </span>
-        <span className={styles.headerHint}>{t('drawboard.escToExit')}</span>
-        <button className={styles.headerClose} onClick={doClose} title={t('drawboard.exitTitle')}>
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-          >
-            <line x1="18" y1="6" x2="6" y2="18" />
-            <line x1="6" y1="6" x2="18" y2="18" />
-          </svg>
-        </button>
-      </div>
+      {header}
       <div className={styles.body} ref={bodyRef}>
         {/* data 始终传入（空数组也传），触发 drawui 以外部数据初始化并关闭 localStorage 持久化 */}
         <CanvasBoard

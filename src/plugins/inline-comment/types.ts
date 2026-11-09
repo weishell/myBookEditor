@@ -31,6 +31,8 @@ export interface CommentCreateState {
   y: number;
   /** 已存在的会话：提交时追加评论到该会话 */
   existing?: boolean;
+  /** 块级评论：锚定的块 id（画板等无文本块用），有值时以 block:<id> 作为 rangeKey */
+  blockId?: string;
 }
 
 /** 气泡弹层：一次展示一个连续被评区域上的所有会话 */

@@ -17,6 +17,11 @@ export function newCommentId(): string {
   return `${COMMENT_ANNOTATION_PREFIX}${genId()}`;
 }
 
+/** 块级评论（画板等无文本块）的会话标识，与行内选区的 rangeKey 区分开 */
+export function blockRangeKey(blockId: string): string {
+  return `block:${blockId}`;
+}
+
 /** 把时间戳格式化为 "MM-DD HH:mm" 的展示文本 */
 export function formatTime(time: number): string {
   const d = new Date(time);

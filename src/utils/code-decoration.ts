@@ -110,75 +110,72 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
   const language = codeBlock.attrs?.language || 'javascript';
   const prismLanguage = Prism.languages[language] || Prism.languages.javascript;
 
-  // 收集所有文本节点信息：路径、文本、在整行合并文本中的起始位置
-  const textNodes: TextNodeInfo[] = [];
-  let globalOffset = 0;
-
+  // 逐行分词。
+  // 之前把所有 code-line 的文本拼成一个字符串（且没有换行符）再交给 Prism，
+  // 于是任意一行里的 // 注释会把后面所有行一起吞进同一个 comment token，
+  // 表现就是「第一处注释之后整段代码全变绿」。逐行处理才符合代码块的实际结构。
   (codeBlock.children || []).forEach((lineNode: any, lineIndex: number) => {
-    if (lineNode.type === BlockElementType.CODE_LINE) {
-      (lineNode.children || []).forEach((textNode: any, textIndex: number) => {
-        const text = textNode.text || '';
-        if (text.length > 0) {
-          textNodes.push({
-            path: [...path, lineIndex, textIndex],
-            text,
-            start: globalOffset,
-          });
-          globalOffset += text.length;
-        }
+    if (lineNode?.type !== BlockElementType.CODE_LINE) return;
+
+    const textNodes: TextNodeInfo[] = [];
+    let lineText = '';
+    (lineNode.children || []).forEach((textNode: any, textIndex: number) => {
+      const text = textNode?.text || '';
+      if (text.length === 0) return;
+      textNodes.push({
+        path: [...path, lineIndex, textIndex],
+        text,
+        start: lineText.length,
       });
-    }
-  });
+      lineText += text;
+    });
 
-  if (textNodes.length === 0) return decorations;
+    if (textNodes.length === 0 || !lineText) return;
 
-  const fullText = textNodes.map((n) => n.text).join('');
-  if (!fullText) return decorations;
+    const tokens = Prism.tokenize(lineText, prismLanguage);
+    let offset = 0;
 
-  const tokens = Prism.tokenize(fullText, prismLanguage);
-  let offset = 0;
+    const traverseTokens = (token: Prism.Token | string) => {
+      if (typeof token === 'string') {
+        offset += token.length;
+        return;
+      }
 
-  const traverseTokens = (token: Prism.Token | string) => {
-    if (typeof token === 'string') {
-      offset += token.length;
-      return;
-    }
+      const length = Number(token.length) || 0;
+      const tokenType = token.type as string;
 
-    const length = token.length as number;
-    const tokenType = token.type as string;
+      if (SHOULD_COLOR_TOKEN.has(tokenType)) {
+        const start = offset;
+        const end = offset + length;
 
-    if (SHOULD_COLOR_TOKEN.has(tokenType)) {
-      const start = offset;
-      const end = offset + length;
+        for (const textNode of textNodes) {
+          const nodeStart = textNode.start;
+          const nodeEnd = textNode.start + textNode.text.length;
 
-      // 为 token 跨越的每个文本节点分别创建 decoration
-      for (const textNode of textNodes) {
-        const nodeStart = textNode.start;
-        const nodeEnd = textNode.start + textNode.text.length;
+          if (nodeEnd <= start || nodeStart >= end) continue;
 
-        if (nodeEnd <= start || nodeStart >= end) continue;
+          const localStart = Math.max(0, start - nodeStart);
+          const localEnd = Math.min(textNode.text.length, end - nodeStart);
 
-        const localStart = Math.max(0, start - nodeStart);
-        const localEnd = Math.min(textNode.text.length, end - nodeStart);
-
-        if (localEnd > localStart) {
-          decorations.push({
-            anchor: { path: textNode.path, offset: localStart },
-            focus: { path: textNode.path, offset: localEnd },
-            [tokenType]: true,
-          });
+          if (localEnd > localStart) {
+            decorations.push({
+              anchor: { path: textNode.path, offset: localStart },
+              focus: { path: textNode.path, offset: localEnd },
+              [tokenType]: true,
+            });
+          }
         }
       }
-    }
 
-    offset += length;
+      offset += length;
 
-    if (token.content && Array.isArray(token.content)) {
-      token.content.forEach(traverseTokens);
-    }
-  };
+      if (token.content && Array.isArray(token.content)) {
+        token.content.forEach(traverseTokens);
+      }
+    };
 
-  tokens.forEach(traverseTokens);
+    tokens.forEach(traverseTokens);
+  });
 
   return decorations;
 };
