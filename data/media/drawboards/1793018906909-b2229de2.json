@@ -62,7 +62,7 @@
     "y": 213.80003356933594,
     "points": [
       { "x": 749.6000366210938, "y": 213.80006408691406 },
-      { "x": 1024.8001708984375, "y": 213.80006408691406 }
+      { "x": 949.6000366210938, "y": 226.60000610351562 }
     ],
     "rotation": 0,
     "style": {
@@ -80,8 +80,8 @@
   {
     "id": "shape_1793018899499_xo0os9k73",
     "type": "rounded-rectangle",
-    "x": 1084.8001708984375,
-    "y": 213.80006408691406,
+    "x": 1009.6000366210938,
+    "y": 226.60000610351562,
     "width": 120,
     "height": 60,
     "borderRadius": 8,
@@ -150,44 +150,5 @@
     "connectionType": "straight",
     "arrowHead": "end",
     "dashed": false
-  },
-  {
-    "id": "shape_1794213773484_xrkz80jeh",
-    "type": "arrow",
-    "x": 1024.8001708984375,
-    "y": 213.80006408691406,
-    "points": [
-      { "x": 1024.8001708984375, "y": 213.80006408691406 },
-      { "x": 1020.800048828125, "y": 401.8000183105469 }
-    ],
-    "rotation": 0,
-    "style": {
-      "strokeColor": "#1f2937",
-      "fillColor": "transparent",
-      "strokeWidth": 2,
-      "strokeDash": null
-    },
-    "startBinding": { "toShapeId": "shape_1793018899499_xo0os9k73", "handle": "left" },
-    "connectionType": "polyline",
-    "arrowHead": "end",
-    "dashed": false,
-    "endBinding": { "toShapeId": "shape_1794213774521_19a45yp6u", "handle": "left", "auto": false }
-  },
-  {
-    "id": "shape_1794213774521_19a45yp6u",
-    "type": "rounded-rectangle",
-    "x": 1080.800048828125,
-    "y": 401.8000183105469,
-    "width": 120,
-    "height": 60,
-    "borderRadius": 8,
-    "rotation": 0,
-    "style": {
-      "strokeColor": "#1f2937",
-      "fillColor": "#f8fafc",
-      "fillOpacity": 0.9,
-      "strokeWidth": 2,
-      "strokeDash": null
-    }
   }
 ]

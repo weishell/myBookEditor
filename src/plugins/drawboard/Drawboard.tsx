@@ -76,6 +76,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   //    ref 不能像以前那样「每次渲染都从 state 同步」，否则编辑中的最新笔迹会被覆盖回旧值。
   const [liveData, setLiveData] = useState<Shape[] | undefined>(attrs?.data);
   const liveDataRef = useRef<Shape[] | undefined>(attrs?.data);
+  /** 编辑期间是否有未提交的修改：切模式/卸载时据此决定要不要强制落盘 */
+  const dirtyRef = useRef(false);
 
   // 旧文档可能只有 attrs.src（数据在独立文件里），进页面时按路径懒加载
   const [remoteShapes, setRemoteShapes] = useState<Shape[] | null>(null);
@@ -102,6 +104,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   // 编辑器内图形变化：编辑期间只记 ref（不触发重渲染），关闭时统一刷新缩略图
   const handleEditorDataChange = useCallback((shapes: Shape[]) => {
     liveDataRef.current = shapes;
+    dirtyRef.current = true;
     if (editingRef.current) return;
     setLiveData(shapes);
   }, []);
@@ -110,36 +113,48 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   const commitShapes = useCallback(async (shapes?: Shape[]) => {
     const finalShapes = shapes ?? liveDataRef.current ?? [];
     const cur = elementRef.current as { attrs?: DrawboardAttrs };
-    let nextAttrs: DrawboardAttrs = { ...(cur.attrs ?? {}) };
+    const baseAttrs: DrawboardAttrs = { ...(cur.attrs ?? {}) };
+    dirtyRef.current = false;
 
-    if (canWrite()) {
+    const writeAttrs = (next: DrawboardAttrs) => {
       try {
-        const src = await saveDrawboard(finalShapes, nextAttrs.src);
-        nextAttrs = { ...nextAttrs, src };
-        delete nextAttrs.data;
+        const path = ReactEditor.findPath(editorRef.current, elementRef.current as any);
+        if (path) {
+          Transforms.setNodes(editorRef.current, { attrs: next } as any, { at: path });
+        }
       } catch {
-        // 保存失败：至少把当前数据留在文档里，避免直接丢内容
-        nextAttrs = { ...nextAttrs, data: finalShapes };
+        /* ignore */
       }
-    } else {
-      nextAttrs = { ...nextAttrs, data: finalShapes };
+    };
+
+    if (!canWrite()) {
+      writeAttrs({ ...baseAttrs, data: finalShapes });
+      return;
     }
 
+    // 先同步内联一份：保存文件是异步的，这期间组件可能被卸载（切页/切模式），
+    // 卸载后异步的 setNodes 写不进文档，画板内容就会丢。先落内联数据兜底。
+    writeAttrs({ ...baseAttrs, data: finalShapes });
+
     try {
-      const path = ReactEditor.findPath(editorRef.current, elementRef.current as any);
-      if (path) {
-        Transforms.setNodes(editorRef.current, { attrs: nextAttrs } as any, { at: path });
-      }
+      const src = await saveDrawboard(finalShapes, baseAttrs.src);
+      const latest = (elementRef.current as { attrs?: DrawboardAttrs } | null)?.attrs ?? baseAttrs;
+      const nextAttrs: DrawboardAttrs = { ...latest, src };
+      delete nextAttrs.data;
+      writeAttrs(nextAttrs);
     } catch {
-      /* ignore */
+      // 保存失败：保留内联数据，至少不丢内容
+      const latest = (elementRef.current as { attrs?: DrawboardAttrs } | null)?.attrs ?? baseAttrs;
+      writeAttrs({ ...latest, data: finalShapes });
     }
   }, []);
 
   const handleClose = useCallback(() => {
     setEditing(false);
-    // 阅读模式下打开的是只读预览：没有任何改动，不回写、也不触发保存
-    if (readMode) return;
     const finalShapes = liveDataRef.current;
+    // 阅读态打开的是只读预览，本来没有改动；但若是编辑过程中被切到阅读，
+    // 未提交的修改还在，必须照常落盘，不能因为 readMode 直接丢弃。
+    if (readMode && !dirtyRef.current) return;
     void commitShapes(finalShapes);
     // 先把全屏层撤掉、这一帧画完，再生成缩略图：
     // 否则「全量重绘 + PNG 编码」会堵在关闭动作里，用户感觉退出卡一下。
@@ -149,6 +164,28 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
   }, [commitShapes, readMode]);
 
   const previewShapes = liveData ?? attrs?.data ?? remoteShapes ?? undefined;
+
+  // 编辑中被切到阅读：CanvasBoard 会被卸载（DrawboardEditor 走只读预览分支），
+  // 不主动收尾的话这一轮修改没机会提交。先落盘，再关掉全屏层。
+  useEffect(() => {
+    if (!readMode || !editingRef.current) return;
+    const finalShapes = liveDataRef.current;
+    setEditing(false);
+    if (finalShapes) {
+      void commitShapes(finalShapes);
+      window.setTimeout(() => setLiveData(finalShapes), 0);
+    }
+  }, [readMode, commitShapes]);
+
+  // 切页/卸载时组件直接消失，不会走 handleClose：把编辑中的最新数据补交一次。
+  useEffect(
+    () => () => {
+      if (editingRef.current && liveDataRef.current) {
+        void commitShapes(liveDataRef.current);
+      }
+    },
+    [commitShapes],
+  );
 
   // 画板块被选中时，在窗口捕获阶段拦截 Enter → 进入全屏编辑。
   // 选捕获阶段在根节点 React/Slate 处理之前触发，preventDefault 会让 Slate 跳过插入换行等默认行为。
@@ -443,7 +480,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
 
       {editing && (
         <DrawboardEditor
-          initialData={attrs?.data ?? liveData ?? remoteShapes ?? undefined}
+          // 与卡片缩略图统一取数顺序：liveData 优先，避免 attrs.data 旧快照覆盖最新编辑
+          initialData={previewShapes}
           onDataChange={handleEditorDataChange}
           onClose={handleClose}
           readOnly={readMode}

@@ -23,6 +23,10 @@
 - 软换行：`insertSoftBreak` = `splitNodes({always:true})` 拆块不写 `\n`；正确做法 `Transforms.insertText(editor,'\n')`，且 `[data-slate-string]{white-space:pre-wrap}`（`src/index.css`）必须有。
 - 跨多块选区用 `Editor.nodes({at:selection,mode:'highest'})` 别用 `Editor.above`（above 跨块返回 undefined）。
 - `Editor.nodes` 的 `match` 里用 `Editor.isBlock` 必须前置 `Element.isElement(n)` 守卫，否则 `mode:'highest'` 会把根节点当块命中（path `[]`）终止遍历。
+- `editor.marks` **只在折叠光标时有效**，展开选区恒为 `null`。判格式激活/决定 toggle 方向必须自己遍历选区文本节点统计（`plugins/marks.ts#isMarkActive`）。
+  只读 marks 的后果：格式取消不掉（永远走 addMark）、按钮图标永不高亮。
+- 浮层工具条（FloatBar / 取色器 / 字体 / 艺术字 / 对齐面板）里所有按钮必须 `onMouseDown={e=>e.preventDefault()}`。
+  否则按下时 contenteditable 失焦 → Chrome 折叠 DOM 选区 → 浮栏被 `selectionchange` 关掉、格式写错位置/整段被选中。
 
 ## 列表 lilist
 

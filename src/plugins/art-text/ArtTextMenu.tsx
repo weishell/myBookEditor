@@ -2,6 +2,7 @@ import React from 'react';
 import type { Editor } from 'slate';
 import { setArtTextStyle, ArtTextPresets } from './art-text-marks';
 import type { ArtTextStyle } from './art-text-marks';
+import { isSelectionExpanded } from '../marks';
 import styles from './ArtTextMenu.module.less';
 
 interface ArtTextMenuProps {
@@ -20,16 +21,14 @@ export const ArtTextMenu: React.FC<ArtTextMenuProps> = ({
   if (!visible) return null;
 
   const handleSelectStyle = (style: ArtTextStyle) => {
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) {
+    if (isSelectionExpanded(editor)) {
       setArtTextStyle(editor, style);
     }
     onClose();
   };
 
   const handleClearStyle = () => {
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) {
+    if (isSelectionExpanded(editor)) {
       setArtTextStyle(editor, null);
     }
     onClose();
@@ -39,6 +38,8 @@ export const ArtTextMenu: React.FC<ArtTextMenuProps> = ({
     <div
       className={styles.menu}
       style={{ left: position.x, top: position.y }}
+      // 菜单里点任何一项都不能让编辑器失焦：否则浏览器折叠选区，样式无处可写
+      onMouseDown={(e) => e.preventDefault()}
       onClick={(e) => e.stopPropagation()}
     >
       <div className={styles.sectionTitle}>渐变字</div>

@@ -48,6 +48,17 @@
     background-color: @bg-hover;
   }
 
+  // 激活态（加粗/倾斜/下划线/行内代码已生效）：主题色文字 + 淡主题色底。
+  // 与块类型菜单里的「当前项」保持同一套视觉语言，一眼能看出当前格式。
+  &.toolButtonActive {
+    color: @color-primary;
+    background-color: color-mix(in srgb, @color-primary 12%, transparent);
+
+    &:hover {
+      background-color: color-mix(in srgb, @color-primary 18%, transparent);
+    }
+  }
+
   &.disabled,
   &:disabled {
     cursor: not-allowed;
@@ -266,4 +277,10 @@
 
 .iconUnderline {
   text-decoration: underline;
+}
+
+// 删除线：S 中间一条横线（与 underline 的花头保持一致，宽度略收细更清晰）
+.iconStrike {
+  text-decoration: line-through;
+  text-decoration-thickness: 1.5px;
 }

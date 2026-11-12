@@ -117,6 +117,8 @@ export function ColorPickerPanel({
             <button
               className={styles.fontSwatch}
               style={{ color: color.value }}
+              // 不抢焦点：保住编辑器里的选区，否则取色时选中范围会丢
+              onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.stopPropagation();
                 onTextColorChange(color.value);
@@ -143,6 +145,7 @@ export function ColorPickerPanel({
             <button
               className={`${styles.bgSwatch} ${!color.value ? styles.bgSwatchEmpty : ''}`}
               style={{ backgroundColor: color.value || '#fff' }}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={(e) => {
                 e.stopPropagation();
                 onBackgroundColorChange(color.value || null);
@@ -154,6 +157,7 @@ export function ColorPickerPanel({
 
       <button
         className={styles.reset}
+        onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => {
           e.stopPropagation();
           onTextColorChange(null);
@@ -191,6 +195,8 @@ export default function ColorPicker({
     <div className={styles.picker}>
       <button
         className={styles.trigger}
+        // 展开面板不能让编辑器失焦，否则原选区丢失、颜色无处可写
+        onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => {
           e.stopPropagation();
           setOpen(!open);

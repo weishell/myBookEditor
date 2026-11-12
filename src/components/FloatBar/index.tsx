@@ -18,6 +18,8 @@ import {
   toggleMark,
   toggleBlock,
   MarkTypes,
+  isMarkActive,
+  isSelectionExpanded,
   setColor,
   setBackgroundColor,
   setFontFamily,
@@ -72,8 +74,26 @@ const isSelectionInHeadingTitle = (editor: any): boolean => {
 export type { BlockType };
 export { getActiveBlockType, resolveBlockTypeKey };
 
-/** 合并菜单项 → toggleBlock 参数的映射 */
-const CONVERT_TARGETS: Record<BlockType, { format: BlockElementType; level?: number }> = {
+/** FloatBar 上会显示激活态的字符格式按钮（顺序即工具栏顺序） */
+const MARK_BUTTON_KEYS = [
+  MarkTypes.BOLD,
+  MarkTypes.ITALIC,
+  MarkTypes.UNDERLINE,
+  MarkTypes.STRIKETHROUGH,
+  MarkTypes.CODE,
+] as const;
+
+/** 一次性读出当前选区的全部字符格式激活态 */
+const readActiveMarks = (editor: any): Record<string, boolean> => {
+  const next: Record<string, boolean> = {};
+  for (const key of MARK_BUTTON_KEYS) next[key] = isMarkActive(editor, key);
+  return next;
+};
+
+/** 合并菜单项 → toggleBlock 参数的映射 */ const CONVERT_TARGETS: Record<
+  BlockType,
+  { format: BlockElementType; level?: number }
+> = {
   paragraph: { format: BlockElementType.PARAGRAPH },
   h1: { format: BlockElementType.HEADING, level: 1 },
   h2: { format: BlockElementType.HEADING, level: 2 },
@@ -123,6 +143,9 @@ const BlockTypeDropdown = ({ activeBlockKey, onConvert }: BlockTypeDropdownProps
     return (
       <button
         className={`${styles.menuItem} ${active ? styles.menuItemActive : ''}`}
+        // 按下不抢焦点：否则 contenteditable 失焦 → 浏览器折叠 DOM 选区，
+        // 后续所有格式操作都拿不到原来的选中范围
+        onMouseDown={(e) => e.preventDefault()}
         onClick={(e) => {
           e.stopPropagation();
           onConvert(target);
@@ -251,6 +274,10 @@ export default function FloatBar() {
   // 单靠 Slate 自身 context 不会触发重渲染。这里在 mouseup/selectionchange 里
   // 主动刷新，配合 onClick 触发块切换后的下一次 mouseup 自然同步。
   const [activeBlockKey, setActiveBlockKey] = useState<BlockType | null>(null);
+  // 当前选区的字符格式激活态（B / I / U / 行内代码）。
+  // 同样因为 BookEditor 的 onChange 是 no-op，Slate context 不会驱动重渲染，
+  // 只能在 mouseup / selectionchange / 点完按钮后主动读一次。
+  const [activeMarks, setActiveMarks] = useState<Record<string, boolean>>({});
   const [formulaOpen, setFormulaOpen] = useState(false);
   const [linkOpen, setLinkOpen] = useState(false);
   const toolbarRef = useRef<HTMLDivElement | null>(null);
@@ -288,6 +315,7 @@ export default function FloatBar() {
 
   const refreshActive = useCallback(() => {
     setActiveBlockKey(getActiveBlockType(editor));
+    setActiveMarks(readActiveMarks(editor));
   }, [editor]);
 
   useEffect(() => {
@@ -370,13 +398,17 @@ export default function FloatBar() {
   if ((!visible || isSelectionInHeadingTitle(editor)) && !formulaOpen && !linkOpen) return null;
 
   const handleFormatClick = (format: string, isMark: boolean, level?: number) => {
-    const selection = window.getSelection();
-    if (selection && !selection.isCollapsed) {
-      if (isMark) {
+    if (isMark) {
+      // 字符格式必须有实际选中范围：折叠光标点 B 只是改「后续输入格式」，
+      // 用户看不到任何反馈，干脆不处理
+      if (isSelectionExpanded(editor)) {
         toggleMark(editor, format);
-      } else {
-        toggleBlock(editor, format as BlockElementType, level ? { level } : undefined);
+        // 点完立刻回读：加粗/取消后图标高亮必须马上跟上（不等下一次选区变化）
+        setActiveMarks(readActiveMarks(editor));
       }
+    } else {
+      toggleBlock(editor, format as BlockElementType, level ? { level } : undefined);
+      setActiveBlockKey(getActiveBlockType(editor));
     }
     setActiveMenu(null);
   };
@@ -410,6 +442,7 @@ export default function FloatBar() {
     hasDropdown,
     className,
     disabled,
+    active,
   }: {
     icon: React.ReactNode;
     label?: string;
@@ -417,13 +450,20 @@ export default function FloatBar() {
     hasDropdown?: boolean;
     className?: string;
     disabled?: boolean;
+    active?: boolean;
   }) => (
     <button
+      // 关键：按下时不让按钮拿走焦点。
+      // 否则 contenteditable 失焦 → Chrome 折叠 DOM 选区（有概率变成整段/整块选中），
+      // 我们随后读到的是"错的"选区，格式操作位置就漂了。
+      onMouseDown={(e) => e.preventDefault()}
       onClick={(e) => {
         e.stopPropagation();
         if (!disabled) onClick();
       }}
-      className={`${styles.toolButton} ${className || ''} ${disabled ? styles.disabled : ''}`}
+      className={`${styles.toolButton} ${className || ''} ${disabled ? styles.disabled : ''} ${
+        active ? styles.toolButtonActive : ''
+      }`}
       disabled={disabled}
     >
       {icon}
@@ -487,29 +527,32 @@ export default function FloatBar() {
         <div className={styles.divider} />
         <ToolButton
           icon={<span className={styles.iconBold}>B</span>}
+          active={!!activeMarks[MarkTypes.BOLD]}
           onClick={() => handleFormatClick(MarkTypes.BOLD, true)}
         />
         <ToolButton
           icon={<span className={styles.iconItalic}>I</span>}
+          active={!!activeMarks[MarkTypes.ITALIC]}
           onClick={() => handleFormatClick(MarkTypes.ITALIC, true)}
         />
         <ToolButton
           icon={<span className={styles.iconUnderline}>U</span>}
+          active={!!activeMarks[MarkTypes.UNDERLINE]}
           onClick={() => handleFormatClick(MarkTypes.UNDERLINE, true)}
+        />
+        <ToolButton
+          // 删除线：字母 S 本身带一条横线，与 B/I/U 的字符按钮保持同一套视觉
+          icon={<span className={styles.iconStrike}>S</span>}
+          active={!!activeMarks[MarkTypes.STRIKETHROUGH]}
+          onClick={() => handleFormatClick(MarkTypes.STRIKETHROUGH, true)}
         />
         <div className={styles.divider} />
         <ColorPicker
           onTextColorChange={(color) => {
-            const selection = window.getSelection();
-            if (selection && !selection.isCollapsed) {
-              setColor(editor, color);
-            }
+            if (isSelectionExpanded(editor)) setColor(editor, color);
           }}
           onBackgroundColorChange={(color) => {
-            const selection = window.getSelection();
-            if (selection && !selection.isCollapsed) {
-              setBackgroundColor(editor, color);
-            }
+            if (isSelectionExpanded(editor)) setBackgroundColor(editor, color);
           }}
         />
         <div className={styles.divider} />
@@ -524,10 +567,7 @@ export default function FloatBar() {
             <div className={`${styles.dropdown} ${styles.dropdownFont}`}>
               <FontPicker
                 onFontChange={(family) => {
-                  const selection = window.getSelection();
-                  if (selection && !selection.isCollapsed) {
-                    setFontFamily(editor, family || null);
-                  }
+                  if (isSelectionExpanded(editor)) setFontFamily(editor, family || null);
                   setActiveMenu(null);
                 }}
               />
@@ -551,6 +591,7 @@ export default function FloatBar() {
         <div className={styles.divider} />
         <ToolButton
           icon={<InlineCodeIcon size={16} />}
+          active={!!activeMarks[MarkTypes.CODE]}
           onClick={() => handleFormatClick(MarkTypes.CODE, true)}
         />
         <ToolButton

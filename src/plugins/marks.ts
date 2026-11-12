@@ -1,4 +1,4 @@
-import { Editor, Element, Transforms, type Node } from 'slate';
+import { Editor, Element, Text, Transforms, Range, type Node } from 'slate';
 import { BlockElementType } from '@/enums';
 import { showCursorToast } from '@/components/InlineToast';
 
@@ -26,9 +26,40 @@ export const toggleMark = (editor: Editor, format: string) => {
   }
 };
 
+/**
+ * 选区内是否「全部」带某个格式。
+ *
+ * ⚠️ 不能只读 `editor.marks`：Slate 里它只在**折叠光标**时才是当前格式的快照，
+ * 展开选区时恒为 null。之前只看 marks，导致 B/I/U 永远被判定为「未激活」→
+ * 点一次加格式、再点还是 addMark，取消不掉；图标也不会高亮。
+ * 所以展开选区必须自己遍历选区内的文本节点统计。
+ */
 export const isMarkActive = (editor: Editor, format: string) => {
+  const { selection } = editor;
   const marks = (editor as any).marks;
-  return marks ? marks[format as keyof typeof marks] === true : false;
+  const collapsedActive = marks ? marks[format as keyof typeof marks] === true : false;
+
+  if (!selection) return collapsedActive;
+  if (Range.isCollapsed(selection)) return collapsedActive;
+
+  let total = 0;
+  let matched = 0;
+  for (const [node] of Editor.nodes(editor, {
+    at: selection,
+    match: (n: Node) => Text.isText(n),
+  })) {
+    // 空文本叶子（分片产生的占位）不参与判断，否则「全选一段」会被空叶子稀释成 false
+    if (!(node as Text).text) continue;
+    total += 1;
+    if ((node as any)[format] === true) matched += 1;
+  }
+  return total > 0 && matched === total;
+};
+
+/** 当前是否选中了实际文本（用于判断格式类操作有没有作用对象） */
+export const isSelectionExpanded = (editor: Editor) => {
+  const { selection } = editor;
+  return !!selection && Range.isExpanded(selection);
 };
 
 /** 颜色需要作用的"自绘 + void"行内元素类型 */
@@ -108,6 +139,7 @@ export const MarkTypes = {
   BOLD: 'bold',
   ITALIC: 'italic',
   UNDERLINE: 'underline',
+  STRIKETHROUGH: 'strikethrough',
   CODE: 'code',
   COLOR: 'color',
   HIGHLIGHT: 'highlight',

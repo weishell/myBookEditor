@@ -68,6 +68,8 @@ export default function FontPicker({ activeFamily, onFontChange }: FontPickerPro
           >
             <button
               className={`${styles.item} ${isActive ? styles.itemActive : ''}`}
+              // 不抢焦点：保住编辑器选区，字体才能落到选中的那几个字上
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => handleFontClick(font)}
               disabled={isLoading}
               style={{ fontFamily: isDefault ? undefined : font.family }}

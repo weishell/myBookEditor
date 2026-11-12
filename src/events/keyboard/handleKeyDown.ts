@@ -206,6 +206,8 @@ const handleLilistBackspace = (editor: Editor): boolean => {
  * 文本 mark 快捷键（跨平台，mod = Mac 的 Cmd / Windows 的 Ctrl）：
  *  - mod+b → 加粗
  *  - mod+i → 倾斜
+ *  - mod+shift+x → 删除线（Tiptap / 飞书同款组合）
+ *  - mod+shift+c → 行内代码
  * 标题名（HEADING_TITLE）禁止任何格式化，与 FloatBar 的禁用策略保持一致
  * @returns 是否已消费该按键
  */
@@ -215,13 +217,17 @@ const handleMarkShortcut = (editor: Editor, e: React.KeyboardEvent): boolean => 
   let format = '';
   if (isHotkey('mod+b', e)) format = MarkTypes.BOLD;
   else if (isHotkey('mod+i', e)) format = MarkTypes.ITALIC;
+  else if (isHotkey('mod+shift+x', e)) format = MarkTypes.STRIKETHROUGH;
   else if (isHotkey('mod+shift+c', e)) format = MarkTypes.CODE;
   else return false;
 
   toggleMark(editor, format);
-  const markKey = { [MarkTypes.BOLD]: 'b', [MarkTypes.ITALIC]: 'i', [MarkTypes.CODE]: 'shift+c' }[
-    format
-  ];
+  const markKey = {
+    [MarkTypes.BOLD]: 'b',
+    [MarkTypes.ITALIC]: 'i',
+    [MarkTypes.STRIKETHROUGH]: 'shift+x',
+    [MarkTypes.CODE]: 'shift+c',
+  }[format];
   console.log(`[keydown] mod+${markKey} → ${format}`);
   e.preventDefault();
   e.stopPropagation();
