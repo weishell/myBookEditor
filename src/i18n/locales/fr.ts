@@ -37,7 +37,9 @@ export default {
     clickToEdit: 'Cliquer pour modifier en plein écran',
     hint: 'Double-cliquez le tableau ou sélectionnez puis Entrée',
     doubleClickTitle: 'Double-clic pour modifier en plein écran',
+    doubleClickView: 'Double-clic pour afficher en plein écran',
     escToExit: 'Échap pour quitter l’édition',
+    readOnlyHint: 'Lecture seule · glisser pour déplacer · Échap pour quitter',
     exitTitle: 'Quitter (Échap)',
   },
   header: {

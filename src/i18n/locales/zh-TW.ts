@@ -36,7 +36,9 @@ export default {
     clickToEdit: '點擊進入全螢幕編輯',
     hint: '雙擊畫板 或 選取後按 Enter',
     doubleClickTitle: '雙擊進入全螢幕編輯',
+    doubleClickView: '雙擊進入全螢幕查看',
     escToExit: 'Esc 退出編輯',
+    readOnlyHint: '唯讀模式 · 可拖動查看 · Esc 退出',
     exitTitle: '退出 (Esc)',
   },
   header: {

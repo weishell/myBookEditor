@@ -37,7 +37,9 @@ export default {
     clickToEdit: 'Klicken für Vollbild-Bearbeitung',
     hint: 'Board doppelklicken oder auswählen und Enter drücken',
     doubleClickTitle: 'Doppelklick für Vollbild-Bearbeitung',
+    doubleClickView: 'Doppelklick für Vollbildansicht',
     escToExit: 'Esc beendet die Bearbeitung',
+    readOnlyHint: 'Nur Lesen · Ziehen zum Verschieben · Esc zum Beenden',
     exitTitle: 'Beenden (Esc)',
   },
   header: {

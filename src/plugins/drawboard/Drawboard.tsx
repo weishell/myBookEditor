@@ -165,8 +165,8 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
 
   const previewShapes = liveData ?? attrs?.data ?? remoteShapes ?? undefined;
 
-  // 编辑中被切到阅读：CanvasBoard 会被卸载（DrawboardEditor 走只读预览分支），
-  // 不主动收尾的话这一轮修改没机会提交。先落盘，再关掉全屏层。
+  // 编辑中被切到阅读：先把这一轮修改落盘，再关掉全屏层；
+  // 之后再双击进入的是只读权限的画板（permission="read"），不再是静态图片。
   useEffect(() => {
     if (!readMode || !editingRef.current) return;
     const finalShapes = liveDataRef.current;
@@ -400,7 +400,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
           suppressContentEditableWarning={true}
           onClick={handleSelect}
           onDoubleClick={openEditor}
-          title={t('drawboard.doubleClickTitle')}
+          title={readMode ? t('drawboard.doubleClickView') : t('drawboard.doubleClickTitle')}
           style={{
             alignSelf: alignToAlignSelf(align),
             maxWidth: `min(${effW}px, 100%)`,
@@ -452,7 +452,7 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
                   </svg>
                 </div>
                 <span className={styles.emptyText}>
-                  {readMode ? t('drawboard.doubleClickTitle') : t('drawboard.clickToEdit')}
+                  {readMode ? t('drawboard.doubleClickView') : t('drawboard.clickToEdit')}
                 </span>
                 {!readMode && <span className={styles.hint}>{t('drawboard.hint')}</span>}
               </>

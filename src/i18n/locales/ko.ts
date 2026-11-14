@@ -37,7 +37,9 @@ export default {
     clickToEdit: '클릭하여 전체 화면 편집',
     hint: '보드를 더블클릭하거나 선택 후 Enter',
     doubleClickTitle: '더블클릭하여 전체 화면 편집',
+    doubleClickView: '더블클릭하여 전체 화면으로 보기',
     escToExit: 'Esc 편집 종료',
+    readOnlyHint: '읽기 전용 · 드래그로 이동 · Esc 종료',
     exitTitle: '종료 (Esc)',
   },
   header: {

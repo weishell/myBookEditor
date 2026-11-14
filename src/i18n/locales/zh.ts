@@ -108,7 +108,9 @@ export default {
     clickToEdit: '点击进入全屏编辑',
     hint: '双击画板 或 选中后按 Enter',
     doubleClickTitle: '双击进入全屏编辑',
+    doubleClickView: '双击进入全屏查看',
     escToExit: 'Esc 退出编辑',
+    readOnlyHint: '只读模式 · 可拖动查看 · Esc 退出',
     exitTitle: '退出 (Esc)',
   },
   header: {

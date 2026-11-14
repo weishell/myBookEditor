@@ -37,7 +37,9 @@ export default {
     clickToEdit: 'クリックして全画面編集',
     hint: 'ボードをダブルクリック、または選択して Enter',
     doubleClickTitle: 'ダブルクリックで全画面編集',
+    doubleClickView: 'ダブルクリックで全画面表示',
     escToExit: 'Esc で編集終了',
+    readOnlyHint: '読み取り専用 · ドラッグで移動 · Esc で終了',
     exitTitle: '終了 (Esc)',
   },
   header: {

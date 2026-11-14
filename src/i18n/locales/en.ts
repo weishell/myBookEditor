@@ -108,7 +108,9 @@ export default {
     clickToEdit: 'Click to edit fullscreen',
     hint: 'Double-click the board or select and press Enter',
     doubleClickTitle: 'Double-click to edit fullscreen',
+    doubleClickView: 'Double-click to view fullscreen',
     escToExit: 'Esc to exit editing',
+    readOnlyHint: 'Read-only · drag to pan · Esc to exit',
     exitTitle: 'Exit (Esc)',
   },
   header: {
