@@ -2,7 +2,7 @@ import { isHotkey, type KeyboardEventLike } from 'is-hotkey';
 import { Range, type Editor } from 'slate';
 import { increaseIndent, decreaseIndent, hasNonIndentableInSelection } from '@/utils/indent';
 import { isInCodeBlock, handleCodeBlockTab } from '@/utils/code-tab';
-import { showCursorToast, type ToastKey } from '@/components/InlineToast';
+import { showCursorToast, type ToastKey } from '@/components/InlineToast/showCursorToast';
 import { getLilistAtSelection, indentLilistSubtree, sortLilist } from '@/plugins/lilist';
 
 export function handleTabIndent(editor: Editor, e: React.KeyboardEvent): void {

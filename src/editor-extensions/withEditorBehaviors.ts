@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType } from '@/enums';
 import { ensureHeadingTitle } from './withDelete';
 import { isNonTextType } from './nonText';
+import { collectPastedDrawboards, copyPastedDrawboards } from '@/plugins/drawboard/pasteDrawboards';
 
 /**
  * 把 Fragment 中所有 HEADING_TITLE 降级为 PARAGRAPH（保留 children 内容）
@@ -35,12 +36,45 @@ const downgradeHeadingTitles = (nodes: Descendant[]): Descendant[] => {
  * 递归重生成 Fragment 中所有层级的 id（保证页面内唯一）。
  * 复制时写入剪贴板的是原始 id，粘贴时才换新，这样多次粘贴也不会产生重复 id。
  */
+/**
+ * 插件级内部 id 也要换新。
+ * 节点 id 归 Slate 语义管辖，但 attrs 里的 id 是插件自己的数据 —— 复制粘贴后同一文档里
+ * 会出现两组相同的 item id，将来接协同 / 按 id 定位（块内评论、引用）会串到另一个块上。
+ * 只处理「跨块会互相干扰」的字段；图片/视频/附件的 attrs.url 指向同一份媒体文件是正确的，
+ * 不在这里换（换了等于重新上传一份同样的文件）。
+ * 画板的 attrs.src 不在这里处理 —— 它要复制服务端文件，见 pasteDrawboards.ts。
+ */
+const regenerateAttrsIds = (node: any): any => {
+  const type = node?.type;
+  const attrs = node?.attrs;
+  if (!attrs || typeof attrs !== 'object') return attrs;
+
+  if (type === BlockElementType.TIMELINE && Array.isArray(attrs.items)) {
+    return {
+      ...attrs,
+      items: attrs.items.map((it: any) =>
+        it && typeof it === 'object' ? { ...it, id: uuidv4() } : it,
+      ),
+    };
+  }
+  if (type === BlockElementType.CALENDAR && Array.isArray(attrs.events)) {
+    return {
+      ...attrs,
+      events: attrs.events.map((ev: any) =>
+        ev && typeof ev === 'object' ? { ...ev, id: uuidv4() } : ev,
+      ),
+    };
+  }
+  return attrs;
+};
+
 const regenerateIds = (nodes: Descendant[]): Descendant[] => {
   const walk = (n: any): any => {
-    if (n && Array.isArray(n.children)) {
-      return { ...n, id: uuidv4(), children: n.children.map(walk) };
-    }
-    return n;
+    if (!n || !Array.isArray(n.children)) return n;
+    const next = { ...n, id: uuidv4(), children: n.children.map(walk) };
+    const attrs = regenerateAttrsIds(n);
+    if (attrs !== n.attrs) next.attrs = attrs;
+    return next;
   };
   return nodes.map(walk) as Descendant[];
 };
@@ -248,12 +282,17 @@ export const withEditorBehaviors = (editor: Editor) => {
       if (handlePasteInsideHeadingTitle(editor, withNewIds)) return;
     }
 
+    // 画板块的图形数据在独立文件里（attrs.src），必须复制一份再回写，
+    // 否则副本和原块共用一个 json，编辑副本会覆盖原图数据。
+    const drawboards = collectPastedDrawboards(withNewIds);
+
     insertFragment(withNewIds as any);
     try {
       ensureHeadingTitle(editor);
     } catch {
       /* ignore */
     }
+    copyPastedDrawboards(editor, drawboards);
   };
 
   return editor;

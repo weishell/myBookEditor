@@ -156,6 +156,22 @@ export async function saveDrawboard(data: unknown[], path?: string): Promise<str
   return body.path;
 }
 
+/**
+ * 复制一份已有画板到新文件，返回新相对路径。
+ * 粘贴画板块时必须走这里：文档节点只存 attrs.src，两个块指向同一个 json 时，
+ * 保存（有 path 就覆盖）会让编辑副本把原图数据覆盖掉。
+ */
+export async function copyDrawboard(src: string): Promise<string> {
+  const res = await fetch('/api/drawboards', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ copyFrom: src }),
+  });
+  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+  const body = (await res.json()) as { path: string };
+  return body.path;
+}
+
 /** 按相对路径读取画板数据 */
 export async function loadDrawboard(path: string): Promise<unknown[]> {
   const res = await fetch(toMediaUrl(path));

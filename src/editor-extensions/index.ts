@@ -5,3 +5,9 @@ export { withDelete } from './withDelete';
 export { withBlockSelection } from './withBlockSelection';
 export { withLilist } from './withLilist';
 export { withPasteConversion } from './withPasteConversion';
+export {
+  withStructureGuard,
+  ensureUniqueIds,
+  inspectStructure,
+  installStructureInspector,
+} from './withStructureGuard';

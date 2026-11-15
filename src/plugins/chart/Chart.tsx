@@ -1,7 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import * as echarts from 'echarts';
-import 'echarts-wordcloud';
+// echarts 只用于类型标注，实例由 echarts-loader 动态拉取（否则整个图表引擎
+// 会顺着静态 import 链被文档页无条件下载，约 376 kB）
+import type * as echarts from 'echarts';
 import { Transforms } from 'slate';
 import { ReactEditor, useSelected, useSlateStatic } from 'slate-react';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
@@ -10,6 +11,7 @@ import { useTheme } from '@/context/ThemeContext';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { ChartConfigDialog } from './ChartConfigDialog';
 import { buildChartOption, ChartKind, type ChartAttrs } from './chart-utils';
+import { loadEcharts, type EChartsModule } from './echarts-loader';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
 import {
   useVisualBlockReadOnly,
@@ -44,6 +46,8 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
   const cardRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<echarts.ECharts | null>(null);
+  // echarts 模块句柄：异步到货后缓存在这里，后续重建不再走 await
+  const echartsRef = useRef<EChartsModule | null>(null);
   const [editing, setEditing] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
   const hideTimerRef = useRef<number | null>(null);
@@ -118,17 +122,43 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
 
   // 只在配置/主题变化时重建图表。仪表盘用 merge 模式(setOption 不置空)，
   // 以便指针从旧值平滑补间动画到新值，而不是整体重绘直接跳变。
+  //
+  // echarts 是动态加载的，首帧要等它到货。等待期间如果配置又变了，旧任务会被
+  // cancelled 掉、由新任务接手，保证最终 setOption 的永远是最新配置。
   useEffect(() => {
     const el = canvasRef.current;
     if (!el) return;
+    let cancelled = false;
     const isGauge = configRef.current.kind === ChartKind.GAUGE;
-    if (!chartRef.current) {
-      chartRef.current = echarts.init(el);
+    const option = buildChartOption(configRef.current, { accent, isDarkMode });
+
+    const paint = (mod: EChartsModule) => {
+      // 加载期间节点可能已被卸载（切路由 / 删块），此时 init 出来的画布是野指针
+      if (cancelled || !el.isConnected) return;
+      if (!chartRef.current) chartRef.current = mod.init(el);
+      chartRef.current.setOption(option, !isGauge);
+    };
+
+    if (echartsRef.current) {
+      paint(echartsRef.current);
+      return () => {
+        cancelled = true;
+      };
     }
-    chartRef.current.setOption(
-      buildChartOption(configRef.current, { accent, isDarkMode }),
-      !isGauge,
-    );
+
+    loadEcharts()
+      .then((mod) => {
+        echartsRef.current = mod;
+        paint(mod);
+      })
+      .catch((err) => {
+        // 加载失败只留一张空卡片，不要把整个文档渲染拖崩
+        console.error('[chart] echarts 加载失败', err);
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [configKey, accent, isDarkMode]);
 
   // 尺寸自适应：容器变化时 resize 画布。拖动缩放手柄期间先不 relayout，

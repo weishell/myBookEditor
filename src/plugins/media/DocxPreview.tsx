@@ -2,7 +2,6 @@
 //  - 线上（公网 http(s) 地址）：直接用 Office 在线预览 iframe，由微软服务器抓取文件；
 //  - 本地（localhost/内网地址、本地相对路径）：Office 服务抓不到，退回 docx-preview 前端解析。
 import React, { useEffect, useRef, useState } from 'react';
-import { renderAsync } from 'docx-preview';
 import { toMediaUrl } from '@/data/media';
 import styles from './MediaBlock.module.less';
 
@@ -87,6 +86,10 @@ const DocxPreview: React.FC<DocxPreviewProps> = ({ src, variant = 'inline' }) =>
         const res = await fetch(toMediaUrl(src));
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const buffer = await res.arrayBuffer();
+        if (cancelled) return;
+        // docx-preview 体积不小，且只有「本地/内网的 .docx」才用得上（线上地址走 Office iframe），
+        // 所以在这里动态引入，避免全站首屏为它付体积。
+        const { renderAsync } = await import('docx-preview');
         if (cancelled) return;
         // ignoreWidth/ignoreHeight：文档页跟随容器宽度排版，避免固定 21cm 版心在正文里横向溢出
         await renderAsync(buffer, el, undefined, {

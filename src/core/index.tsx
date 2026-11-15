@@ -44,6 +44,9 @@ import {
   withBlockSelection,
   withLilist,
   withPasteConversion,
+  withStructureGuard,
+  ensureUniqueIds,
+  installStructureInspector,
 } from '@/editor-extensions';
 import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
@@ -112,24 +115,28 @@ export default function BookEditor({
   const forceCommentRender = useCallback(() => setCommentTick((t) => t + 1), []);
   const editor = useMemo(
     () =>
-      withDelete(
-        withPasteConversion(
-          withEmbed(
-            withChart(
-              withTimeline(
-                withCalendar(
-                  withCountdown(
-                    withEditorBehaviors(
-                      withSlashCommand(
-                        withBlockSelection(
-                          withLilist(
-                            withHyperlink(
-                              withColumns(
-                                withHintBlock(
-                                  withMention(
-                                    withInlineFormula(
-                                      withMarkdownShortcuts(
-                                        withCodeBlock(withHistory(withReact(createEditor()))),
+      // 结构守卫放在最外层：它的 normalizeNode 必须抢在 Slate 默认规则之前跑，
+      // 否则空容器会被塞 { text: '' }，容器身份翻转后块级子节点会被 unwrap。
+      withStructureGuard(
+        withDelete(
+          withPasteConversion(
+            withEmbed(
+              withChart(
+                withTimeline(
+                  withCalendar(
+                    withCountdown(
+                      withEditorBehaviors(
+                        withSlashCommand(
+                          withBlockSelection(
+                            withLilist(
+                              withHyperlink(
+                                withColumns(
+                                  withHintBlock(
+                                    withMention(
+                                      withInlineFormula(
+                                        withMarkdownShortcuts(
+                                          withCodeBlock(withHistory(withReact(createEditor()))),
+                                        ),
                                       ),
                                     ),
                                   ),
@@ -170,8 +177,13 @@ export default function BookEditor({
   useNonEditableCaretGuard(!readOnly);
 
   useEffect(() => {
+    // 挂载时先做一次全量规范化，再修掉 split_node 历史遗留的重复 / 缺失 id
     Editor.normalize(editor, { force: true });
-  }, [editor]);
+    // 只读态（文章浏览）不动文档，避免浏览时产生写操作
+    if (!readOnly) ensureUniqueIds(editor);
+    // 仅开发环境生效：结构被某个 op 弄脏时打印 op 类型与路径，生产构建里是空函数
+    installStructureInspector(editor);
+  }, [editor, readOnly]);
 
   const keyboardHandler = useMemo(() => createKeyDownHandler(editor), [editor]);
   const handleKeyDown = useCallback(

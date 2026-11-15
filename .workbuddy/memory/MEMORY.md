@@ -7,6 +7,29 @@
 - 本地 `vite build` 会因沙箱拦截清 `dist/assets` 失败——本地限制非代码问题，看到 `✓ N modules transformed` 即 OK。
 - 按文件统计报错：`tsc -b 2>&1 | grep -oE "^src/[^(]+" | sort | uniq -c | sort -rn`
 
+## 性能 / 分包（2026-11-15 起）
+
+- 路由级 `React.lazy`（`App.tsx` 全部页面含 `@/core`）。`<Suspense>` **只包 `<Routes>`**，否则顶栏跟着重挂。
+- `vite.config.ts` manualChunks 里 **必须**给 `vite/preload-helper` 单独切 `vite-helper`：否则 `__vitePreload`
+  被打进共享 chunk（drawui-vendor），首屏为了拿 helper 把 726 kB 画板库一起下载。
+- 重依赖一律动态 `import()`：drawui-react（DrawboardEditor）、emoji-mart（IconPicker）、docx-preview（renderAsync）、
+  echarts（`plugins/chart/echarts-loader.ts#loadEcharts`，含 wordcloud 副作用注册）、katex CSS。
+- **顶层组件（App.tsx 静态树内）一律不许静态 import slate / slate-react**。已拆：`find-replace`（slate 用法搬进
+  动态加载的 `find-ops.ts`，`find-utils.ts` 只留 type + `typeof x.text==='string'`）、`InlineToast`（`manager.ts` 纯状态，
+  `showCursorToast.ts` 带 slate）。再加组件时先看它在不在首页链上。
+- 只要组件里静态 import 了重组件，lazy 就失效。把纯函数/类型抽成独立文件（如 `components/IconPicker/render-value.tsx`）再引。
+- 实测：入口 3325 kB / gzip 993；首页 1293 → **308 kB**；无图表文章页 1158 → **783 kB**；`/demo`（真含 5 个图表）1154 → 1158。
+- chart-utils.ts 里 echarts 只能用 `import type`（它只消费 `EChartsOption` 类型），改回静态 import 就把 376 kB 拉回文档页。
+- App.module.less 里**不能用 `fade(@text-primary, 14%)`**：`@text-*` 是 `var(--dm-*)`，Less 求值失败。
+
+## 生产包日志（vite.config.ts）
+
+- `defineConfig` 是函数式，按 `command` 分支：build 时开 `esbuild.pure`（log/debug/info/table/trace/dir）+ `drop:['debugger']`，
+  dev 传 `undefined` 保留调试日志。
+- **`drop: ['console']` 是坑**：error/warn 一起没了；只能 `pure` 精确列出要删的那几个方法。
+- **`pure` 单独不删代码**，只打 `/* @__PURE__ */` 注释，靠 minify 阶段 tree-shaking 才真删 → 依赖默认 `minify:'esbuild'`。
+- `pure` 会连同参数整段删，所以 `console.log(getX())` 里的 getX() 不会执行。写日志别把有副作用的调用塞进参数。
+
 ## 文档标题块 HEADING_TITLE（重要）
 
 - 文档默认大标题块 `type:'heading-title'`，`attrs={author,date}`，`children=[{text:标题}]`；`/demo` 的 `initial-value.ts` 有范例。

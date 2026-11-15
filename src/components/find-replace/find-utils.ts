@@ -5,7 +5,11 @@
 //      表格 / 代码块 / 图片 / 图表 / 公式等非文本插件即便含相同文字也不参与。
 //   2. searchDecorate：把匹配结果转成 Slate 装饰区间，交给 renderLeaf 做高亮。
 //   3. replaceTextInLeaf / replaceAll：局部替换与全局替换的最小实现。
-import { Editor, Text, Transforms, type NodeEntry, type Range } from 'slate';
+//
+// ⚠️ 这个文件**不许 import slate 的运行时**（只能用 type）：它被 FindReplaceProvider
+// 引入，而 Provider 挂在应用最顶层，会把整个寻址链拉进首页。
+// 需要 slate 实际做事的（选中跳转 / 替换）都在 ./find-ops.ts 里，按需动态加载。
+import type { Editor, NodeEntry, Range } from 'slate';
 import { BlockElementType } from '@/enums';
 
 /** 文本类 block（可被查找替换）。其余一律视为非文本插件，即使含相同文字也不替换。 */
@@ -38,7 +42,8 @@ const walkTextLeaves = (nodeList: any[], basePath: number[], out: any[]): void =
   for (let i = 0; i < nodeList.length; i++) {
     const child = nodeList[i];
     const path = [...basePath, i];
-    if (Text.isText(child)) {
+    // 等价于 Text.isText()，但不引 slate 运行时（见文件头说明）
+    if (typeof (child as any)?.text === 'string') {
       out.push({ node: child, path });
       continue;
     }
@@ -128,61 +133,4 @@ export const searchDecorate = (
   }
 
   return ranges;
-};
-
-/**
- * 替换一个叶子内的 [start,end) 区间为 replacement。
- * 用「先删除区间再 insertText」实现：比 setNodes 直接改 text 更可靠，
- * 且不影响区间外文本的 marks（仅新插入的替换文本不带 mark）。
- * 必须在 Editor.withoutNormalizing（或等价）包裹内调用。
- */
-const replaceRangeInLeaf = (
-  editor: Editor,
-  path: number[],
-  start: number,
-  end: number,
-  replacement: string,
-): void => {
-  Transforms.delete(editor, {
-    at: { anchor: { path, offset: start }, focus: { path, offset: end } },
-  });
-  const prevMarks = editor.marks;
-  editor.marks = null; // 避免误注入搜索框/光标处的格式
-  Transforms.insertText(editor, replacement, { at: { path, offset: start } });
-  editor.marks = prevMarks;
-};
-
-/** 替换单个匹配（当前项） */
-export const replaceMatch = (editor: Editor, match: FindMatch, replacement: string): void => {
-  Editor.withoutNormalizing(editor, () => {
-    replaceRangeInLeaf(editor, match.path, match.offset, match.offset + match.length, replacement);
-  });
-};
-
-/**
- * 全局替换：按叶子分组，每个叶子内从右往左逐个替换，这样左侧匹配的
- * offset 不受右侧替换长度变化影响，路径也保持稳定。
- */
-export const replaceAllMatches = (
-  editor: Editor,
-  matches: FindMatch[],
-  replacement: string,
-): void => {
-  if (!matches.length) return;
-
-  const byLeaf = new Map<string, FindMatch[]>();
-  for (const m of matches) {
-    const key = m.path.join('/');
-    if (!byLeaf.has(key)) byLeaf.set(key, []);
-    byLeaf.get(key)!.push(m);
-  }
-
-  Editor.withoutNormalizing(editor, () => {
-    for (const list of byLeaf.values()) {
-      const sorted = [...list].sort((a, b) => b.offset - a.offset);
-      for (const item of sorted) {
-        replaceRangeInLeaf(editor, item.path, item.offset, item.offset + item.length, replacement);
-      }
-    }
-  });
 };

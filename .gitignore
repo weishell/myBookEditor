@@ -2,6 +2,9 @@ node_modules
 dist
 demo/
 
+# 性能对比用的临时构建目录（vite build --outDir .dist-v2 …）
+.dist-*
+
 # ---------- 站点数据 ----------
 # 正文：data/articles/<id>.json —— 一篇一个文件，这是数据的真相，必须提交
 # 分类标签：data/meta.json —— 同样是真相，必须提交

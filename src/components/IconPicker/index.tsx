@@ -3,20 +3,17 @@ import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
+import { type IconPickerValue } from './render-value';
 import styles from './IconPicker.module.less';
 
 // ============================================================
 // IconPicker - 基于 @emoji-mart v5 的表情图标选择器
 // 对外接口保持 { kind, value } 结构以兼容旧数据
+// 类型与 renderIconValue 已抽到 ./render-value，避免「只画个 emoji」也拉整个选择器
 // ============================================================
 
-export type IconKind = 'emoji';
-
-export interface IconPickerValue {
-  kind: 'emoji';
-  /** emoji 字符（native） */
-  value: string;
-}
+export type { IconKind, IconPickerValue } from './render-value';
+export { renderIconValue } from './render-value';
 
 export interface IconPickerProps {
   /** 锚点元素，用于定位 */
@@ -69,23 +66,7 @@ const hexToRgb = (hex: string): string => {
   return `${r}, ${g}, ${b}`;
 };
 
-// ---------- 渲染工具 ----------
-export function renderIconValue(val: IconPickerValue | null | undefined, size = 20) {
-  if (!val || val.kind !== 'emoji' || !val.value) return null;
-  return (
-    <span
-      style={{
-        fontSize: Math.round(size * 1.1),
-        lineHeight: 1,
-        display: 'inline-flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-      }}
-    >
-      {val.value}
-    </span>
-  );
-}
+// ---------- 渲染工具（定义在 ./render-value，这里只做本地引用） ----------
 
 // ---------- 布局常量（与 less 中容器宽度匹配） ----------
 const EMOJI_BUTTON_SIZE = 36;

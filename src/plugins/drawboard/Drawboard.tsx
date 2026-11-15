@@ -6,7 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { ElementWrapper } from '../element-wrapper/ElementWrapper';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { BlockElementType } from '@/enums';
-import DrawboardEditor from './DrawboardEditor';
+// 全屏画板编辑器（drawui-react 全量 + drawui 样式表）只有点开才需要，按需拉取；
+// 文档里只显示缩略图时不该为它付首屏体积。
+const DrawboardEditor = React.lazy(() => import('./DrawboardEditor'));
 import DrawboardPreview from './DrawboardPreview';
 import { type DrawboardAttrs } from './drawboard-utils';
 import type { Shape } from 'drawui-core';
@@ -479,13 +481,15 @@ const Drawboard: React.FC<DrawboardProps> = ({ attributes, children, pluginId, e
       {children}
 
       {editing && (
-        <DrawboardEditor
-          // 与卡片缩略图统一取数顺序：liveData 优先，避免 attrs.data 旧快照覆盖最新编辑
-          initialData={previewShapes}
-          onDataChange={handleEditorDataChange}
-          onClose={handleClose}
-          readOnly={readMode}
-        />
+        <React.Suspense fallback={null}>
+          <DrawboardEditor
+            // 与卡片缩略图统一取数顺序：liveData 优先，避免 attrs.data 旧快照覆盖最新编辑
+            initialData={previewShapes}
+            onDataChange={handleEditorDataChange}
+            onClose={handleClose}
+            readOnly={readMode}
+          />
+        </React.Suspense>
       )}
     </ElementWrapper>
   );

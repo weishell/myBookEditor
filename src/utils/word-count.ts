@@ -2,8 +2,8 @@
 //
 // 只统计「文本类」块：段落、标题、任务列表、有序/无序列表、代码块、提示块、引用块。
 // 图片、表格、图表、公式、嵌入等非文本块整块跳过，不计入字数。
-import { Text, type Descendant } from 'slate';
 import { BlockElementType } from '@/enums';
+import type { Descendant } from 'slate';
 
 /** 非文本块：命中后整棵子树都不参与统计 */
 const NON_TEXT_TYPES = new Set<string>([
@@ -25,14 +25,16 @@ const NON_TEXT_TYPES = new Set<string>([
   BlockElementType.DRAWBOARD,
 ]);
 
+// 注意：这里刻意不用 slate 的 Text.isText()。字数统计是站点外壳（首页也挂）的功能，
+// 一旦 import 了 slate，整块 editor-vendor 就会被首屏无条件拉下来。
 function collectText(node: Descendant, buffer: string[]) {
-  if (Text.isText(node)) {
-    buffer.push(node.text);
+  const maybeText = node as { text?: unknown; type?: string; children?: Descendant[] };
+  if (typeof maybeText.text === 'string') {
+    buffer.push(maybeText.text);
     return;
   }
-  const element = node as { type?: string; children?: Descendant[] };
-  if (element.type && NON_TEXT_TYPES.has(element.type)) return;
-  element.children?.forEach((child) => collectText(child, buffer));
+  if (maybeText.type && NON_TEXT_TYPES.has(maybeText.type)) return;
+  maybeText.children?.forEach((child) => collectText(child, buffer));
 }
 
 /**

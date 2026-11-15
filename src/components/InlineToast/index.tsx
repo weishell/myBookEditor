@@ -4,82 +4,17 @@
 //   - 按 Tab 但选区含非文本块时，提示"缩进仅针对文本类内容"
 //   - 达到最大缩进时，提示"已达到最大缩进限制"
 //
-// 触发方式：调用 showCursorToast(editor, toastKey)，
-//           内部通过 ReactEditor.toDOMRange 定位光标，Portal 到 body。
+// ⚠️ 这个模块只放「渲染」，不许 import slate —— 它被 App.tsx 顶层渲染，
+// 一旦引入 slate，首页也得先下载 60 kB 编辑器内核。
+// 需要按光标定位的 showCursorToast 在 ./showCursorToast（只有编辑器内部会引）。
 import React, { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useTranslation } from 'react-i18next';
-import { ReactEditor } from 'slate-react';
-import { Editor } from 'slate';
+import { InlineToastManager, type ToastItem } from './manager';
 import styles from './InlineToast.module.less';
 
-export type ToastKey =
-  'toast.indentOnlyText' | 'toast.indentMaxReached' | 'toast.artTextGradientConflict';
-
-interface ToastItem {
-  id: number;
-  messageKey: ToastKey;
-  x: number;
-  y: number;
-}
-
-let toastId = 0;
-
-export function showCursorToast(editor: Editor, messageKey: ToastKey): void {
-  try {
-    const domRange = ReactEditor.toDOMRange(editor as any, editor.selection as any);
-    const rect = domRange.getBoundingClientRect();
-    const x = rect.left + rect.width / 2 + window.scrollX;
-    const y = rect.bottom + window.scrollY + 8;
-    InlineToastManager.show(messageKey, x, y);
-  } catch {
-    const editorEl = document.querySelector('[data-slate-editor]');
-    if (editorEl) {
-      const r = editorEl.getBoundingClientRect();
-      InlineToastManager.show(
-        messageKey,
-        r.left + r.width / 2 + window.scrollX,
-        r.top + window.scrollY + 8,
-      );
-    }
-  }
-}
-
-class InlineToastManagerClass {
-  private listeners = new Set<(toasts: ToastItem[]) => void>();
-  private toasts: ToastItem[] = [];
-  private timers = new Map<number, ReturnType<typeof setTimeout>>();
-
-  show(messageKey: ToastKey, x: number, y: number): void {
-    const id = ++toastId;
-    this.toasts = [...this.toasts, { id, messageKey, x, y }];
-    this.emit();
-
-    const timer = setTimeout(() => this.dismiss(id), 2000);
-    this.timers.set(id, timer);
-  }
-
-  dismiss(id: number): void {
-    this.toasts = this.toasts.filter((t) => t.id !== id);
-    const timer = this.timers.get(id);
-    if (timer) {
-      clearTimeout(timer);
-      this.timers.delete(id);
-    }
-    this.emit();
-  }
-
-  subscribe(fn: (toasts: ToastItem[]) => void): () => void {
-    this.listeners.add(fn);
-    return () => this.listeners.delete(fn);
-  }
-
-  private emit(): void {
-    this.listeners.forEach((fn) => fn(this.toasts));
-  }
-}
-
-export const InlineToastManager = new InlineToastManagerClass();
+export { InlineToastManager } from './manager';
+export type { ToastKey, ToastItem } from './manager';
 
 export const InlineToastHost: React.FC = () => {
   const { t } = useTranslation();

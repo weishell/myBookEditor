@@ -1,3 +1,4 @@
+import 'katex/dist/katex.min.css';
 import * as katexNs from 'katex';
 
 // KaTeX ESM 是 export default，但 @types/katex 用的是命名导出，

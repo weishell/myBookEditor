@@ -1,12 +1,5 @@
+import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
-import Editor from '@/core';
-import NotFound from '@/pages/NotFound';
-import Home from '@/pages/Home';
-import ArticleList from '@/pages/ArticleList';
-import Article from '@/pages/Article';
-import Search from '@/pages/Search';
-import Settings from '@/pages/Settings';
-import RecycleBin from '@/pages/RecycleBin';
 import AntdThemeBridge from '@/components/AntdThemeBridge';
 import { InlineToastHost } from '@/components/InlineToast';
 import { AppHeader } from '@/components/AppHeader';
@@ -22,6 +15,26 @@ import { FindReplaceProvider, FindReplacePanel } from '@/components/find-replace
 import CursorTrail from '@/components/CursorTrail';
 import { SEED_COMMENTS } from '@/data/comments';
 import styles from './App.module.less';
+
+// 路由级代码分割：页面（尤其整个 @/core 编辑器 + 全部插件 + drawui + echarts）改成按需拉取。
+// 之前全部静态 import，首页必须先把 3.3 MB 的业务 chunk 解析完才出内容。
+const Editor = lazy(() => import('@/core'));
+const Home = lazy(() => import('@/pages/Home'));
+const ArticleList = lazy(() => import('@/pages/ArticleList'));
+const Article = lazy(() => import('@/pages/Article'));
+const Search = lazy(() => import('@/pages/Search'));
+const Settings = lazy(() => import('@/pages/Settings'));
+const RecycleBin = lazy(() => import('@/pages/RecycleBin'));
+const NotFound = lazy(() => import('@/pages/NotFound'));
+
+/** 路由 chunk 加载态：只占位，不引入任何重依赖（否则懒加载白做） */
+function RouteFallback() {
+  return (
+    <div className={styles.routeFallback} aria-busy="true">
+      <span className={styles.routeFallbackSpinner} />
+    </div>
+  );
+}
 
 function AppFrame() {
   const { mode } = useEditorMode();
@@ -39,25 +52,28 @@ function AppFrame() {
       {/* 顶栏自带折叠逻辑：滚出视口后收成右上角小按钮，点开才浮出（见 components/AppHeader） */}
       <AppHeader />
       <main className={`${styles.main} ${isDocRoute ? styles.mainDoc : ''}`}>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/search" element={<Search />} />
-          <Route path="/category/:name" element={<ArticleList kind="category" />} />
-          <Route path="/tag/:name" element={<ArticleList kind="tag" />} />
-          <Route path="/articles" element={<ArticleList kind="all" />} />
-          <Route path="/trash" element={<RecycleBin />} />
-          <Route path="/settings" element={<Settings />} />
-          {/* 旧的 /appearance 已并入 /settings，保留跳转免得书签失效 */}
-          <Route path="/appearance" element={<Navigate to="/settings" replace />} />
-          <Route path="/article/:id" element={<Article />} />
-          <Route
-            path="/demo"
-            element={
-              <Editor readOnly={mode === 'read'} commentKey="demo" commentSeed={SEED_COMMENTS} />
-            }
-          />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
+        {/* 兜底只包在 <Routes> 外面：顶栏/浮层不随路由 chunk 重新挂载 */}
+        <Suspense fallback={<RouteFallback />}>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/search" element={<Search />} />
+            <Route path="/category/:name" element={<ArticleList kind="category" />} />
+            <Route path="/tag/:name" element={<ArticleList kind="tag" />} />
+            <Route path="/articles" element={<ArticleList kind="all" />} />
+            <Route path="/trash" element={<RecycleBin />} />
+            <Route path="/settings" element={<Settings />} />
+            {/* 旧的 /appearance 已并入 /settings，保留跳转免得书签失效 */}
+            <Route path="/appearance" element={<Navigate to="/settings" replace />} />
+            <Route path="/article/:id" element={<Article />} />
+            <Route
+              path="/demo"
+              element={
+                <Editor readOnly={mode === 'read'} commentKey="demo" commentSeed={SEED_COMMENTS} />
+              }
+            />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Suspense>
       </main>
       <Outline />
       <BackToTop />

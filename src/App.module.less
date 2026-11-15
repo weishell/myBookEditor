@@ -28,6 +28,29 @@
   }
 }
 
+/* 路由 chunk 加载态：只放一个居中小转圈，避免懒加载时白屏跳动 */
+.routeFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 45vh;
+}
+
+.routeFallbackSpinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid @border-color-light;
+  border-top-color: @text-tertiary;
+  animation: routeFallbackSpin 0.8s linear infinite;
+}
+
+@keyframes routeFallbackSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 /* 文档路由专属：左侧要给 200px 的固定目录让出空间。
    ⚠️ 必须只在文档路由生效 —— 首页也用这条规则的话，
    回来后会空出一条 240px 的竖向空白，看着像目录没消失。 */

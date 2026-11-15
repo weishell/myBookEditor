@@ -1,6 +1,6 @@
 import { Editor, Element, Text, Transforms, Range, type Node } from 'slate';
 import { BlockElementType } from '@/enums';
-import { showCursorToast } from '@/components/InlineToast';
+import { showCursorToast } from '@/components/InlineToast/showCursorToast';
 
 // 渐变字与背景高亮互斥：渐变字通过 background-clip 实现，会覆盖 background-color，
 // 叠加时背景色必然"无效"。判断当前选区是否处于渐变字（glow/shadow 不冲突）。

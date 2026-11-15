@@ -1,4 +1,7 @@
-import * as echarts from 'echarts';
+// 这里只用 echarts 的「类型」（EChartsOption），运行时要靠 Chart.tsx 里的
+// 动态 import 拿实例。写成 type-only，打包器才会真的把这条依赖剪掉 ——
+// 否则 echarts（约 376 kB）会顺着 Chart.tsx → chart-utils 的静态链被文档页无条件下载。
+import type * as echarts from 'echarts';
 import { BlockElementType, ZERO_WIDTH_SPACE } from '@/enums';
 import { v4 as uuidv4 } from 'uuid';
 

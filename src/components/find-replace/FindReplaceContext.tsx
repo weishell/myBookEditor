@@ -5,6 +5,11 @@
 //   2. 全局监听 Ctrl/Cmd + F 打开查找替换，并拦截浏览器原生查找
 //   3. 根据 editor 与查询词实时收集匹配，供 decorate 高亮与面板计数
 //   4. 提供上/下一个、替换当前、全部替换等操作
+//
+// ⚠️ 这个 Provider 挂在应用最顶层（App.tsx 里包住 <BrowserRouter>），所以它**不许**
+// 静态 import slate / slate-react —— 否则连首页都要先下载那 60 kB 的编辑器内核。
+// 真正需要 slate 做事的三处（选中跳转、替换单个、全部替换）都改成按需
+// import('./find-ops')：这些操作只可能在文档页触发，那时编辑器早已加载，命中缓存。
 import {
   createContext,
   useCallback,
@@ -15,10 +20,8 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { Transforms } from 'slate';
-import { ReactEditor } from 'slate-react';
 import { useEditorMode } from '@/context/EditorContext';
-import { collectMatches, replaceAllMatches, replaceMatch, type FindMatch } from './find-utils';
+import { collectMatches, type FindMatch } from './find-utils';
 
 interface FindReplaceContextType {
   open: boolean;
@@ -39,23 +42,6 @@ interface FindReplaceContextType {
 }
 
 const FindReplaceContext = createContext<FindReplaceContextType | undefined>(undefined);
-
-/** 选中某个匹配并滚动到可视区域（同时让"当前项"高亮生效） */
-const focusAndScroll = (editor: any, match: FindMatch): void => {
-  if (!editor) return;
-  const range = {
-    anchor: { path: match.path, offset: match.offset },
-    focus: { path: match.path, offset: match.offset + match.length },
-  };
-  try {
-    Transforms.select(editor, range);
-    const dom = ReactEditor.toDOMRange(editor, range);
-    const el = dom?.startContainer?.parentElement;
-    el?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
-  } catch {
-    /* 只读或极端情况忽略滚动 */
-  }
-};
 
 export function FindReplaceProvider({ children }: { children: ReactNode }) {
   const { editor, mode } = useEditorMode();
@@ -99,7 +85,10 @@ export function FindReplaceProvider({ children }: { children: ReactNode }) {
       if (!matches.length) return;
       const idx = ((next % matches.length) + matches.length) % matches.length;
       setCurrentIndex(idx);
-      focusAndScroll(editorRef.current, matches[idx]);
+      const target = matches[idx];
+      // 命中缓存基本是同步的（文档页必然已加载过编辑器），这里只是不想让
+      // 顶层 bundle 静态依赖 slate
+      void import('./find-ops').then((m) => m.focusAndScroll(editorRef.current, target));
     },
     [matches],
   );
@@ -120,15 +109,20 @@ export function FindReplaceProvider({ children }: { children: ReactNode }) {
     const ed = editorRef.current;
     const m = matches[currentIndex];
     if (!ed || !m) return;
-    replaceMatch(ed, m, replacement);
-    refresh();
+    void import('./find-ops').then((ops) => {
+      ops.replaceMatch(ed, m, replacement);
+      refresh();
+    });
   }, [matches, currentIndex, replacement, refresh]);
 
   const replaceAll = useCallback(() => {
     const ed = editorRef.current;
     if (!ed || !matches.length) return;
-    replaceAllMatches(ed, matches, replacement);
-    refresh();
+    const snapshot = matches;
+    void import('./find-ops').then((ops) => {
+      ops.replaceAllMatches(ed, snapshot, replacement);
+      refresh();
+    });
   }, [matches, replacement, refresh]);
 
   const value = useMemo<FindReplaceContextType>(

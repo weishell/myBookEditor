@@ -5,7 +5,11 @@ import { useTranslation } from 'react-i18next';
 import { BlockElementType } from '@/enums';
 import { ElementWrapper } from '@/plugins/element-wrapper';
 import { BuiltInCovers, type CoverItem } from './covers';
-import IconPicker, { renderIconValue, type IconPickerValue } from '@/components/IconPicker';
+import { renderIconValue, type IconPickerValue } from '@/components/IconPicker/render-value';
+
+// 表情选择器本体依赖 @emoji-mart 数据包（约 500 kB），点开才需要 —— 不能放在
+// HeadingTitle 的静态依赖里，否则每篇文档首屏都要为它付体积。
+const IconPicker = React.lazy(() => import('@/components/IconPicker'));
 import styles from './HeadingTitle.module.less';
 
 interface HeadingTitleProps {
@@ -292,15 +296,17 @@ export const HeadingTitle = ({ attributes, children, pluginId, element }: Headin
 
       {/* 图标选择弹层 */}
       {showIconPicker && iconAnchorRef.current && (
-        <IconPicker
-          anchorEl={iconAnchorRef.current}
-          value={currentIcon}
-          onSelect={handleSelectIcon}
-          onRemove={handleRemoveIcon}
-          onClose={() => setShowIconPicker(false)}
-          recentStorageKey="mb:iconpicker:recent"
-          zIndex={10002}
-        />
+        <React.Suspense fallback={null}>
+          <IconPicker
+            anchorEl={iconAnchorRef.current}
+            value={currentIcon}
+            onSelect={handleSelectIcon}
+            onRemove={handleRemoveIcon}
+            onClose={() => setShowIconPicker(false)}
+            recentStorageKey="mb:iconpicker:recent"
+            zIndex={10002}
+          />
+        </React.Suspense>
       )}
 
       {/* 标题 + 元信息 */}
