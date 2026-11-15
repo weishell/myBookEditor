@@ -11,6 +11,12 @@ import ResizeHandle from '../resize-handle/ResizeHandle';
 import { ChartConfigDialog } from './ChartConfigDialog';
 import { buildChartOption, ChartKind, type ChartAttrs } from './chart-utils';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
+import {
+  useVisualBlockReadOnly,
+  useBlockComment,
+  BlockCommentButton,
+} from '../_shared/useBlockComment';
+import { useTranslation } from 'react-i18next';
 import styles from './Chart.module.less';
 
 interface ChartProps {
@@ -25,6 +31,11 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
   const isSelected = useSelected();
   const { attrs } = element;
   const { isDarkMode, themeColor } = useTheme();
+  const { t } = useTranslation();
+
+  // 只读：编辑类按钮（对齐 / 编辑图表 / 缩放手柄）全部隐藏，工具条只留「评论」
+  const readOnly = useVisualBlockReadOnly();
+  const comment = useBlockComment(element.id, t('blockPicker.chart'));
 
   const attrsRef = useRef(attrs);
   attrsRef.current = attrs;
@@ -51,7 +62,8 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    if (isSelected) return;
+    // 选中态常显；只读模式下没有选中概念，必须允许隐藏，否则工具条挂住不走
+    if (isSelected && !readOnly) return;
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
       showTimerRef.current = null;
@@ -60,7 +72,7 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
       hideTimerRef.current = null;
       setShowToolbar(false);
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   useEffect(
     () => () => {
@@ -191,44 +203,65 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
     <ElementWrapper type={BlockElementType.CHART} pluginId={pluginId} attributes={attributes}>
       <div
         className={styles.wrapper}
+        // 只读态正文纸面是 pointer-events:none（见 core/index.tsx），
+        // 这里恢复可交互，否则悬浮评论按钮永远进不来
+        style={readOnly ? { pointerEvents: 'auto' } : undefined}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {(showToolbar || isSelected) && (
+        {(showToolbar || (!readOnly && isSelected)) && (
           <div
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <BlockAlignButtons
-              align={align}
-              onAlign={setAlign}
-              btnClass={styles.toolbarButton}
-              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
-            />
-            <div className={styles.divider} />
-            <button
-              className={styles.toolbarButton}
-              title="编辑图表"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditing(true);
-              }}
-            >
-              <svg
-                width="15"
-                height="15"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
-              </svg>
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+                iconSize={15}
+              />
+            ) : (
+              <>
+                <BlockAlignButtons
+                  align={align}
+                  onAlign={setAlign}
+                  btnClass={styles.toolbarButton}
+                  btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+                />
+                <div className={styles.divider} />
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  withLabel={false}
+                  iconSize={15}
+                />
+                <button
+                  className={styles.toolbarButton}
+                  title="编辑图表"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(true);
+                  }}
+                >
+                  <svg
+                    width="15"
+                    height="15"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5z" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -249,8 +282,8 @@ export const Chart: React.FC<ChartProps> = ({ attributes, children, pluginId, el
             <div ref={canvasRef} className={styles.chartCanvas} />
           </div>
 
-          {/* 选中时显示缩放手柄 */}
-          {isSelected && bounds && (
+          {/* 选中时显示缩放手柄（只读下不出现） */}
+          {!readOnly && isSelected && bounds && (
             <ResizeHandle
               bounds={bounds}
               aspectRatio={effW / effH}

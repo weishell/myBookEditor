@@ -5,8 +5,9 @@
 //   - <h1-h6>        → heading 块
 //   - <pre>/<code>   → code-block 块（逐行 code-line）
 //   - <ul>/<ol>/<li> → 列表项（段落 + attrs.lilist，嵌套用 attrs.indent）
-//   - <img>          → 段落占位文本 [图片]（图片上传后续再加）
+//   - <img>          → image 块（保留原地址，插入后由 pasteImages 异步落盘到本地）
 //   - <p>/文本       → 段落；行内加粗/斜体/下划线/删除线/行内代码/链接标记保留
+// 剪贴板里直接带图片文件（截图 / 右键复制图片）时走 pasteImages，不进 HTML 解析。
 // 解析出块后走 editor.insertFragment（withEditorBehaviors 负责换 id / 标题降级），
 // 无法解析或选区在代码块内时回退原 insertData 逻辑。
 // 注意：这里刻意不直接导入 slate 的 `Element` —— 本文件处理的是 DOM 节点树，
@@ -15,6 +16,14 @@
 import { Editor, Transforms, Element as SlateElement, Range, type Descendant } from 'slate';
 import { v4 as uuidv4 } from 'uuid';
 import { BlockElementType, LilistType, ZERO_WIDTH_SPACE } from '@/enums';
+import {
+  collectImageUrls,
+  insertPastedFiles,
+  insertPastedImages,
+  localizePastedRemoteImages,
+  looksLikeImageUrl,
+} from '@/plugins/image/pasteImages';
+import { uploadRemoteImage } from '@/data/media';
 
 interface RawMark {
   bold?: boolean;
@@ -52,9 +61,48 @@ const textNode = (text: string, marks: RawMark = {}): Record<string, unknown> =>
 interface InlineRun {
   text: string;
   marks: RawMark;
+  /** 该位置是一张图（src）；行内序列里遇到它就切出一个独立 image 块 */
+  image?: string;
 }
 
 const ifr = (...out: InlineRun[]) => out;
+
+/** 图片块：先保留原始地址，插入后由 pasteImages.localizePastedRemoteImages 异步落盘 */
+const buildImageBlock = (src: string, alt?: string): Descendant =>
+  ({
+    type: BlockElementType.IMAGE_BLOCK,
+    id: `${UUID_PREFIX}${uuidv4()}`,
+    attrs: { url: src, align: 'center', ...(alt ? { name: alt } : null) },
+    children: [{ text: '' }],
+  }) as unknown as Descendant;
+
+/**
+ * 把「文字 + 图片」混排的行内序列拆成块（保持原顺序）：
+ * 文本段落 → 图片块 → 文本段落…，否则 <p>文字<img>文字</p> 里的图会被吞掉。
+ */
+const runsToBlocks = (
+  runs: InlineRun[],
+  makeText: (runs: InlineRun[]) => Descendant,
+): Descendant[] => {
+  if (!runs.some((r) => r.image)) return [makeText(runs)];
+
+  const out: Descendant[] = [];
+  let buffer: InlineRun[] = [];
+  const flush = () => {
+    if (buffer.some((r) => r.text.trim())) out.push(makeText(buffer));
+    buffer = [];
+  };
+  for (const run of runs) {
+    if (run.image) {
+      flush();
+      out.push(buildImageBlock(run.image));
+    } else {
+      buffer.push(run);
+    }
+  }
+  flush();
+  return out.length > 0 ? out : [makeText([])];
+};
 
 /** 处理单个节点 → 行内 run（文本直接产出，元素按标记递归其子节点） */
 const inlineRunsOf = (node: Node, marks: RawMark): InlineRun[] => {
@@ -72,8 +120,11 @@ const inlineRunsOf = (node: Node, marks: RawMark): InlineRun[] => {
   else if (tag === 's' || tag === 'strike' || tag === 'del') next.strikethrough = true;
   else if (tag === 'code') next.code = true;
   else if (tag === 'a') next.hyperlink = el.getAttribute('href') || undefined;
-  else if (tag === 'img') return ifr({ text: '[图片]', marks });
-  else if (tag === 'br' || tag === 'hr') return ifr({ text: ' ', marks });
+  else if (tag === 'img') {
+    // 只有绝对地址（http/https 或 data:）才可能落盘；相对地址在这里没有 base 可拼，直接丢弃
+    const src = el.getAttribute('src') || el.getAttribute('data-src') || '';
+    return /^(?:https?:\/\/|data:image\/)/i.test(src) ? ifr({ text: '', marks, image: src }) : [];
+  } else if (tag === 'br' || tag === 'hr') return ifr({ text: ' ', marks });
   const out: InlineRun[] = [];
   childArray(el).forEach((c) => out.push(...inlineRunsOf(c, next)));
   return out;
@@ -186,7 +237,9 @@ const cellParagraph = (td: Element): Descendant => {
     ) || false;
   if (!hasBlock) {
     const runs = parseInlineRuns(td);
-    return paragraph(runs.map((r) => textNode(r.text, r.marks)));
+    // 单元格只能接一个返回块，图片优先（文字留在同一个单元格里意义不大）
+    const blocks = runsToBlocks(runs, (rs) => paragraph(rs.map((r) => textNode(r.text, r.marks))));
+    return blocks.find((b) => (b as any).type === BlockElementType.IMAGE_BLOCK) ?? blocks[0];
   }
   const paras: Descendant[] = [];
   const blocks = Array.from(td.children).filter((c) =>
@@ -218,15 +271,21 @@ const buildList = (el: Element, indent: number): Descendant[] => {
     const runs: InlineRun[] = [];
     inlineNodes.forEach((c) => runs.push(...inlineRunsOf(c, {})));
     if (inlineNodes.length > 0) {
-      items.push({
-        type: BlockElementType.PARAGRAPH,
-        id: `${UUID_PREFIX}${uuidv4()}`,
-        attrs: {
-          indent,
-          lilist: { list_type: listType, list_id: listId, list_number: 1, list_custom: false },
-        },
-        children: runs.length ? runs.map((r) => textNode(r.text, r.marks)) : [{ text: '' }],
-      } as unknown as Descendant);
+      // li 里夹着图片时拆成「列表项段落 + 图片块」，keep 顺序
+      const blocks = runsToBlocks(
+        runs,
+        (rs) =>
+          ({
+            type: BlockElementType.PARAGRAPH,
+            id: `${UUID_PREFIX}${uuidv4()}`,
+            attrs: {
+              indent,
+              lilist: { list_type: listType, list_id: listId, list_number: 1, list_custom: false },
+            },
+            children: rs.length ? rs.map((r) => textNode(r.text, r.marks)) : [{ text: '' }],
+          }) as unknown as Descendant,
+      );
+      items.push(...blocks);
     }
     nestedLists.forEach((nl) => {
       items.push(...buildList(nl, indent + 1));
@@ -256,31 +315,36 @@ const parseBlock = (node: Node): Descendant[] => {
       if (innerCode) return [buildCodeBlock(innerCode as Element)];
       return [buildCodeBlock(el)];
     }
-    case 'img':
-      return [paragraph([{ text: '[图片]' }])];
+    case 'img': {
+      const src = el.getAttribute('src') || el.getAttribute('data-src') || '';
+      if (!/^(?:https?:\/\/|data:image\/)/i.test(src)) return [];
+      return [buildImageBlock(src, el.getAttribute('alt') || undefined)];
+    }
   }
 
   if (/^h[1-6]$/.test(tag)) {
     const level = parseInt(tag.slice(1), 10);
     const runs = parseInlineRuns(el);
-    return [
-      {
-        type: BlockElementType.HEADING,
-        id: `${UUID_PREFIX}${uuidv4()}`,
-        attrs: { level },
-        children: runs.length ? runs.map((r) => textNode(r.text, r.marks)) : [{ text: '' }],
-      } as unknown as Descendant,
-    ];
+    return runsToBlocks(
+      runs,
+      (rs) =>
+        ({
+          type: BlockElementType.HEADING,
+          id: `${UUID_PREFIX}${uuidv4()}`,
+          attrs: { level },
+          children: rs.length ? rs.map((r) => textNode(r.text, r.marks)) : [{ text: '' }],
+        }) as unknown as Descendant,
+    );
   }
 
   if (tag === 'blockquote' || tag === 'li') {
     const runs = parseInlineRuns(el);
-    return [paragraph(runs.map((r) => textNode(r.text, r.marks)))];
+    return runsToBlocks(runs, (rs) => paragraph(rs.map((r) => textNode(r.text, r.marks))));
   }
 
   if (tag === 'p' || tag === 'span' || tag === 'font') {
     const runs = parseInlineRuns(el);
-    return [paragraph(runs.map((r) => textNode(r.text, r.marks)))];
+    return runsToBlocks(runs, (rs) => paragraph(rs.map((r) => textNode(r.text, r.marks))));
   }
 
   // 容器类：递归展开为多个顶层块
@@ -289,18 +353,17 @@ const parseBlock = (node: Node): Descendant[] => {
     childArray(el).forEach((c) => out.push(...parseBlock(c)));
     if (out.length === 0) {
       const runs = parseInlineRuns(el);
-      if (runs.some((r) => r.text.trim())) {
-        return [paragraph(runs.map((r) => textNode(r.text, r.marks)))];
+      if (runs.some((r) => r.text.trim() || r.image)) {
+        return runsToBlocks(runs, (rs) => paragraph(rs.map((r) => textNode(r.text, r.marks))));
       }
     }
     return out;
   }
 
-  // 其它元素按段落处理（如 <blockquote>、自定义标签）
+  // 其它元素按段落处理（如自定义标签）
   const runs = parseInlineRuns(el);
-  return runs.some((r) => r.text.trim())
-    ? [paragraph(runs.map((r) => textNode(r.text, r.marks)))]
-    : [];
+  if (!runs.some((r) => r.text.trim() || r.image)) return [];
+  return runsToBlocks(runs, (rs) => paragraph(rs.map((r) => textNode(r.text, r.marks))));
 };
 
 /** 解析 HTML 字符串为编辑器块列表（过滤纯空块） */
@@ -324,6 +387,11 @@ export const htmlToBlocks = (html: string): Descendant[] => {
       filtered.push(b);
       continue;
     }
+    // 图片块没有文本，但显然不是空块
+    if (anyBlock.type === BlockElementType.IMAGE_BLOCK) {
+      filtered.push(b);
+      continue;
+    }
     if (anyBlock.attrs?.lilist) {
       filtered.push(b);
       continue;
@@ -331,6 +399,33 @@ export const htmlToBlocks = (html: string): Descendant[] => {
     if (hasText(b)) filtered.push(b);
   }
   return filtered;
+};
+
+/** 末尾是 void 块时补一个空段落：粘完图能直接接着写 */
+const ensureTrailingParagraph = (blocks: Descendant[]): Descendant[] => {
+  const last = blocks[blocks.length - 1] as any;
+  if (!last) return blocks;
+  if (last.type !== BlockElementType.IMAGE_BLOCK) return blocks;
+  return [
+    ...blocks,
+    {
+      type: BlockElementType.PARAGRAPH,
+      id: `${UUID_PREFIX}${uuidv4()}`,
+      attrs: {},
+      children: [{ text: '' }],
+    } as unknown as Descendant,
+  ];
+};
+
+/** HTML 里有没有可读文字：只有 <img> 的剪贴板才按"纯图片"处理，避免粘贴带图富文本时把文字丢掉 */
+const htmlHasText = (html: string): boolean => {
+  if (!html) return false;
+  try {
+    const doc = new DOMParser().parseFromString(html, 'text/html');
+    return (doc.body.textContent || '').replace(/\u200b/g, '').trim().length > 0;
+  } catch {
+    return false;
+  }
 };
 
 const isInsideCodeBlock = (editor: Editor): boolean => {
@@ -351,6 +446,13 @@ export const withPasteConversion = (editor: Editor) => {
   const { insertData, insertFragment } = editor;
 
   editor.insertData = (data: DataTransfer) => {
+    // 编辑器内部的复制粘贴（Slate 自己的 fragment）优先原样插入，
+    // 里面可能本来就有图片块 / 表格，不能被当成"剪贴板图片"再走一遍上传
+    if (data.getData('application/x-slate-fragment')) {
+      insertData(data);
+      return;
+    }
+
     const { selection } = editor;
     if (!selection) {
       insertData(data);
@@ -361,16 +463,47 @@ export const withPasteConversion = (editor: Editor) => {
       insertData(data);
       return;
     }
+
+    // ① 剪贴板里直接带图片文件：截图、右键"复制图片"、从资源管理器拖进来。
+    //    但「复制了一段带图的富文本」也会带 files —— 那种情况文字不能丢，
+    //    所以只有 HTML 里没有可读文字时才按"纯图片"处理。
     const html = data.getData('text/html');
+    const imageFiles = Array.from(data.files ?? []).filter((f) => f.type.startsWith('image/'));
+    if (imageFiles.length > 0 && !htmlHasText(html) && insertPastedFiles(editor, imageFiles)) {
+      return;
+    }
+
     if (!html) {
+      // ② 少数浏览器（Firefox）复制图片只给 text/uri-list，没有 HTML
+      const uri = data.getData('text/uri-list');
+      const first = uri
+        .split(/\r?\n/)
+        .map((l) => l.trim())
+        .find((l) => l && !l.startsWith('#'));
+      if (first && looksLikeImageUrl(first)) {
+        const pasted = insertPastedImages(editor, [
+          {
+            previewUrl: first,
+            upload: async () => {
+              const remote = await uploadRemoteImage(first);
+              return { path: remote.path, name: remote.originalName };
+            },
+          },
+        ]);
+        if (pasted) return;
+      }
       insertData(data);
       return;
     }
-    const blocks = htmlToBlocks(html);
-    if (blocks.length === 0) {
+
+    const parsed = htmlToBlocks(html);
+    if (parsed.length === 0) {
       insertData(data);
       return;
     }
+    // ③ HTML 里的 <img> 已经解析成图片块，插入后再异步本地化
+    const blocks = ensureTrailingParagraph(parsed);
+    const remoteUrls = collectImageUrls(blocks as unknown[]);
 
     try {
       if (!Range.isCollapsed(selection)) {
@@ -380,7 +513,9 @@ export const withPasteConversion = (editor: Editor) => {
       insertFragment(blocks as any);
     } catch {
       insertData(data);
+      return;
     }
+    if (remoteUrls.length > 0) localizePastedRemoteImages(editor, remoteUrls);
   };
 
   return editor;

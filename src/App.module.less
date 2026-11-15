@@ -1,3 +1,6 @@
+// 站点外壳：容器 + 主内容区
+// 顶栏（logo/导航/搜索 + 滚动折叠）已拆到 components/AppHeader
+
 .container {
   position: relative;
   min-height: 100vh;
@@ -5,182 +8,9 @@
   flex-direction: column;
   background-color: @bg-page;
   color: @text-primary;
-  transition: background-color 0.2s, color 0.2s;
-}
-
-.header {
-  position: relative;
-  z-index: 10;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 12px 24px;
-  background-color: @bg-base;
-  border-bottom: 1px solid @border-color-light;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  transition: background-color 0.2s, border-color 0.2s, box-shadow 0.2s, color 0.2s;
-}
-
-.logo {
-  font-size: 18px;
-  font-weight: 600;
-  color: @text-primary;
-  text-decoration: none;
-  white-space: nowrap;
-  transition: color 0.2s;
-}
-
-/* logo + 主导航：导航贴着 logo 放，右侧只留搜索 */
-.brand {
-  display: flex;
-  align-items: center;
-  gap: 28px;
-  min-width: 0;
-}
-
-.nav {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.navLink {
-  position: relative;
-  padding: 6px 12px;
-  border-radius: 8px;
-  font-size: 13.5px;
-  color: #5b6472;
-  text-decoration: none;
-  white-space: nowrap;
   transition:
-    color 0.16s ease,
-    background-color 0.16s ease;
-
-  &:hover {
-    color: var(--theme-primary);
-    background: color-mix(in srgb, var(--theme-primary) 7%, transparent);
-  }
-}
-
-/* 当前页：主题色文字 + 底部一小段色条，比整块实底更安静 */
-.navLinkActive {
-  color: var(--theme-primary);
-
-  &::after {
-    content: '';
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: 2px;
-    height: 2px;
-    border-radius: 1px;
-    background: var(--theme-primary);
-    opacity: 0.85;
-  }
-}
-
-@media (max-width: 720px) {
-  .brand {
-    gap: 12px;
-  }
-
-  .navLink {
-    padding: 6px 8px;
-    font-size: 13px;
-  }
-}
-
-.controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-/* 顶栏搜索框（放在右侧 controls 里，logo 左、搜索+设置右） */
-
-.searchBox {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.searchIcon {
-  position: absolute;
-  left: 11px;
-  color: @text-tertiary;
-  pointer-events: none;
-}
-
-.searchBox input {
-  width: 280px;
-  max-width: 40vw;
-  padding: 6px 12px 6px 32px;
-  border-radius: 999px;
-  border: 1px solid @border-color-light;
-  background: @bg-subtle;
-  font-size: 13px;
-  color: @text-primary;
-  outline: none;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s,
-    background-color 0.15s;
-}
-
-.searchBox input::placeholder {
-  color: @text-placeholder;
-}
-
-.searchBox input:focus {
-  border-color: @color-primary;
-  box-shadow: 0 0 0 2px color-mix(in srgb, @color-primary 16%, transparent);
-  background: @bg-base;
-}
-
-@media (max-width: 860px) {
-  .searchBox input {
-    width: 140px;
-  }
-
-  .nav {
-    gap: 0;
-  }
-
-  .navLink {
-    padding: 6px 7px;
-    font-size: 12.5px;
-  }
-}
-
-/* 窄屏：logo 缩小、导航再瘦一圈，保证「logo + 导航 + 搜索」能塞进一行 */
-@media (max-width: 600px) {
-  .header {
-    padding: 10px 14px;
-  }
-
-  .brand {
-    gap: 6px;
-  }
-
-  .logo {
-    font-size: 15px;
-  }
-
-  .navLink {
-    padding: 6px 6px;
-    font-size: 12px;
-  }
-
-  .navLinkActive::after {
-    left: 6px;
-    right: 6px;
-  }
-
-  .searchBox input {
-    width: 106px;
-    padding-left: 28px;
-    padding-right: 8px;
-  }
+    background-color 0.2s,
+    color 0.2s;
 }
 
 .main {
@@ -221,46 +51,16 @@
   color: var(--dm-text-primary, #e5e7eb);
 }
 
-/* 顶栏：保留一点点玻璃感的半透明深色 + 柔和分割线，不挡壁纸且有层次 */
-:global(.dark-mode) .header {
-  background-color: color-mix(in srgb, var(--dm-bg-base, #121721) 68%, transparent);
-  border-bottom-color: color-mix(in srgb, var(--dm-border-light, #202837) 70%, transparent);
-  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-}
-
 /* main 区域背景透明，直接露出壁纸 */
 :global(.dark-mode) .main {
   background-color: transparent;
 }
 
-/* 顶栏导航暗色：黑主题下 theme-primary 被换成亮蓝，文字用"主题色提亮 + 白"的混合 */
-:global(.dark-mode) .navLink {
-  color: var(--dm-text-secondary, #9ca3af);
-
-  &:hover {
-    color: color-mix(in srgb, var(--theme-primary) 70%, #fff);
-    background: rgba(255, 255, 255, 0.06);
-  }
-}
-
-:global(.dark-mode) .navLinkActive {
-  color: color-mix(in srgb, var(--theme-primary) 72%, #fff);
-}
-
 /* ================ 浅色壁纸（柔和护眼）透出 =================== */
-/* 壁纸选中时 html 上有 .light-wallpaper，--lw-tint/--lw-paper 由 WallpaperHost 写入 */
 
-/* 浅色壁纸：容器背景透明，让底层 WallpaperHost（z-index:0）的装饰渐变透出，
-   与暗黑模式同一机制；编辑纸面用 --lw-paper、顶栏用 --lw-tint 染色 */
+/* 浅色壁纸：容器背景透明，让底层 WallpaperHost（z-index:0）的装饰渐变透出 */
 :global(.light-wallpaper) .container {
   background-color: transparent;
-}
-
-:global(.light-wallpaper) .header {
-  background-color: color-mix(in srgb, var(--lw-tint, #ffffff) 55%, #ffffff);
-  border-bottom-color: color-mix(in srgb, var(--lw-tint, #e8e8e8) 45%, #e8e8e8);
 }
 
 /* ================ antd 弹出层暗黑适配 =================== */

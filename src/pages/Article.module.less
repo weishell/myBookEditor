@@ -98,7 +98,106 @@
   color: @text-placeholder;
 }
 
+/* ========== 上一篇 / 下一篇 ==========
+   放在正文纸面（含全文评论）下方，左右两栏对称；跨分类时用分类色点出来 */
+.docNav {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.navCard {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 13px 16px;
+  border: 1px solid @border-color-light;
+  border-radius: 14px;
+  background: var(--lw-paper, @bg-base);
+  text-decoration: none;
+  cursor: var(--cursor-pointer, pointer);
+  transition:
+    border-color 0.16s ease,
+    transform 0.16s ease,
+    box-shadow 0.16s ease;
+
+  &:hover {
+    border-color: var(--theme-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-lift);
+  }
+}
+
+.navNext {
+  text-align: right;
+
+  .navLabel {
+    justify-content: flex-end;
+  }
+}
+
+.navEmpty {
+  cursor: default;
+  opacity: 0.55;
+
+  &:hover {
+    border-color: @border-color-light;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .navTitle {
+    font-weight: 500;
+    color: @text-secondary;
+  }
+}
+
+.navLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: @text-tertiary;
+}
+
+.navArrow {
+  color: var(--theme-primary);
+}
+
+.navCat {
+  font-size: 11.5px;
+}
+
+.navTitle {
+  overflow: hidden;
+  font-size: 14px;
+  font-weight: 600;
+  color: @text-primary;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ========== 暗黑模式 ========== */
+:global(.dark-mode) .navCard {
+  background: color-mix(in srgb, var(--dm-bg-base, #121721) 82%, transparent);
+  border-color: var(--dm-border-light, #202837);
+}
+
+:global(.dark-mode) .navTitle {
+  color: var(--dm-text-primary, #e5e7eb);
+}
+
+:global(.dark-mode) .navLabel {
+  color: var(--dm-text-tertiary, #6b7280);
+}
+
+@media (max-width: 720px) {
+  .docNav {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 :global(.dark-mode) .crumb {
   color: var(--dm-text-tertiary, #6b7280);
 }

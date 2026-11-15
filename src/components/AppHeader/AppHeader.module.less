@@ -1,0 +1,404 @@
+// 站点顶栏：普通流内顶栏 + 滚出视口后的右侧折叠按钮 + 点击展开的浮层
+// 变量（@bg-base / @border-color-light …）由 vite 的 less additionalData 全局注入
+
+.header {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  background-color: @bg-base;
+  border-bottom: 1px solid @border-color-light;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s,
+    color 0.2s;
+}
+
+/* 浮层：fixed 到视口顶部，从上方滑落。占位高度由组件里的等高空 div 兜住 */
+.headerOpen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 80;
+  /* 给右侧的 × 留位，别压住搜索框 */
+  padding-right: 64px;
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.16);
+  animation: headerDrop 0.18s ease-out;
+}
+
+@keyframes headerDrop {
+  from {
+    opacity: 0;
+    transform: translateY(-14px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 遮罩：点空白收起；不压暗太多，保持"浮层"而不是"弹窗"的感觉 */
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 70;
+  background: rgba(15, 23, 42, 0.12);
+  animation: scrimIn 0.18s ease-out;
+}
+
+@keyframes scrimIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+/* 折叠后的小圆按钮：贴右上角，和顶栏一样随主题变色 */
+.dockBtn {
+  position: fixed;
+  top: 14px;
+  right: 20px;
+  z-index: 75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid @border-color-light;
+  border-radius: 50%;
+  background-color: @bg-base;
+  color: @text-secondary;
+  cursor: var(--cursor-pointer);
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.14);
+  animation: dockIn 0.18s ease-out;
+  transition:
+    color 0.16s,
+    border-color 0.16s,
+    transform 0.16s,
+    background-color 0.2s;
+
+  &:hover {
+    color: var(--theme-primary);
+    border-color: color-mix(in srgb, var(--theme-primary) 40%, transparent);
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+@keyframes dockIn {
+  from {
+    opacity: 0;
+    transform: scale(0.86);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 浮层内的关闭按钮（与 dockBtn 同一视觉语言，位置在顶栏右侧） */
+.inlineClose {
+  position: absolute;
+  top: 50%;
+  right: 20px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid @border-color-light;
+  border-radius: 50%;
+  background-color: transparent;
+  color: @text-secondary;
+  cursor: var(--cursor-pointer);
+  transition:
+    color 0.16s,
+    background-color 0.16s;
+
+  &:hover {
+    color: var(--theme-primary);
+    background: color-mix(in srgb, var(--theme-primary) 8%, transparent);
+  }
+}
+
+.logo {
+  font-size: 18px;
+  font-weight: 600;
+  color: @text-primary;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color 0.2s;
+}
+
+/* logo + 主导航：导航贴着 logo 放，右侧只留搜索 */
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  min-width: 0;
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.navLink {
+  position: relative;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13.5px;
+  color: #5b6472;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    color 0.16s ease,
+    background-color 0.16s ease;
+
+  &:hover {
+    color: var(--theme-primary);
+    background: color-mix(in srgb, var(--theme-primary) 7%, transparent);
+  }
+}
+
+/* 当前页：主题色文字 + 底部一小段色条，比整块实底更安静 */
+.navLinkActive {
+  color: var(--theme-primary);
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 2px;
+    height: 2px;
+    border-radius: 1px;
+    background: var(--theme-primary);
+    opacity: 0.85;
+  }
+}
+
+@media (max-width: 720px) {
+  .brand {
+    gap: 12px;
+  }
+
+  .navLink {
+    padding: 6px 8px;
+    font-size: 13px;
+  }
+}
+
+.controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 顶栏搜索框（放在右侧 controls 里，logo 左、搜索右） */
+.searchBox {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.searchIcon {
+  position: absolute;
+  left: 11px;
+  color: @text-tertiary;
+  pointer-events: none;
+}
+
+.searchBox input {
+  width: 280px;
+  max-width: 40vw;
+  padding: 6px 12px 6px 32px;
+  border-radius: 999px;
+  border: 1px solid @border-color-light;
+  background: @bg-subtle;
+  font-size: 13px;
+  color: @text-primary;
+  outline: none;
+  transition:
+    border-color 0.15s,
+    box-shadow 0.15s,
+    background-color 0.15s;
+}
+
+.searchBox input::placeholder {
+  color: @text-placeholder;
+}
+
+.searchBox input:focus {
+  border-color: @color-primary;
+  box-shadow: 0 0 0 2px color-mix(in srgb, @color-primary 16%, transparent);
+  background: @bg-base;
+}
+
+@media (max-width: 860px) {
+  .searchBox input {
+    width: 140px;
+  }
+
+  .nav {
+    gap: 0;
+  }
+
+  .navLink {
+    padding: 6px 7px;
+    font-size: 12.5px;
+  }
+}
+
+/* 窄屏：logo 缩小、导航再瘦一圈，保证「logo + 导航 + 搜索」能塞进一行 */
+@media (max-width: 600px) {
+  .header {
+    padding: 10px 14px;
+  }
+
+  .brand {
+    gap: 6px;
+  }
+
+  .logo {
+    font-size: 15px;
+  }
+
+  .navLink {
+    padding: 6px 6px;
+    font-size: 12px;
+  }
+
+  .navLinkActive::after {
+    left: 6px;
+    right: 6px;
+  }
+
+  .searchBox input {
+    width: 106px;
+    padding-left: 28px;
+    padding-right: 8px;
+  }
+
+  .dockBtn {
+    top: 10px;
+    right: 14px;
+    width: 36px;
+    height: 36px;
+  }
+
+  .inlineClose {
+    right: 14px;
+  }
+}
+
+/* 窄屏展开态：一行塞不下「logo + 4 个导航 + 搜索 + ×」，
+   改成第一行导航、第二行搜索（通栏）；× 固定在右上角，位置与折叠按钮完全一致，
+   视觉上只是图标从 ≡ 变成 ×，不会"跳"。 */
+@media (max-width: 720px) {
+  .headerOpen {
+    flex-wrap: wrap;
+    row-gap: 8px;
+    padding-right: 14px;
+  }
+
+  .headerOpen .brand {
+    /* 给右上角的 × 让位 */
+    padding-right: 44px;
+  }
+
+  .headerOpen .controls {
+    width: 100%;
+  }
+
+  .headerOpen .searchBox {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .headerOpen .searchBox input {
+    width: 100%;
+    max-width: none;
+  }
+
+  .headerOpen .inlineClose {
+    position: fixed;
+    top: 10px;
+    right: 14px;
+    /* 覆盖基类的 translateY(-50%)，否则会再往上偏半截 */
+    transform: none;
+  }
+}
+
+/* ================ 暗黑模式（壁纸透出） =================== */
+
+:global(.dark-mode) .header {
+  background-color: color-mix(in srgb, var(--dm-bg-base, #121721) 68%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--dm-border-light, #202837) 70%, transparent);
+  box-shadow: 0 2px 14px rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+:global(.dark-mode) .headerOpen {
+  background-color: color-mix(in srgb, var(--dm-bg-base, #121721) 92%, transparent);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+}
+
+:global(.dark-mode) .dockBtn {
+  background-color: var(--dm-bg-base, #121721);
+  border-color: color-mix(in srgb, var(--dm-border-light, #202837) 80%, transparent);
+  color: var(--dm-text-secondary, #9ca3af);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.5);
+}
+
+:global(.dark-mode) .inlineClose {
+  border-color: color-mix(in srgb, var(--dm-border-light, #202837) 80%, transparent);
+  color: var(--dm-text-secondary, #9ca3af);
+}
+
+/* 顶栏导航暗色：黑主题下 theme-primary 被换成亮蓝，文字用"主题色提亮 + 白"的混合 */
+:global(.dark-mode) .navLink {
+  color: var(--dm-text-secondary, #9ca3af);
+
+  &:hover {
+    color: color-mix(in srgb, var(--theme-primary) 70%, #fff);
+    background: rgba(255, 255, 255, 0.06);
+  }
+}
+
+:global(.dark-mode) .navLinkActive {
+  color: color-mix(in srgb, var(--theme-primary) 72%, #fff);
+}
+
+/* ================ 浅色壁纸（柔和护眼）透出 =================== */
+
+:global(.light-wallpaper) .header {
+  background-color: color-mix(in srgb, var(--lw-tint, #ffffff) 55%, #ffffff);
+  border-bottom-color: color-mix(in srgb, var(--lw-tint, #e8e8e8) 45%, #e8e8e8);
+}
+
+:global(.light-wallpaper) .headerOpen {
+  background-color: color-mix(in srgb, var(--lw-tint, #ffffff) 88%, #ffffff);
+}
+
+:global(.light-wallpaper) .dockBtn {
+  background-color: color-mix(in srgb, var(--lw-tint, #ffffff) 70%, #ffffff);
+}

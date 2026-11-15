@@ -5,9 +5,9 @@
   "categoryId": "frontend",
   "tagIds": [],
   "createdAt": "2026-10-26T12:56:59.121Z",
-  "reads": 0,
+  "reads": 3,
   "status": "published",
-  "updatedAt": "2026-10-26T12:56:59.121Z",
+  "updatedAt": "2026-11-14T10:21:53.940Z",
   "content": [
     {
       "type": "heading-title",
@@ -23,8 +23,29 @@
       ]
     },
     {
+      "type": "image-block",
+      "id": "fad0305d-1ef6-4f6b-ab7e-134667c232d9",
+      "attrs": {
+        "url": "/media/images/1794651701760-image.webp",
+        "width": 414,
+        "height": 311,
+        "align": "center",
+        "name": "image.webp",
+        "offsetLeft": 16,
+        "offsetTop": 98.4000244140625,
+        "offsetWidth": 293.20001220703125,
+        "offsetHeight": 203.79998779296875
+      },
+      "children": [
+        {
+          "text": ""
+        }
+      ]
+    },
+    {
       "type": "paragraph",
-      "id": "59a2abf3-be99-47ff-a1cb-240418f3795e",
+      "id": "paste-1e7540e4-7aea-4b32-b724-264a377430ed",
+      "attrs": {},
       "children": [
         {
           "text": ""

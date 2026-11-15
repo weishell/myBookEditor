@@ -53,6 +53,8 @@ import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
 import { searchDecorate, useFindReplace } from '@/components/find-replace';
 import FloatBar from '@/components/FloatBar';
+import { setWordCount } from '@/components/WordCount/store';
+import { countWords } from '@/utils/word-count';
 import { useEditorMode } from '@/context/EditorContext';
 import { useTheme } from '@/context/ThemeContext';
 import { renderElement } from './renderElement';
@@ -152,10 +154,12 @@ export default function BookEditor({
   // 同时挂到 window/globalThis，调试时可在控制台直接打印 window.editor 看数据结构
   useEffect(() => {
     setEditor(editor);
+    setWordCount(countWords(editor.children));
     (window as any).editor = editor;
     (globalThis as any).editor = editor;
     return () => {
       setEditor(null);
+      setWordCount(0);
       delete (window as any).editor;
       delete (globalThis as any).editor;
     };
@@ -214,6 +218,8 @@ export default function BookEditor({
   const handleChange = useCallback(
     (value: Descendant[]) => {
       latestValue.current = value;
+      // 右下角字数气泡实时跟随正文（只走独立 store，不触发页面重渲染）
+      setWordCount(countWords(value));
       if (!persistKey && !onSave) return;
       if (saveTimer.current !== null) window.clearTimeout(saveTimer.current);
       saveTimer.current = window.setTimeout(() => {

@@ -8,6 +8,11 @@ import { BlockElementType } from '@/enums';
 import { lockPageScroll } from '@/utils/scroll-lock';
 import ResizeHandle from '../resize-handle/ResizeHandle';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
+import {
+  useVisualBlockReadOnly,
+  useBlockComment,
+  BlockCommentButton,
+} from '../_shared/useBlockComment';
 import styles from './Timeline.module.less';
 import {
   insertTimelineItemAt,
@@ -49,6 +54,8 @@ interface EditableFieldProps {
   className: string;
   placeholder: string;
   onChange: (value: string) => void;
+  /** 只读：仅展示文本，不允许就地编辑（阅读模式 / 只读数据源） */
+  readOnly?: boolean;
 }
 
 const EditableField: React.FC<EditableFieldProps> = ({
@@ -56,6 +63,7 @@ const EditableField: React.FC<EditableFieldProps> = ({
   className,
   placeholder,
   onChange,
+  readOnly,
 }) => {
   const ref = useRef<HTMLDivElement>(null);
   const onChangeRef = useRef(onChange);
@@ -75,9 +83,10 @@ const EditableField: React.FC<EditableFieldProps> = ({
       ref={ref}
       className={className}
       data-placeholder={placeholder}
-      contentEditable
+      contentEditable={!readOnly}
       suppressContentEditableWarning
       onInput={(e) => {
+        if (readOnly) return;
         const el = e.currentTarget;
         if (!el.textContent) el.innerHTML = '';
         onChangeRef.current(el.textContent || '');
@@ -91,7 +100,11 @@ const EditableField: React.FC<EditableFieldProps> = ({
 };
 
 /** 悬浮加号按钮（横向连接线段） */
-const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide }) => {
+const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean; readOnly?: boolean }> = ({
+  onAdd,
+  wide,
+  readOnly,
+}) => {
   const { t } = useTranslation();
   const [hover, setHover] = useState(false);
   return (
@@ -100,7 +113,7 @@ const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {hover && (
+      {hover && !readOnly && (
         <button
           className={styles.gapAddBtn}
           onClick={onAdd}
@@ -116,7 +129,11 @@ const AddGapH: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
 };
 
 /** 悬浮加号按钮（纵向连接线段） */
-const AddGapV: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide }) => {
+const AddGapV: React.FC<{ onAdd: () => void; wide?: boolean; readOnly?: boolean }> = ({
+  onAdd,
+  wide,
+  readOnly,
+}) => {
   const { t } = useTranslation();
   const [hover, setHover] = useState(false);
   return (
@@ -125,7 +142,7 @@ const AddGapV: React.FC<{ onAdd: () => void; wide?: boolean }> = ({ onAdd, wide 
       onMouseEnter={() => setHover(true)}
       onMouseLeave={() => setHover(false)}
     >
-      {hover && (
+      {hover && !readOnly && (
         <button
           className={styles.gapAddBtn}
           onClick={onAdd}
@@ -213,6 +230,10 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
   const attrs: TimelineAttrs = normalizeTimelineAttrs(element.attrs);
   const isSelected = useSelected();
 
+  // 只读：对齐 / 删除 / 加号 / 设置面板 / 就地编辑全部关掉，工具条只留「评论」
+  const readOnly = useVisualBlockReadOnly();
+  const comment = useBlockComment(element.id, t('blockPicker.timeline'));
+
   const [showToolbar, setShowToolbar] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -297,7 +318,8 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    if (isSelected) return;
+    // 选中态常显；只读模式下没有选中概念，必须允许隐藏
+    if (isSelected && !readOnly) return;
     // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -307,7 +329,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
       setShowToolbar(false);
       hideTimerRef.current = null;
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   // 在指定位置插入节点（悬浮中间连接线 = 中间插入，末尾 = 追加）
   const handleInsertAt = useCallback(
@@ -389,31 +411,38 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
       className={`${styles.card} ${NODE_COLORS[ci].card} ${
         selectedItemId === item.id ? styles.cardSelected : ''
       }`}
-      onClick={() => setSelectedItemId(item.id)}
+      onClick={() => {
+        if (readOnly) return;
+        setSelectedItemId(item.id);
+      }}
     >
       <EditableField
         className={styles.cardTitle}
         value={item.title}
         placeholder={t('timeline.titlePlaceholder')}
         onChange={(v) => handleItemChange(item.id, 'title', v)}
+        readOnly={readOnly}
       />
       <EditableField
         className={styles.cardDetail}
         value={item.detail}
         placeholder={t('timeline.detailPlaceholder')}
         onChange={(v) => handleItemChange(item.id, 'detail', v)}
+        readOnly={readOnly}
       />
-      <button
-        className={styles.deleteBtn}
-        onClick={(e) => {
-          e.stopPropagation();
-          handleDeleteItem(item.id);
-        }}
-        title={t('timeline.deleteNode')}
-        onMouseDown={(e) => e.preventDefault()}
-      >
-        <TrashIcon />
-      </button>
+      {!readOnly && (
+        <button
+          className={styles.deleteBtn}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleDeleteItem(item.id);
+          }}
+          title={t('timeline.deleteNode')}
+          onMouseDown={(e) => e.preventDefault()}
+        >
+          <TrashIcon />
+        </button>
+      )}
     </div>
   );
 
@@ -423,6 +452,7 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
       value={item.time}
       placeholder={t('timeline.timePlaceholder')}
       onChange={(v) => handleItemChange(item.id, 'time', v)}
+      readOnly={readOnly}
     />
   );
 
@@ -469,7 +499,11 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
             {renderNodeH(item, index)}
             {/* 节点之间的连接线段：默认显示圆点虚线（动态：有节点就有、无节点就无），
                 悬浮时变蓝色高亮 + 出现 + 按钮。中间段 = 中间插入；末尾宽段 = 追加 */}
-            <AddGapH onAdd={() => handleInsertAt(index + 1)} wide={index === items.length - 1} />
+            <AddGapH
+              onAdd={() => handleInsertAt(index + 1)}
+              wide={index === items.length - 1}
+              readOnly={readOnly}
+            />
           </React.Fragment>
         ))}
       </div>
@@ -482,7 +516,11 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
         {items.map((item, index) => (
           <React.Fragment key={item.id}>
             {renderNodeV(item, index)}
-            <AddGapV onAdd={() => handleInsertAt(index + 1)} wide={index === items.length - 1} />
+            <AddGapV
+              onAdd={() => handleInsertAt(index + 1)}
+              wide={index === items.length - 1}
+              readOnly={readOnly}
+            />
           </React.Fragment>
         ))}
       </div>
@@ -494,48 +532,66 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
       <div
         ref={wrapperRef}
         className={styles.wrapper}
+        // 只读态正文纸面 pointer-events:none（见 core/index.tsx），这里恢复可交互
+        style={readOnly ? { pointerEvents: 'auto' } : undefined}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
         {/* 编辑器级悬浮工具栏 */}
-        {showToolbar && !isSelected && (
+        {showToolbar && (readOnly || !isSelected) && (
           <div
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <BlockAlignButtons
-              align={align}
-              onAlign={setAlign}
-              btnClass={styles.toolbarButton}
-              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
-              size={14}
-            />
-            <button
-              onClick={handleRemove}
-              className={styles.toolbarButton}
-              title={t('timeline.delete')}
-            >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#666"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+              />
+            ) : (
+              <>
+                <BlockAlignButtons
+                  align={align}
+                  onAlign={setAlign}
+                  btnClass={styles.toolbarButton}
+                  btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+                  size={14}
+                />
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  iconSize={14}
+                />
+                <button
+                  onClick={handleRemove}
+                  className={styles.toolbarButton}
+                  title={t('timeline.delete')}
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="#666"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                </button>
+              </>
+            )}
           </div>
         )}
 
         {/* 外层 frame = 定位容器；topRightBar 在这里 absolute，不受内部滚动影响 */}
         <div className={styles.frame} data-visual-root style={{ width, height }}>
-          {/* 右上角操作栏（不滚动） */}
+          {/* 右上角操作栏（不滚动）：只读时只留全屏，设置面板能改数据 */}
           <div className={styles.topRightBar}>
             <button
               className={styles.iconBtn}
@@ -544,17 +600,19 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
             >
               <FullscreenIcon />
             </button>
-            <button
-              className={styles.iconBtn}
-              title={t('timeline.settings')}
-              onClick={() => setShowSettings(!showSettings)}
-            >
-              <SettingsIcon />
-            </button>
+            {!readOnly && (
+              <button
+                className={styles.iconBtn}
+                title={t('timeline.settings')}
+                onClick={() => setShowSettings(!showSettings)}
+              >
+                <SettingsIcon />
+              </button>
+            )}
           </div>
 
           {/* 设置面板（不滚动） */}
-          {showSettings && (
+          {!readOnly && showSettings && (
             <div ref={settingsRef} className={styles.settingsPanel}>
               <div className={styles.settingsItem} onClick={toggleSideMode}>
                 <span className={styles.settingsLabel}>{t('timeline.alternate')}</span>
@@ -589,8 +647,8 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
           </div>
         </div>
 
-        {/* 缩放手柄 */}
-        {(isSelected || showToolbar) && bounds && (
+        {/* 缩放手柄（只读下不出现） */}
+        {!readOnly && (isSelected || showToolbar) && bounds && (
           <ResizeHandle
             bounds={bounds}
             onResize={handleResize}
@@ -616,15 +674,17 @@ const Timeline: React.FC<TimelineProps> = ({ attributes, children, pluginId, ele
                 >
                   <ExitFullscreenIcon />
                 </button>
-                <button
-                  className={styles.iconBtn}
-                  title={t('timeline.settings')}
-                  onClick={() => setShowSettings(!showSettings)}
-                >
-                  <SettingsIcon />
-                </button>
+                {!readOnly && (
+                  <button
+                    className={styles.iconBtn}
+                    title={t('timeline.settings')}
+                    onClick={() => setShowSettings(!showSettings)}
+                  >
+                    <SettingsIcon />
+                  </button>
+                )}
               </div>
-              {showSettings && (
+              {!readOnly && showSettings && (
                 <div ref={settingsRef} className={styles.settingsPanel}>
                   <div className={styles.settingsItem} onClick={toggleSideMode}>
                     <span className={styles.settingsLabel}>{t('timeline.alternate')}</span>

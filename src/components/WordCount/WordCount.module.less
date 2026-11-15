@@ -1,0 +1,43 @@
+// 正文字数气泡 - 与「回到顶部」按钮同一套视觉语言
+
+.pill {
+  position: fixed;
+  right: 32px;
+  /* 回到顶部按钮：bottom 32 + 高 40 + 12 间距 */
+  bottom: 84px;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  padding: 7px 12px;
+  border: 1px solid @border-color;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: @shadow-sm;
+  color: @text-secondary;
+  font-size: 12px;
+  line-height: 1;
+  z-index: 999;
+  pointer-events: none;
+  user-select: none;
+}
+
+.value {
+  font-size: 13px;
+  font-weight: 600;
+  color: @text-primary;
+  font-variant-numeric: tabular-nums;
+}
+
+.unit {
+  font-size: 11px;
+}
+
+:global(.dark-mode) .pill {
+  background: rgba(23, 29, 41, 0.9);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #9ca3af;
+
+  .value {
+    color: #e5e7eb;
+  }
+}

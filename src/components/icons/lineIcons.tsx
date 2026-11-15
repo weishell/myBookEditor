@@ -230,6 +230,13 @@ export const DragHandleIcon = ({ color = 'currentColor', size = 16 }: SvgIconPro
 
 /* ============================ 操作 ============================ */
 
+/** 菜单：三横（顶栏折叠后的展开按钮） */
+export const MenuIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
+  <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>
+    <path d="M4 6h16M4 12h16M4 18h16" />
+  </svg>
+);
+
 /** 缩进和对齐：左侧箭头 + 长短横线 */
 export const IndentAlignIcon = ({ color = 'currentColor', size = 18 }: SvgIconProps) => (
   <svg width={size} height={size} viewBox="0 0 24 24" {...lineProps} stroke={color}>

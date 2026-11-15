@@ -11,6 +11,16 @@ export function upload(req, res) {
   res.json({ ok: true, ...result });
 }
 
+/** POST /api/upload/remote：{ url, name } → 服务端代下载外链图片并落盘 */
+export async function uploadRemote(req, res, next) {
+  try {
+    const result = await mediaService.saveRemoteImage(req.body?.url, req.body?.name);
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    next(err);
+  }
+}
+
 /** POST /api/drawboards：保存画板数据（有 path 覆盖，无 path 新建） */
 export function saveDrawboard(req, res) {
   res.json(persistDrawboard(req.body));

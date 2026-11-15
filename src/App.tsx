@@ -1,15 +1,4 @@
-import { useState } from 'react';
-import {
-  BrowserRouter,
-  NavLink,
-  Navigate,
-  Routes,
-  Route,
-  Link,
-  useLocation,
-  useNavigate,
-} from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { BrowserRouter, Navigate, Routes, Route, useLocation } from 'react-router-dom';
 import Editor from '@/core';
 import NotFound from '@/pages/NotFound';
 import Home from '@/pages/Home';
@@ -20,7 +9,9 @@ import Settings from '@/pages/Settings';
 import RecycleBin from '@/pages/RecycleBin';
 import AntdThemeBridge from '@/components/AntdThemeBridge';
 import { InlineToastHost } from '@/components/InlineToast';
+import { AppHeader } from '@/components/AppHeader';
 import { BackToTop } from '@/components/BackToTop/BackToTop';
+import { WordCount } from '@/components/WordCount/WordCount';
 import { Outline } from '@/components/Outline/Outline';
 import { WallpaperHost } from '@/components/wallpapers';
 import { EditorProvider, useEditorMode } from '@/context/EditorContext';
@@ -31,67 +22,6 @@ import { FindReplaceProvider, FindReplacePanel } from '@/components/find-replace
 import CursorTrail from '@/components/CursorTrail';
 import { SEED_COMMENTS } from '@/data/comments';
 import styles from './App.module.less';
-
-/** 顶栏搜索框：回车跳转到 /search?q=… */
-function HeaderSearch() {
-  const [value, setValue] = useState('');
-  const navigate = useNavigate();
-  const { t } = useTranslation();
-
-  const submit = () => {
-    const q = value.trim();
-    if (q) navigate(`/search?q=${encodeURIComponent(q)}`);
-  };
-
-  return (
-    <div className={styles.searchBox}>
-      <svg
-        className={styles.searchIcon}
-        width="14"
-        height="14"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-      >
-        <circle cx="11" cy="11" r="7" />
-        <path d="M20 20l-3.2-3.2" />
-      </svg>
-      <input
-        value={value}
-        placeholder={t('header.searchPlaceholder')}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter') submit();
-        }}
-      />
-    </div>
-  );
-}
-
-/** 顶栏导航：设置是独立路由页，不再用下拉浮层 */
-function HeaderNav() {
-  const navClass = ({ isActive }: { isActive: boolean }) =>
-    `${styles.navLink} ${isActive ? styles.navLinkActive : ''}`;
-
-  return (
-    <nav className={styles.nav}>
-      <NavLink to="/" end className={navClass}>
-        首页
-      </NavLink>
-      <NavLink to="/articles" className={navClass}>
-        全部文章
-      </NavLink>
-      <NavLink to="/trash" className={navClass}>
-        回收站
-      </NavLink>
-      <NavLink to="/settings" className={navClass}>
-        设置
-      </NavLink>
-    </nav>
-  );
-}
 
 function AppFrame() {
   const { mode } = useEditorMode();
@@ -106,17 +36,8 @@ function AppFrame() {
     <div className={styles.container}>
       <CursorTrail />
       <WallpaperHost />
-      <header className={styles.header}>
-        <div className={styles.brand}>
-          <Link to="/" className={styles.logo}>
-            MyBook Editor
-          </Link>
-          <HeaderNav />
-        </div>
-        <div className={styles.controls}>
-          <HeaderSearch />
-        </div>
-      </header>
+      {/* 顶栏自带折叠逻辑：滚出视口后收成右上角小按钮，点开才浮出（见 components/AppHeader） */}
+      <AppHeader />
       <main className={`${styles.main} ${isDocRoute ? styles.mainDoc : ''}`}>
         <Routes>
           <Route path="/" element={<Home />} />
@@ -140,6 +61,7 @@ function AppFrame() {
       </main>
       <Outline />
       <BackToTop />
+      <WordCount />
     </div>
   );
 }

@@ -19,6 +19,7 @@ import MediaPreview from './MediaPreview';
 import DocxPreview, { isDocxFile, isLegacyDocFile } from './DocxPreview';
 import { FileCode, isTextualFile } from './file-code';
 import { isBrowserPlayableVideo, toMediaUrl } from '@/data/media';
+import { useBlockComment, BlockCommentButton } from '../_shared/useBlockComment';
 import styles from './MediaBlock.module.less';
 
 export type MediaKind = 'file' | 'video';
@@ -207,6 +208,12 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
     attrs?.layer === 'text' || attrs?.layer === 'view' ? attrs.layer : 'card';
   const align = attrs?.align === 'center' || attrs?.align === 'right' ? attrs.align : 'left';
 
+  // 只读：图层切换 / 对齐 / 预览 / 复制 / 删除全部隐藏，工具条只留「评论」
+  const comment = useBlockComment(
+    element.id,
+    attrs?.name || t(kind === 'video' ? 'blockPicker.video' : 'blockPicker.file'),
+  );
+
   const [showToolbar, setShowToolbar] = useState(false);
   const [editing, setEditing] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
@@ -351,7 +358,8 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    if (isSelected) return;
+    // 选中态常显；只读模式下没有选中概念，必须允许隐藏
+    if (isSelected && !readOnly) return;
     // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -361,7 +369,7 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
       setShowToolbar(false);
       hideTimerRef.current = null;
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   const Icon = kind === 'video' ? VideoIcon : FileIcon;
   const typeLabel = t(kind === 'video' ? 'media.video' : 'media.file');
@@ -380,82 +388,103 @@ const MediaBlock: React.FC<MediaProps> = ({ attributes, children, pluginId, elem
           display: 'flex',
           justifyContent:
             align === 'center' ? 'center' : align === 'right' ? 'flex-end' : 'flex-start',
+          // 只读态正文纸面 pointer-events:none（见 core/index.tsx），这里恢复可交互
+          ...(readOnly ? { pointerEvents: 'auto' as const } : null),
         }}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {!readOnly && (showToolbar || isSelected) && (
+        {(showToolbar || (!readOnly && isSelected)) && (
           <div
             className={styles.toolbar}
             style={toolbarLeft != null ? { left: toolbarLeft } : undefined}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <LayerIcon
-              active={layer === 'text'}
-              title={t('media.layerText')}
-              onClick={() => updateAttrs({ layer: 'text' })}
-            >
-              {TEXT_LAYER_ICON}
-            </LayerIcon>
-            <LayerIcon
-              active={layer === 'card'}
-              title={t('media.layerCard')}
-              onClick={() => updateAttrs({ layer: 'card' })}
-            >
-              {CARD_LAYER_ICON}
-            </LayerIcon>
-            <LayerIcon
-              active={layer === 'view'}
-              title={t('media.layerView')}
-              onClick={() => updateAttrs({ layer: 'view' })}
-            >
-              {VIEW_LAYER_ICON}
-            </LayerIcon>
-            <div className={styles.divider} />
-            <LayerIcon
-              active={align === 'left'}
-              title={t('alignIndent.left')}
-              onClick={() => handleAlign('left')}
-            >
-              <AlignIcon align="left" active={align === 'left'} size={15} />
-            </LayerIcon>
-            <LayerIcon
-              active={align === 'center'}
-              title={t('alignIndent.center')}
-              onClick={() => handleAlign('center')}
-            >
-              <AlignIcon align="center" active={align === 'center'} size={15} />
-            </LayerIcon>
-            <LayerIcon
-              active={align === 'right'}
-              title={t('alignIndent.right')}
-              onClick={() => handleAlign('right')}
-            >
-              <AlignIcon align="right" active={align === 'right'} size={15} />
-            </LayerIcon>
-            <div className={styles.divider} />
-            <button
-              className={styles.toolbarButton}
-              title={t('media.preview')}
-              onClick={() => setPreviewOpen(true)}
-            >
-              <EyeIcon />
-            </button>
-            <button
-              className={styles.toolbarButton}
-              title={t('blockMenu.copy')}
-              onClick={handleCopy}
-            >
-              <CopyIcon size={16} />
-            </button>
-            <button
-              className={styles.toolbarButton}
-              title={t('blockMenu.delete')}
-              onClick={handleRemove}
-            >
-              <TrashIcon size={16} />
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+                withLabel={false}
+                iconSize={16}
+              />
+            ) : (
+              <>
+                <LayerIcon
+                  active={layer === 'text'}
+                  title={t('media.layerText')}
+                  onClick={() => updateAttrs({ layer: 'text' })}
+                >
+                  {TEXT_LAYER_ICON}
+                </LayerIcon>
+                <LayerIcon
+                  active={layer === 'card'}
+                  title={t('media.layerCard')}
+                  onClick={() => updateAttrs({ layer: 'card' })}
+                >
+                  {CARD_LAYER_ICON}
+                </LayerIcon>
+                <LayerIcon
+                  active={layer === 'view'}
+                  title={t('media.layerView')}
+                  onClick={() => updateAttrs({ layer: 'view' })}
+                >
+                  {VIEW_LAYER_ICON}
+                </LayerIcon>
+                <div className={styles.divider} />
+                <LayerIcon
+                  active={align === 'left'}
+                  title={t('alignIndent.left')}
+                  onClick={() => handleAlign('left')}
+                >
+                  <AlignIcon align="left" active={align === 'left'} size={15} />
+                </LayerIcon>
+                <LayerIcon
+                  active={align === 'center'}
+                  title={t('alignIndent.center')}
+                  onClick={() => handleAlign('center')}
+                >
+                  <AlignIcon align="center" active={align === 'center'} size={15} />
+                </LayerIcon>
+                <LayerIcon
+                  active={align === 'right'}
+                  title={t('alignIndent.right')}
+                  onClick={() => handleAlign('right')}
+                >
+                  <AlignIcon align="right" active={align === 'right'} size={15} />
+                </LayerIcon>
+                <div className={styles.divider} />
+                <button
+                  className={styles.toolbarButton}
+                  title={t('media.preview')}
+                  onClick={() => setPreviewOpen(true)}
+                >
+                  <EyeIcon />
+                </button>
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  withLabel={false}
+                  iconSize={16}
+                />
+                <button
+                  className={styles.toolbarButton}
+                  title={t('blockMenu.copy')}
+                  onClick={handleCopy}
+                >
+                  <CopyIcon size={16} />
+                </button>
+                <button
+                  className={styles.toolbarButton}
+                  title={t('blockMenu.delete')}
+                  onClick={handleRemove}
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </>
+            )}
           </div>
         )}
 

@@ -13,7 +13,16 @@ import { toMediaUrl, uploadBinary } from '@/data/media';
 import type { UploadedMedia } from '@/data/media';
 
 /** 图片显示宽度上限（超宽图等比缩放，避免撑满编辑区） */
-const MAX_DISPLAY_WIDTH = 800;
+export const MAX_DISPLAY_WIDTH = 800;
+
+/** 按显示上限等比换算宽高（截图/照片超过 800 宽时缩到 800，高度跟着比例走） */
+export const fitDisplaySize = (
+  width: number,
+  height: number,
+): { width: number; height: number } => {
+  const w = Math.min(width, MAX_DISPLAY_WIDTH);
+  return { width: w, height: Math.round((w / Math.max(width, 1)) * height) };
+};
 
 /**
  * 瞬态上传进度 store（不进 Slate 文档，仅驱动 Image 的进度条 overlay）。
@@ -48,8 +57,8 @@ export const uploadProgressStore = (() => {
   };
 })();
 
-/** 读取本地图片的自然尺寸 */
-const loadImageSize = (url: string): Promise<{ width: number; height: number }> =>
+/** 读取本地/远端图片的自然尺寸 */
+export const loadImageSize = (url: string): Promise<{ width: number; height: number }> =>
   new Promise((resolve, reject) => {
     const img = new Image();
     img.onload = () => resolve({ width: img.naturalWidth, height: img.naturalHeight });
@@ -97,6 +106,34 @@ export const simulateUploadProgress = (id: string): void => {
 };
 
 /**
+ * 给「已经插入文档的节点」挂进度条，等真实任务落地。
+ *
+ * 与 simulateUploadProgress 的区别：那个没有真实完成信号，只能自己爬到 100%；
+ * 粘贴场景节点是先插入再上传的，必须等 upload 落地才收尾，否则会出现
+ * 「进度条卡在 100% 不动」的假死观感。所以这里爬升封顶 88%，
+ * 真实 Promise 结束（成功或失败）时才冲到 100 并移除条目。
+ */
+export const trackUpload = async <T>(id: string, task: Promise<T>): Promise<T> => {
+  uploadProgressStore.set(id, 0);
+  let progress = 0;
+  const timer = window.setInterval(() => {
+    if (progress >= 88) return;
+    const step = progress < 45 ? 14 : progress < 70 ? 8 : 4;
+    progress = Math.min(progress + step + Math.random() * step, 88);
+    uploadProgressStore.set(id, Math.floor(progress));
+  }, 160);
+
+  try {
+    return await task;
+  } finally {
+    window.clearInterval(timer);
+    uploadProgressStore.set(id, 100);
+    // 留一小段时间让 100% 可见，再撤掉遮罩露出图片本体
+    window.setTimeout(() => uploadProgressStore.delete(id), 240);
+  }
+};
+
+/**
  * 在指定路径处插入一张本地图片。节点以成功态一步插入历史，
  * 进度条作为瞬态 overlay 在 store 中驱动（不进历史）。
  */
@@ -119,8 +156,9 @@ export const insertImageWithProgress = async (
   let dispHeight = 0;
   try {
     const { width, height } = await loadImageSize(toMediaUrl(url));
-    dispWidth = Math.min(width, MAX_DISPLAY_WIDTH);
-    dispHeight = Math.round((dispWidth / Math.max(width, 1)) * height);
+    const fitted = fitDisplaySize(width, height);
+    dispWidth = fitted.width;
+    dispHeight = fitted.height;
   } catch {
     // 无法解码的图片：blob 地址要释放，上传成功的文件留作后续排查
     if (url.startsWith('blob:')) URL.revokeObjectURL(url);

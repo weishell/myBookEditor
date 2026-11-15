@@ -54,7 +54,25 @@
 - 注释用中文，解释“为什么”。组件/插件结构 `src/plugins/<name>/`，核心渲染 `src/core/{index,renderElement,renderLeaf}.tsx`。
 - 6 个复杂插件(image/media/drawio/drawboard/timeline/embed)各自内嵌同模式悬浮工具条：hover 300ms 延迟、离开 300ms 隐藏、hide 必须取消 pending show timer、选中态常显。照抄 `Image.tsx`。
 - 提示块 `attrs.label` 持久化：显示 = `attrs.label || t('hintBlock.labels.'+type)`；只有从未自定义才跟随语言。
+- **视觉块只读态 = 只留「评论」**（2026-11-14）：chart/drawio/image/media/timeline/embed 统一用 `_shared/useBlockComment.tsx`
+  （`useVisualBlockReadOnly` / `useBlockComment` / `BlockCommentButton`）。只读下必须给块 wrapper 加 `pointerEvents:'auto'`
+  （`data-paper` 只读时是 `pointer-events:none`），`hideToolbarHandler` 的选中常显要判 `!readOnly`，否则工具条挂住。
+  块级评论会话 key = `block:<element.id>`，编辑态工具条也要有评论按钮。
 - ⚠️ 有的源文件是 CRLF（`plugins/lilist/LilistSettingPopover.tsx`），`.prettierrc` 是 `lf` → 对它跑 `prettier --write` 会整文件改行尾。改完手写格式即可。
+
+## 图片 / 粘贴（2026-11-14 起）
+
+- 粘贴图片管线 `src/plugins/image/pasteImages.ts`：同步插入 image 块（url 先给 blob 或原外链，粘完立刻可见）→
+  异步上传（`trackUpload` 驱动 `uploadProgressStore` 进度条）→ 落盘后把 `attrs.url` 换成 `/media/...` 相对路径。
+- ⚠️ 换 url 必须 `HistoryEditor.withoutSaving(editor, fn)`（slate-history 静态方法）。`withHistory` 只挂了
+  history/undo/redo，**没有 withoutSaving 实例方法**，写成 `editor.withoutSaving(fn)` 会静默失效 →
+  用户按一次撤销「没反应」、第二次图才消失。
+- `insertData` 优先级：内部 `application/x-slate-fragment` → 原逻辑；图片 files → 纯图片粘贴；
+  `text/uri-list`（Firefox）；`text/html`。**有 files 但 html 有可读文字**时不能当纯图片（会吞掉文字）。
+- `htmlToBlocks` 里 `<img>` → image 块（保留原地址），插完按 **url** 匹配异步本地化（`insertFragment` 会重建 id，别用 id 追踪）；
+  `<p>文字<img></p>` 由 `runsToBlocks` 拆成段落 + 图片块。
+- 外链图走服务端 `POST /api/upload/remote` 代下载（浏览器 fetch 会被 CORS / 防盗链挡）：只允许 http(s)、拒内网地址、
+  15s 超时、25MB 上限、content-type 白名单。
 
 ## 数据层（2026-10-17 架构，别倒退）
 
@@ -81,7 +99,13 @@
 
 ## 站点外壳 / 路由（2026-10-24 起）
 
-- 顶栏 = logo + `首页 / 全部文章 / 设置` 三个 NavLink + 搜索。**没有设置下拉**（原 `SettingsSwitcher` 已删，别再加回来）。
+- 顶栏 = logo + `首页 / 全部文章 / 回收站 / 设置` 四个 NavLink + 搜索。**没有设置下拉**（原 `SettingsSwitcher` 已删，别再加回来）。
+- 顶栏组件在 `src/components/AppHeader/`（2026-11-14 从 App.tsx 拆出，含滚动折叠）：
+  顶栏滚出视口 → 右上角浮出圆形 ≡ 按钮 → 点开是 fixed 浮层（右侧 ×、12% 遮罩、Esc/点遮罩收起）；
+  **展开后一滚动就收起**，换路由也收起。浮起时 header 脱离文档流，靠一个等高空 div 占位，防止内容上跳。
+  坑：滚动监听的 effect 会随 `headerHeight` 重绑，重绑时的初始化**只能算位置不能走 onScroll**，否则刚点开就被自己关掉；
+  另加 260ms「刚打开」保护窗口，忽略布局重排带出的 scroll 抖动。
+  窄屏（≤720px）展开态换两行：第一行 logo+导航+右上角 ×（fixed，与折叠按钮同位置），第二行通栏搜索。
 - 设置是独立路由 `/settings`（`src/pages/Settings.tsx`）：左侧分组导航 + 右侧单页切换（背景/主题色/字体/光标/语言/阅读模式）。`/appearance` 只是 `<Navigate>` 兜底。
 - `.main` 的 240px 左栏留白只属于文档路由（`.mainDoc`，`/article/:id` 与 `/demo`）；首页/列表页不要留，否则像目录没消失。
 - 首页 Hero 用 `src/pages/home/scenes.tsx` 的 6 套场景（自带 light/dark 色调）+ `useHeroScene`（`mybook:home-scene:v1`），与全局壁纸是两套独立偏好。

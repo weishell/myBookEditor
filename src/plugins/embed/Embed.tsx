@@ -7,6 +7,12 @@ import { createPortal } from 'react-dom';
 import { normalizeEmbedAttrs, normalizeEmbedUrl, type EmbedAttrs } from './embed-node';
 import { EmbedSettings } from './EmbedSettings';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
+import {
+  useVisualBlockReadOnly,
+  useBlockComment,
+  BlockCommentButton,
+} from '../_shared/useBlockComment';
+import { useTranslation } from 'react-i18next';
 import styles from './Embed.module.less';
 
 interface EmbedProps {
@@ -67,6 +73,11 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
   const editor = useSlateStatic();
   const attrs = normalizeEmbedAttrs(element.attrs);
   const isSelected = useSelected();
+  const { t } = useTranslation();
+
+  // 只读：对齐 / 编辑网址 / 删除 / 高度拖拽全部隐藏，工具条只留「评论」
+  const readOnly = useVisualBlockReadOnly();
+  const comment = useBlockComment(element.id, t('blockPicker.embed'));
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -111,7 +122,8 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    if (isSelected) return;
+    // 选中态常显；只读模式下没有选中概念，必须允许隐藏
+    if (isSelected && !readOnly) return;
     // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -121,7 +133,7 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
       setShowToolbar(false);
       hideTimerRef.current = null;
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   useEffect(
     () => () => {
@@ -180,44 +192,62 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
     <ElementWrapper type={BlockElementType.EMBED} pluginId={pluginId} attributes={attributes}>
       <div
         className={styles.wrapper}
+        // 只读态正文纸面 pointer-events:none（见 core/index.tsx），这里恢复可交互
+        style={readOnly ? { pointerEvents: 'auto' } : undefined}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {(showToolbar || isSelected) && (
+        {(showToolbar || (!readOnly && isSelected)) && (
           <div
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <BlockAlignButtons
-              align={align}
-              onAlign={setAlign}
-              btnClass={styles.toolbarButton}
-              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
-            />
-            <div className={styles.divider} />
-            <button
-              className={styles.toolbarButton}
-              title="编辑网址"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.stopPropagation();
-                setEditing(true);
-              }}
-            >
-              <PencilIcon />
-            </button>
-            <button
-              className={styles.toolbarButton}
-              title="删除"
-              onMouseDown={(e) => e.preventDefault()}
-              onClick={(e) => {
-                e.stopPropagation();
-                handleRemove();
-              }}
-            >
-              <TrashIcon />
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+              />
+            ) : (
+              <>
+                <BlockAlignButtons
+                  align={align}
+                  onAlign={setAlign}
+                  btnClass={styles.toolbarButton}
+                  btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+                />
+                <div className={styles.divider} />
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  withLabel={false}
+                />
+                <button
+                  className={styles.toolbarButton}
+                  title="编辑网址"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(true);
+                  }}
+                >
+                  <PencilIcon />
+                </button>
+                <button
+                  className={styles.toolbarButton}
+                  title="删除"
+                  onMouseDown={(e) => e.preventDefault()}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleRemove();
+                  }}
+                >
+                  <TrashIcon />
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -239,23 +269,31 @@ const Embed: React.FC<EmbedProps> = ({ attributes, children, pluginId, element }
               loading="lazy"
             />
           ) : (
-            <div className={styles.placeholder} style={{ height }} onClick={() => setEditing(true)}>
+            <div
+              className={styles.placeholder}
+              style={{ height }}
+              onClick={readOnly ? undefined : () => setEditing(true)}
+            >
               <GlobeIcon />
               <div className={styles.placeholderTitle}>内嵌网页</div>
-              <div className={styles.placeholderHint}>点击填写网站地址</div>
+              <div className={styles.placeholderHint}>
+                {readOnly ? '暂未填写网站地址' : '点击填写网站地址'}
+              </div>
             </div>
           )}
         </div>
 
-        {/* 底部高度拖拽手柄 */}
-        <div
-          className={styles.resizeHandle}
-          title="拖拽调整高度"
-          onMouseDown={onDragStart}
-          contentEditable={false}
-        >
-          <div className={styles.resizeGrip} />
-        </div>
+        {/* 底部高度拖拽手柄（只读下不出现） */}
+        {!readOnly && (
+          <div
+            className={styles.resizeHandle}
+            title="拖拽调整高度"
+            onMouseDown={onDragStart}
+            contentEditable={false}
+          >
+            <div className={styles.resizeGrip} />
+          </div>
+        )}
       </div>
 
       {children}

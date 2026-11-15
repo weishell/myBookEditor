@@ -13,6 +13,7 @@ import { useTheme, THEME_PRESETS, type ThemeId } from '@/context/ThemeContext';
 import { useCursor, CURSOR_THEMES } from '@/context/CursorContext';
 import { useLanguage } from '@/context/LanguageContext';
 import { useEditorMode } from '@/context/EditorContext';
+import { useWordCountEnabled, setWordCountEnabled } from '@/components/WordCount/store';
 import { SUPPORTED_LANGUAGES, LANGUAGE_SHORT, type AppLanguage } from '@/i18n';
 import { FONT_LIST, DEFAULT_FONT_ID, loadFont, getFontById } from '@/plugins/font';
 import { canWrite } from '@/data/store';
@@ -29,7 +30,8 @@ import {
 } from '@/components/wallpapers';
 import styles from './Settings.module.less';
 
-type TabId = 'appearance' | 'theme' | 'font' | 'cursor' | 'language' | 'mode' | 'maintenance';
+type TabId =
+  'appearance' | 'theme' | 'font' | 'cursor' | 'language' | 'mode' | 'wordcount' | 'maintenance';
 
 const TABS: { id: TabId; label: string; note: string; icon: string }[] = [
   { id: 'appearance', label: '外观与背景', note: '壁纸 · 明暗', icon: '◧' },
@@ -38,6 +40,7 @@ const TABS: { id: TabId; label: string; note: string; icon: string }[] = [
   { id: 'cursor', label: '光标', note: '指针样式', icon: '↖' },
   { id: 'language', label: '语言', note: '界面语言', icon: '文' },
   { id: 'mode', label: '阅读模式', note: '编辑 / 只读', icon: '☰' },
+  { id: 'wordcount', label: '字数统计', note: '右下角显示', icon: '字' },
   { id: 'maintenance', label: '资源维护', note: '清理无引用资源', icon: '⌫' },
 ];
 
@@ -116,6 +119,7 @@ export default function Settings() {
   const { cursorTheme, setCursorTheme } = useCursor();
   const { language, setLanguage } = useLanguage();
   const { globalFont, setGlobalFont, mode, setMode } = useEditorMode();
+  const wordCountEnabled = useWordCountEnabled();
 
   const [tab, setTab] = useState<TabId>('appearance');
 
@@ -538,6 +542,45 @@ export default function Settings() {
                   </span>
                 </button>
               </div>
+            </>
+          )}
+
+          {tab === 'wordcount' && (
+            <>
+              <div className={styles.sectionHead}>
+                <h2 className={styles.sectionTitle}>字数统计</h2>
+                <span className={styles.sectionDesc}>
+                  显示在右下角「回到顶部」按钮下方，写作时实时更新
+                </span>
+              </div>
+              <div className={styles.modeCards}>
+                <button
+                  type="button"
+                  className={`${styles.modeCard} ${wordCountEnabled ? styles.modeCardActive : ''}`}
+                  onClick={() => setWordCountEnabled(true)}
+                  aria-pressed={wordCountEnabled}
+                >
+                  <span className={styles.modeCardTitle}>显示</span>
+                  <span className={styles.modeCardDesc}>
+                    悬浮气泡展示当前文档字数，滚动时也能一直看到
+                  </span>
+                </button>
+                <button
+                  type="button"
+                  className={`${styles.modeCard} ${!wordCountEnabled ? styles.modeCardActive : ''}`}
+                  onClick={() => setWordCountEnabled(false)}
+                  aria-pressed={!wordCountEnabled}
+                >
+                  <span className={styles.modeCardTitle}>隐藏</span>
+                  <span className={styles.modeCardDesc}>
+                    完全关掉字数气泡，右下角只保留回到顶部
+                  </span>
+                </button>
+              </div>
+              <p className={styles.hint}>
+                只统计段落、标题、任务列表、有序/无序列表、代码块、提示块、引用块中的文字；
+                图片、表格、图表、公式、嵌入等内容不计入。
+              </p>
             </>
           )}
 

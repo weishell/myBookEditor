@@ -4,7 +4,12 @@ import { Modal } from 'antd';
 import type { Descendant } from 'slate';
 import BookEditor from '@/core';
 import { useEditorMode } from '@/context/EditorContext';
-import { getArticleById, getCategory } from '@/data/articles';
+import {
+  getArticleById,
+  getArticleNeighbors,
+  getCategory,
+  type ArticleIndex,
+} from '@/data/articles';
 import { canWrite, getCachedContent } from '@/data/store';
 import {
   deleteArticleById,
@@ -21,6 +26,65 @@ type SaveState = 'idle' | 'saving' | 'saved' | 'error';
 const EMPTY_DOC: Descendant[] = [
   { type: 'paragraph', id: 'empty', children: [{ text: '' }] } as unknown as Descendant,
 ];
+
+/** 上一篇/下一篇标题最多展示 15 个字，超出用省略号（完整标题放在 title 里） */
+const NEIGHBOR_TITLE_LIMIT = 15;
+
+function truncateTitle(title: string): string {
+  const chars = Array.from(title);
+  return chars.length > NEIGHBOR_TITLE_LIMIT
+    ? `${chars.slice(0, NEIGHBOR_TITLE_LIMIT).join('')}…`
+    : title;
+}
+
+/**
+ * 上一篇 / 下一篇卡片：有的方向没有文章时保留占位，页面底部左右对称不会塌掉。
+ * 跨分类跳转时用分类色标出目标分类，避免"点下去才发现换了类型"。
+ */
+function NeighborCard({
+  direction,
+  article,
+}: {
+  direction: 'prev' | 'next';
+  article: ArticleIndex | null;
+}) {
+  const isPrev = direction === 'prev';
+  const category = article ? getCategory(article.category) : undefined;
+  const className = [styles.navCard, isPrev ? '' : styles.navNext, article ? '' : styles.navEmpty]
+    .filter(Boolean)
+    .join(' ');
+
+  const body = (
+    <>
+      <span className={styles.navLabel}>
+        {isPrev && <span className={styles.navArrow}>←</span>}
+        <span>{isPrev ? '上一篇' : '下一篇'}</span>
+        {category && (
+          <span className={styles.navCat} style={{ color: category.color }}>
+            {category.name}
+          </span>
+        )}
+        {!isPrev && <span className={styles.navArrow}>→</span>}
+      </span>
+      <span className={styles.navTitle} title={article?.title}>
+        {article ? truncateTitle(article.title) : isPrev ? '已经是第一篇了' : '已经是最后一篇了'}
+      </span>
+    </>
+  );
+
+  if (!article) return <div className={className}>{body}</div>;
+
+  return (
+    // 切文档后回到页首，否则会停留在上一篇的滚动位置
+    <Link
+      to={`/article/${article.id}`}
+      className={className}
+      onClick={() => window.scrollTo({ top: 0 })}
+    >
+      {body}
+    </Link>
+  );
+}
 
 export default function Article() {
   const { id = '' } = useParams();
@@ -102,6 +166,7 @@ export default function Article() {
   if (!article) return <NotFound />;
 
   const cat = getCategory(article.category);
+  const { prev, next } = getArticleNeighbors(article.id);
 
   return (
     <div className={styles.page}>
@@ -119,7 +184,8 @@ export default function Article() {
           )}
           <span className={styles.crumbCurrent}>正文</span>
         </div>
-        {writable && (
+        {/* 只读模式没有可写操作：保存提示与删除按钮一并隐藏 */}
+        {writable && mode !== 'read' && (
           <div className={styles.actions}>
             {saveState !== 'idle' && (
               <span className={styles.saveHint} data-state={saveState}>
@@ -152,6 +218,11 @@ export default function Article() {
           <div className={styles.stateBox}>正文加载中…</div>
         )}
       </div>
+
+      <nav className={styles.docNav} aria-label="相邻文档">
+        <NeighborCard direction="prev" article={prev} />
+        <NeighborCard direction="next" article={next} />
+      </nav>
 
       <Modal
         open={confirmOpen}

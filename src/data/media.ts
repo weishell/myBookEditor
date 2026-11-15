@@ -110,6 +110,40 @@ export async function uploadBinary(file: File, kind: UploadKind): Promise<Upload
   return { path: data.path, file: upload };
 }
 
+/** 远端图片代下载结果 */
+export interface RemoteImage {
+  /** 文档里要保存的相对路径（/media/images/xxx.png） */
+  path: string;
+  size: number;
+  originalName: string;
+  contentType: string;
+}
+
+/**
+ * 外链图片本地化：交给本地服务端下载再落盘。
+ *
+ * 为什么不直接在浏览器里 fetch 外链图：CORS 会把响应体挡掉（拿不到字节），
+ * 而多数图床还带防盗链（没有本站 Referer 直接 403）。服务端下载两条都不受影响。
+ */
+export async function uploadRemoteImage(url: string, name?: string): Promise<RemoteImage> {
+  const res = await fetch('/api/upload/remote', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, name }),
+  });
+  if (!res.ok) {
+    let message = `${res.status} ${res.statusText}`;
+    try {
+      const body = (await res.json()) as { error?: string };
+      if (body?.error) message = body.error;
+    } catch {
+      /* 非 JSON 响应，保留状态码信息 */
+    }
+    throw new Error(message);
+  }
+  return (await res.json()) as RemoteImage;
+}
+
 /** 保存画板数据：有 path 时覆盖原文件，返回相对路径 */
 export async function saveDrawboard(data: unknown[], path?: string): Promise<string> {
   const res = await fetch('/api/drawboards', {

@@ -13,6 +13,11 @@ import DrawioResizeHandle from './DrawioResizeHandle';
 import { lockPageScroll } from '@/utils/scroll-lock';
 import { decodeSvgDataUrl, encodeSvgDataUrl, fitSvgToContent } from './svg-fit';
 import { useBlockAlign, BlockAlignButtons, alignToAlignSelf } from '../_shared/useBlockAlign';
+import {
+  useVisualBlockReadOnly,
+  useBlockComment,
+  BlockCommentButton,
+} from '../_shared/useBlockComment';
 import styles from './Drawio.module.less';
 
 interface DrawioAttrs {
@@ -36,6 +41,10 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   const { t } = useTranslation();
   const { attrs } = element;
   const isSelected = useSelected();
+
+  // 只读：对齐 / 编辑 / 删除 / 缩放手柄全部隐藏，工具条只留「评论」
+  const readOnly = useVisualBlockReadOnly();
+  const comment = useBlockComment(element.id, t('blockPicker.drawio'));
 
   const [isEditing, setIsEditing] = useState(false);
   const [isPreviewing, setIsPreviewing] = useState(false);
@@ -236,7 +245,8 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    if (isSelected) return;
+    // 选中态常显；只读模式下没有选中概念，必须允许隐藏
+    if (isSelected && !readOnly) return;
     // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -246,7 +256,7 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
       setShowToolbar(false);
       hideTimerRef.current = null;
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   // 拖拽缩放回调 - 只更新本地拖拽状态（显示尺寸），拖拽结束才写回 attrs
   const handleResize = useCallback(
@@ -303,56 +313,74 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
       <div
         ref={wrapperRef}
         className={styles.wrapper}
+        // 只读态正文纸面 pointer-events:none（见 core/index.tsx），这里恢复可交互
+        style={readOnly ? { pointerEvents: 'auto' } : undefined}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
         {/* 悬浮工具栏 */}
-        {(showToolbar || isSelected) && (
+        {(showToolbar || (!readOnly && isSelected)) && (
           <div
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <BlockAlignButtons
-              align={align}
-              onAlign={setAlign}
-              btnClass={styles.toolbarButton}
-              btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
-            />
-            <div className={styles.toolbarDivider} />
-            <button className={styles.toolbarButton} onClick={handleOpenEditor}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-              </svg>
-              {t('drawio.edit')}
-            </button>
-            <div className={styles.toolbarDivider} />
-            <button className={styles.toolbarButton} onClick={handleRemove}>
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <polyline points="3 6 5 6 21 6" />
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
-              </svg>
-              {t('drawio.delete')}
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+              />
+            ) : (
+              <>
+                <BlockAlignButtons
+                  align={align}
+                  onAlign={setAlign}
+                  btnClass={styles.toolbarButton}
+                  btnActiveClass={`${styles.toolbarButton} ${styles.toolbarButtonActive}`}
+                />
+                <div className={styles.toolbarDivider} />
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  iconSize={14}
+                />
+                <button className={styles.toolbarButton} onClick={handleOpenEditor}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                  </svg>
+                  {t('drawio.edit')}
+                </button>
+                <div className={styles.toolbarDivider} />
+                <button className={styles.toolbarButton} onClick={handleRemove}>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <polyline points="3 6 5 6 21 6" />
+                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                  </svg>
+                  {t('drawio.delete')}
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -417,8 +445,8 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             </div>
           </div>
 
-          {/* 8点位拖拽缩放 */}
-          {(isSelected || showToolbar) && bounds && (
+          {/* 8点位拖拽缩放（只读下不出现） */}
+          {!readOnly && (isSelected || showToolbar) && bounds && (
             <DrawioResizeHandle
               bounds={bounds}
               onResize={handleResize}
@@ -437,9 +465,11 @@ const Drawio: React.FC<DrawioProps> = ({ attributes, children, pluginId, element
             className={styles.descriptionInput}
             value={description}
             placeholder={t('drawio.descPlaceholder')}
+            // 只读模式：描述只展示不可改（onBlur 会写回 Slate，不能放开编辑）
+            readOnly={readOnly}
             onChange={(e) => setDescription(e.target.value)}
-            onBlur={handleDescriptionBlur}
-            onKeyDown={handleDescriptionKeyDown}
+            onBlur={readOnly ? undefined : handleDescriptionBlur}
+            onKeyDown={readOnly ? undefined : handleDescriptionKeyDown}
             onMouseDown={(e) => e.stopPropagation()}
             style={{ width: effWidth }}
           />

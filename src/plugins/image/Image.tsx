@@ -11,6 +11,11 @@ import { useTranslation } from 'react-i18next';
 import { ResetIcon, TrashIcon, CropIcon } from '@/components/icons/lineIcons';
 import { AlignIcon } from '@/components/AlignIndentPanel';
 import { toMediaUrl } from '@/data/media';
+import {
+  useVisualBlockReadOnly,
+  useBlockComment,
+  BlockCommentButton,
+} from '../_shared/useBlockComment';
 import styles from './Image.module.less';
 
 interface ImageAttrs {
@@ -38,6 +43,10 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
   const { t } = useTranslation();
   // 用 Slate 原生 useSelected 检测选中状态
   const isSelected = useSelected();
+
+  // 只读：对齐 / 裁剪 / 重置 / 删除 / 缩放手柄全部隐藏，工具条只留「评论」
+  const readOnly = useVisualBlockReadOnly();
+  const comment = useBlockComment(element.id, t('blockPicker.image'));
 
   const [showToolbar, setShowToolbar] = useState(false);
   const [bounds, setBounds] = useState<DOMRect | null>(null);
@@ -167,15 +176,20 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
     setIsCropping(true);
   }, []);
 
-  /** 选中态下再次点击图片 → 打开预览（与飞书一致）。 */
+  /** 选中态下再次点击图片 → 打开预览（与飞书一致）。只读模式没有选中态，点击即预览。 */
   const handleContainerClick = useCallback(
     (e: React.MouseEvent) => {
+      if (readOnly) {
+        e.stopPropagation();
+        setIsPreviewing(true);
+        return;
+      }
       if (!isSelected) return;
       // 阻止 Slate 把点击当成"重新选择"继续冒泡
       e.stopPropagation();
       setIsPreviewing(true);
     },
-    [isSelected],
+    [isSelected, readOnly],
   );
 
   const handlePreviewClose = useCallback(() => {
@@ -223,8 +237,8 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
   }, []);
 
   const hideToolbarHandler = useCallback(() => {
-    // 选中状态下不隐藏工具栏
-    if (isSelected) return;
+    // 选中状态下不隐藏工具栏（只读态没有选中概念，必须允许隐藏）
+    if (isSelected && !readOnly) return;
     // 取消尚未触发的展示计时，防止鼠标已离开工具条仍弹出
     if (showTimerRef.current) {
       clearTimeout(showTimerRef.current);
@@ -234,7 +248,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
       setShowToolbar(false);
       hideTimerRef.current = null;
     }, 300);
-  }, [isSelected]);
+  }, [isSelected, readOnly]);
 
   const handleAlign = useCallback(
     (align: 'left' | 'center' | 'right') => {
@@ -271,62 +285,86 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
       <div
         ref={wrapperRef}
         className={styles.wrapper}
-        style={getAlignStyle()}
+        style={{
+          ...getAlignStyle(),
+          // 只读态正文纸面 pointer-events:none（见 core/index.tsx），这里恢复可交互
+          ...(readOnly ? { pointerEvents: 'auto' as const } : null),
+        }}
         onMouseEnter={showToolbarHandler}
         onMouseLeave={hideToolbarHandler}
       >
-        {(showToolbar || isSelected) && (
+        {(showToolbar || (!readOnly && isSelected)) && (
           <div
             ref={toolbarRef}
             className={styles.toolbar}
             onMouseEnter={showToolbarHandler}
             onMouseLeave={hideToolbarHandler}
           >
-            <button
-              onClick={() => handleAlign('left')}
-              title={t('imageToolbar.alignLeft')}
-              className={`${styles.toolbarButton} ${attrs.align === 'left' ? styles.toolbarButtonActive : ''}`}
-            >
-              <AlignIcon align="left" active={attrs.align === 'left'} size={16} />
-            </button>
-            <button
-              onClick={() => handleAlign('center')}
-              title={t('imageToolbar.alignCenter')}
-              className={`${styles.toolbarButton} ${attrs.align === 'center' ? styles.toolbarButtonActive : ''}`}
-            >
-              <AlignIcon align="center" active={attrs.align === 'center'} size={16} />
-            </button>
-            <button
-              onClick={() => handleAlign('right')}
-              title={t('imageToolbar.alignRight')}
-              className={`${styles.toolbarButton} ${attrs.align === 'right' ? styles.toolbarButtonActive : ''}`}
-            >
-              <AlignIcon align="right" active={attrs.align === 'right'} size={16} />
-            </button>
-            <div className={styles.divider} />
-            <button
-              onClick={handleCropStart}
-              title={t('imageToolbar.crop')}
-              className={styles.toolbarButton}
-            >
-              <CropIcon size={16} />
-            </button>
-            <div className={styles.divider} />
-            <button
-              onClick={handleReset}
-              title={t('imageToolbar.reset')}
-              className={styles.toolbarButton}
-            >
-              <ResetIcon size={16} />
-            </button>
-            <div className={styles.divider} />
-            <button
-              onClick={handleRemove}
-              title={t('imageToolbar.delete')}
-              className={styles.toolbarButton}
-            >
-              <TrashIcon size={16} />
-            </button>
+            {readOnly ? (
+              <BlockCommentButton
+                count={comment.count}
+                onComment={comment.openComment}
+                className={styles.toolbarButton}
+                withLabel={false}
+                iconSize={16}
+              />
+            ) : (
+              <>
+                <button
+                  onClick={() => handleAlign('left')}
+                  title={t('imageToolbar.alignLeft')}
+                  className={`${styles.toolbarButton} ${attrs.align === 'left' ? styles.toolbarButtonActive : ''}`}
+                >
+                  <AlignIcon align="left" active={attrs.align === 'left'} size={16} />
+                </button>
+                <button
+                  onClick={() => handleAlign('center')}
+                  title={t('imageToolbar.alignCenter')}
+                  className={`${styles.toolbarButton} ${attrs.align === 'center' ? styles.toolbarButtonActive : ''}`}
+                >
+                  <AlignIcon align="center" active={attrs.align === 'center'} size={16} />
+                </button>
+                <button
+                  onClick={() => handleAlign('right')}
+                  title={t('imageToolbar.alignRight')}
+                  className={`${styles.toolbarButton} ${attrs.align === 'right' ? styles.toolbarButtonActive : ''}`}
+                >
+                  <AlignIcon align="right" active={attrs.align === 'right'} size={16} />
+                </button>
+                <div className={styles.divider} />
+                <button
+                  onClick={handleCropStart}
+                  title={t('imageToolbar.crop')}
+                  className={styles.toolbarButton}
+                >
+                  <CropIcon size={16} />
+                </button>
+                <div className={styles.divider} />
+                <button
+                  onClick={handleReset}
+                  title={t('imageToolbar.reset')}
+                  className={styles.toolbarButton}
+                >
+                  <ResetIcon size={16} />
+                </button>
+                <div className={styles.divider} />
+                <BlockCommentButton
+                  count={comment.count}
+                  onComment={comment.openComment}
+                  className={styles.toolbarButton}
+                  withLabel={false}
+                  iconSize={16}
+                />
+                <div className={styles.divider} />
+                <button
+                  onClick={handleRemove}
+                  title={t('imageToolbar.delete')}
+                  className={styles.toolbarButton}
+                >
+                  <TrashIcon size={16} />
+                </button>
+              </>
+            )}
           </div>
         )}
 
@@ -380,7 +418,7 @@ const Image: React.FC<ImageProps> = ({ attributes, children, pluginId, element }
           )}
         </div>
 
-        {!isUploading && (isSelected || showToolbar) && bounds && !hasCrop && (
+        {!readOnly && !isUploading && (isSelected || showToolbar) && bounds && !hasCrop && (
           <ResizeHandle
             bounds={bounds}
             onResize={handleResize}

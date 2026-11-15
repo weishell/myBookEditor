@@ -27,6 +27,29 @@ export const getTag = (id: string): Tag | undefined => getDataState().tags.find(
 export const getArticlesByCategory = (id: string): ArticleIndex[] =>
   getDataState().articles.filter((a) => a.category === id);
 
+/**
+ * 上一篇 / 下一篇：按「首页分类顺序 + 分类内列表顺序」把全站文章串成一条阅读线，
+ * 分类末尾自动接到下一个分类的第一篇，分类开头往前则回到上一个分类的最后一篇。
+ * 分类内顺序刻意与分类列表页保持一致（不做时间排序），这样点上一/下一篇
+ * 和文章在列表里的上下位置对得上，也不会因为自动保存刷新时间而乱跳。
+ */
+export function getArticleNeighbors(id: string): {
+  prev: ArticleIndex | null;
+  next: ArticleIndex | null;
+} {
+  const { categories } = getDataState();
+  const ordered: ArticleIndex[] = [];
+  for (const category of categories) {
+    ordered.push(...getArticlesByCategory(category.id));
+  }
+  const index = ordered.findIndex((a) => a.id === id);
+  if (index < 0) return { prev: null, next: null };
+  return {
+    prev: index > 0 ? ordered[index - 1] : null,
+    next: index < ordered.length - 1 ? ordered[index + 1] : null,
+  };
+}
+
 export const getArticlesByTag = (id: string): ArticleIndex[] =>
   getDataState().articles.filter((a) => a.tags.includes(id));
 
