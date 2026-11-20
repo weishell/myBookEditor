@@ -105,6 +105,12 @@ export default defineConfig(({ command }) => ({
 
           // Prism 单独成块：它只有代码块 / 文本文件预览才用得上，
           // 和 slate 绑在一起会让首页为了 slate 把语言包也一起下了。
+          // 语言包（components/*）由 code-highlighter 动态 import，必须保持独立异步 chunk；
+          // 如果一起归进 prism-vendor，动态加载就失去意义（核心被静态引用会把它整体拉下来）。
+          if (/node_modules\/prismjs\/components\//.test(normalizedId)) {
+            return undefined;
+          }
+
           if (/node_modules\/prismjs\//.test(normalizedId)) {
             return 'prism-vendor';
           }

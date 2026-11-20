@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { renderFormulaToHtml } from './katex-utils';
+import { renderFormulaToHtml, useKatexReady } from './katex-utils';
 import styles from './FormulaEditor.module.less';
 
 interface FormulaEditorProps {
@@ -32,8 +32,12 @@ export const FormulaEditor = ({
   const valueRef = useRef(value);
   valueRef.current = value;
 
-  // 实时预览公式
-  const previewHtml = useMemo(() => renderFormulaToHtml(value), [value]);
+  // 实时预览公式（KaTeX 首次打开弹层时按需加载，加载完成后自动刷新预览）
+  const katexReady = useKatexReady();
+  const previewHtml = useMemo(
+    () => (katexReady ? renderFormulaToHtml(value) : ''),
+    [value, katexReady],
+  );
 
   // 计算定位：锚点下方
   useEffect(() => {

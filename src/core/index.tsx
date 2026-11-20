@@ -50,10 +50,11 @@ import {
 } from '@/editor-extensions';
 import { withSlashCommand, SlashMenu } from '@/editor-extensions/slash';
 import { TrailingAddZone } from '@/plugins/docbar/TrailingAddZone';
-import { withColumns } from '@/plugins';
+import { withColumns, withTableStructure } from '@/plugins';
 import { initialValue as demoInitialValue } from '@/utils/initial-value';
 import { createKeyDownHandler } from '@/events/keyboard';
 import { codeDecorate } from '@/utils/code-decoration';
+import { subscribePrismLanguages } from '@/utils/code-highlighter';
 import { searchDecorate, useFindReplace } from '@/components/find-replace';
 import FloatBar from '@/components/FloatBar';
 import { setWordCount } from '@/components/WordCount/store';
@@ -113,6 +114,10 @@ export default function BookEditor({
   // 行内评论会话变化时自增，强制 Editable 重算 decoration（core 的 onChange 是 no-op）
   const [, setCommentTick] = useState(0);
   const forceCommentRender = useCallback(() => setCommentTick((t) => t + 1), []);
+  // 代码高亮语言包是异步按需加载的：加载完成后自增，改变 decorate 的引用，
+  // 触发 slate-react 重新收集 decoration（否则已渲染的代码块不会重新着色）。
+  const [prismVersion, setPrismVersion] = useState(0);
+  useEffect(() => subscribePrismLanguages(() => setPrismVersion((v) => v + 1)), []);
   const editor = useMemo(
     () =>
       // 结构守卫放在最外层：它的 normalizeNode 必须抢在 Slate 默认规则之前跑，
@@ -131,11 +136,13 @@ export default function BookEditor({
                             withLilist(
                               withHyperlink(
                                 withColumns(
-                                  withHintBlock(
-                                    withMention(
-                                      withInlineFormula(
-                                        withMarkdownShortcuts(
-                                          withCodeBlock(withHistory(withReact(createEditor()))),
+                                  withTableStructure(
+                                    withHintBlock(
+                                      withMention(
+                                        withInlineFormula(
+                                          withMarkdownShortcuts(
+                                            withCodeBlock(withHistory(withReact(createEditor()))),
+                                          ),
                                         ),
                                       ),
                                     ),
@@ -261,7 +268,10 @@ export default function BookEditor({
       const search = searchDecorate(matches, currentIndex, entry);
       return [...code, ...search];
     },
-    [matches, currentIndex],
+    // prismVersion 参与依赖是刻意为之：语言包异步加载完成后需要换新引用，
+    // Editable 才会重新收集 decoration（exhaustive-deps 看不出这层因果）。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [matches, currentIndex, prismVersion],
   );
 
   return (

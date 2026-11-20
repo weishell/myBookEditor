@@ -30,6 +30,13 @@
 - **`pure` 单独不删代码**，只打 `/* @__PURE__ */` 注释，靠 minify 阶段 tree-shaking 才真删 → 依赖默认 `minify:'esbuild'`。
 - `pure` 会连同参数整段删，所以 `console.log(getX())` 里的 getX() 不会执行。写日志别把有副作用的调用塞进参数。
 
+## .workbuddy 只提交 memory，截图不提交
+
+- `.gitignore` 里有 `.workbuddy/**/*.png` / `*.jpg`。视觉自验截图（`scripts/shot.mjs` 产物）是一次性的，
+  结论写进 `.workbuddy/memory/*.md` 就够了，别再 `git add .` 把几 MB 二进制灌进历史。
+- ⚠️ 生成的截图统一放 `.workbuddy/` 下（会自动被忽略），别扔到仓库根目录；`--out` 用默认名 `.shot.png` 时
+  现有规则 `.shot-*.png` **匹配不到**，会被跟踪。
+
 ## 文档标题块 HEADING_TITLE（重要）
 
 - 文档默认大标题块 `type:'heading-title'`，`attrs={author,date}`，`children=[{text:标题}]`；`/demo` 的 `initial-value.ts` 有范例。
@@ -50,6 +57,13 @@
   只读 marks 的后果：格式取消不掉（永远走 addMark）、按钮图标永不高亮。
 - 浮层工具条（FloatBar / 取色器 / 字体 / 艺术字 / 对齐面板）里所有按钮必须 `onMouseDown={e=>e.preventDefault()}`。
   否则按下时 contenteditable 失焦 → Chrome 折叠 DOM 选区 → 浮栏被 `selectionchange` 关掉、格式写错位置/整段被选中。
+- **`Transforms.splitNodes` 会整份克隆属性**（`Node.extractProps`，dist:5247），自定义 `id` 也克隆给新节点。
+  `ensureUniqueIds` 只在挂载跑一次 → 每次回车都造一个重复 id。修法只能挂 `withStructureGuard` 的 `apply`
+  拦截 `split_node` 换 id（回车/粘贴/代码块分行/表格拆分全走这一条），别去逐个改调用点。
+- `isBlock = !isInline`，而 `text` 不是 element、`isInline(text)` 为 false → **`Editor.isBlock(text)` 返回 true**。
+  判断「合法块」不能用它，用 `!Element.isElement(c) || Editor.isInline(editor, c)`。
+- 结构自愈（补格子/补空段落/空表兜底）**禁止 `children.push()` 直接 mutate**：不进 history、不标 dirty path、
+  撤销恢复不了原 id。一律 `Transforms.insertNodes`，批量补时先收集 fixes 再 `withoutNormalizing` **倒序**插（防 path 顶偏）。
 
 ## 列表 lilist
 
@@ -63,6 +77,10 @@
 
 - `TODO_LIST`(`type:'todo-list'`) 勾选态 `attrs.checked`，不是 lilist。回车规则 `handleTodoListEnter`：空项回车→转段落；非空→拆行新项 `checked:false`。
 - 回车分发顺序（`handleEnter.ts`）：代码块→hint 容器内部行→lilist→TODO_LIST→兜底 `insertBreak`。新增块类型插在容器分支之后。
+- 表格结构自愈在 `plugins/table/withTableStructure.ts`，已挂进 `core/index.tsx`（`withColumns` 内层）。
+  ⚠️ `plugins/table/withTable.ts` 的 `extensions: [withTable]` **全仓无人消费**（没有任何代码读插件导出的
+  `extensions`）——它曾经是死文件，表格补格逻辑一次都没跑过。加插件别只写 `extensions`，要自己去 `core/index.tsx` 挂。
+- `withTable.insertBreak` 有缺陷（总用 `[...cellPath,0]` 判断，不看光标在 cell 内哪段），未接入链，接之前先修。
 
 ## i18n
 
@@ -96,6 +114,19 @@
   `<p>文字<img></p>` 由 `runsToBlocks` 拆成段落 + 图片块。
 - 外链图走服务端 `POST /api/upload/remote` 代下载（浏览器 fetch 会被 CORS / 防盗链挡）：只允许 http(s)、拒内网地址、
   15s 超时、25MB 上限、content-type 白名单。
+
+## 数据安全 / 降级（2026-11-15 起）
+
+- **不变量：服务器没确认保存成功，`localStorage` 里就一定留着最新正文**（`src/data/draft.ts`）。
+  实现必须是「先写本机 → 再发请求 → 成功才 `clearDraft`」。写成「失败时再写草稿」救不了
+  「请求挂起期间继续打字」和「渲染崩了连 reject 都等不到」。
+- 「有草稿」等价于「上次没存上」，**不要**去比时间戳猜哪份新。文案/恢复入口都靠这条。
+- 恢复草稿 = 灌进编辑器 **并立刻提交一次**。只灌不提交 → 横幅没了但服务器还是旧内容 → 下次进来又弹。
+- `beforeunload` 只在 `hasDraft(id)` 时 `preventDefault`；另挂 `pagehide → flushDraft()`（iOS 不触发 beforeunload）。
+- `hasDraft` 只读 key 不解析 JSON（`beforeunload` 要同步且快）；`queueDraft` 节流 1.2s，失败只 warn 不阻断保存。
+- 顶层 `AppErrorBoundary` 包在 `main.tsx` 的 `<App />` 外。**正文快照必须在 `getDerivedStateFromError` 里抓**：
+  到 `componentDidCatch` 时 React 已卸载子树，`core/index.tsx` 的 cleanup 早把 `window.editor` delete 了。
+- chunk 加载失败（部署后老页面 lazy import 404）单独文案「页面已更新」，别当成真崩溃吓用户。
 
 ## 数据层（2026-10-17 架构，别倒退）
 

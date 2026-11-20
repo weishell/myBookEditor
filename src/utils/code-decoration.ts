@@ -1,16 +1,6 @@
 import type { Range, NodeEntry } from 'slate';
 import Prism from 'prismjs';
-import 'prismjs/components/prism-javascript';
-import 'prismjs/components/prism-typescript';
-import 'prismjs/components/prism-python';
-import 'prismjs/components/prism-java';
-import 'prismjs/components/prism-css';
-import 'prismjs/components/prism-json';
-import 'prismjs/components/prism-markup';
-import 'prismjs/components/prism-sql';
-import 'prismjs/components/prism-bash';
-import 'prismjs/components/prism-go';
-import 'prismjs/components/prism-rust';
+import { ensurePrismLanguage } from '@/utils/code-highlighter';
 import { BlockElementType } from '@/enums';
 
 export const CODE_TOKEN_COLORS: Record<string, string> = {
@@ -108,7 +98,11 @@ export const codeDecorate = ([node, path]: NodeEntry): Range[] => {
 
   const codeBlock = node as CodeBlockElement;
   const language = codeBlock.attrs?.language || 'javascript';
-  const prismLanguage = Prism.languages[language] || Prism.languages.javascript;
+  // 语言包按需加载：未就绪时先降级为 javascript/plaintext 渲染，
+  // 加载完成后由 core 订阅回调触发一次重渲染，再着色成对应语言。
+  ensurePrismLanguage(language);
+  const prismLanguage =
+    Prism.languages[language] || Prism.languages.javascript || Prism.languages.plaintext;
 
   // 逐行分词。
   // 之前把所有 code-line 的文本拼成一个字符串（且没有换行符）再交给 Prism，

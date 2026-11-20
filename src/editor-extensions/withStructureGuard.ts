@@ -75,7 +75,23 @@ const createEmptyChild = (type: string): CustomElement => {
 };
 
 export const withStructureGuard = (editor: Editor) => {
-  const { normalizeNode } = editor;
+  const { normalizeNode, apply } = editor;
+
+  // split_node 会把 Node.extractProps(node) 整份克隆给新节点（slate dist:5247），
+  // 我们的块 id 就在这份属性里 —— 于是每次「回车拆块」都凭空多出一个和原块同 id 的块。
+  // ensureUniqueIds 只在编辑器挂载时跑一次，编辑过程中攒下的重复 id 没人修，后果是
+  // 块级评论 key（block:<id>）串位、按 id 找节点命中多个、将来按 id 做版本对比会错位。
+  //
+  // 在这里拦截是唯一能覆盖全部拆分路径的位置（回车 / 粘贴拆分 / 代码块分行 / 表格拆分…），
+  // 而且比「每次 onChange 全树扫一遍」便宜得多。
+  editor.apply = ((op: any) => {
+    if (op.type === 'split_node' && op.properties && typeof op.properties.id === 'string') {
+      // 只换 id：type / attrs 仍照常继承，语义不变（拆出来的块类型一致）
+      apply({ ...op, properties: { ...op.properties, id: uuidv4() } });
+      return;
+    }
+    apply(op);
+  }) as Editor['apply'];
 
   editor.normalizeNode = ([node, path]) => {
     if (Element.isElement(node)) {
@@ -92,9 +108,16 @@ export const withStructureGuard = (editor: Editor) => {
           return;
         }
 
-        // ② 非元素子节点（脏数据）：包进段落保住内容，别交给默认规则 remove
+        // ② 非法子节点（脏数据）：包进段落保住内容，别交给默认规则 remove/unwrap
+        //
+        // 「非法」= 纯文本，或 inline 元素（公式 / @提及 —— 这两个插件都覆写了 editor.isInline）。
+        // ⚠️ 别用 Editor.isBlock 判：slate 的 isBlock 实现就是 `!isInline(value)`，
+        //    而 text 不是 element，isInline(text) 为 false → isBlock(text) 反而为 true，
+        //    拿它当条件会把纯文本误判成「合法块」。
         if (!RIGID_TYPES.has(type)) {
-          const badIdx = kids.findIndex((c) => !Element.isElement(c));
+          const badIdx = kids.findIndex(
+            (c) => !Element.isElement(c) || Editor.isInline(editor, c as any),
+          );
           if (badIdx !== -1) {
             const stray = kids[badIdx];
             Editor.withoutNormalizing(editor, () => {

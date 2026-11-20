@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import type { RenderElementProps } from 'slate-react';
 import { useSlate, useSelected, ReactEditor } from 'slate-react';
 import { updateFormula, type FormulaElement } from './formula-utils';
-import { renderFormulaToHtml } from './katex-utils';
+import { renderFormulaToHtml, useKatexReady } from './katex-utils';
 import { FormulaEditor } from './FormulaEditor';
 import { useTheme } from '@/context/ThemeContext';
 import { getInlineMarkStyle } from '@/utils/inline-mark-style';
@@ -41,7 +41,9 @@ export const Formula = ({ element, attributes, readOnly }: FormulaProps) => {
     [slateRef],
   );
 
-  const html = useMemo(() => renderFormulaToHtml(value), [value]);
+  // KaTeX 按需加载：首次渲染时触发，加载完成后自动重渲染成公式
+  const katexReady = useKatexReady();
+  const html = useMemo(() => (katexReady ? renderFormulaToHtml(value) : ''), [value, katexReady]);
 
   const handleCopy = useCallback(
     (e: React.ClipboardEvent) => {

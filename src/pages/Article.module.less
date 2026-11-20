@@ -39,6 +39,76 @@
   color: @text-secondary;
 }
 
+/* ========== 本机草稿提示（保存失败时的兜底入口） ========== */
+.draftBar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding: 9px 12px;
+  border: 1px solid rgba(250, 140, 22, 0.32);
+  border-left: 3px solid @color-orange;
+  border-radius: @radius-md;
+  background: rgba(250, 140, 22, 0.07);
+  font-size: @font-size-sm;
+  line-height: @line-height-base;
+  color: @text-secondary;
+}
+
+.draftDot {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: @color-orange;
+}
+
+.draftText {
+  flex: 1;
+  min-width: 0;
+}
+
+.draftActions {
+  display: flex;
+  flex: none;
+  align-items: center;
+  gap: 8px;
+}
+
+.draftPrimary,
+.draftGhost {
+  height: 26px;
+  padding: 0 12px;
+  border-radius: @radius-sm;
+  font-size: @font-size-sm;
+  font-family: inherit;
+  cursor: var(--cursor-pointer, pointer);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.draftPrimary {
+  border: 1px solid transparent;
+  background: @color-orange;
+  color: #fff;
+
+  &:hover {
+    background: darken(@color-orange, 6%);
+  }
+}
+
+.draftGhost {
+  border: 1px solid @border-color;
+  background: transparent;
+  color: @text-tertiary;
+
+  &:hover {
+    border-color: @color-orange;
+    color: @color-orange;
+  }
+}
+
 /* ========== 正文（编辑器） ========== */
 .editorWrap {
   border-radius: 16px;

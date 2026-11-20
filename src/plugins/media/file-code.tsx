@@ -3,6 +3,7 @@
 import React from 'react';
 import Prism from 'prismjs';
 import { CODE_TOKEN_COLORS, SHOULD_COLOR_TOKEN } from '@/utils/code-decoration';
+import { usePrismLanguageReady } from '@/utils/code-highlighter';
 
 /** 可读取正文预览的文本类文件 */
 const TEXTUAL_EXT =
@@ -91,7 +92,10 @@ interface FileCodeProps {
 /** 带语法着色的文本文件正文（外层是 pre，样式由调用方传 class 决定） */
 export const FileCode: React.FC<FileCodeProps> = ({ code, name, mimeType, className }) => {
   const language = detectFileLanguage(name, mimeType);
+  // 语言包按需加载：加载完成前先显示纯文本，加载后自动重新着色
+  const languageReady = usePrismLanguageReady(language);
   const nodes = React.useMemo<React.ReactNode>(() => {
+    if (!languageReady) return code;
     const grammar = Prism.languages[language];
     if (!code || !grammar || language === 'plaintext') return code;
     try {
@@ -99,7 +103,7 @@ export const FileCode: React.FC<FileCodeProps> = ({ code, name, mimeType, classN
     } catch {
       return code;
     }
-  }, [code, language]);
+  }, [code, language, languageReady]);
 
   return <pre className={className}>{nodes}</pre>;
 };

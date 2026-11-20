@@ -1,0 +1,100 @@
+/* 顶层兜底页：不依赖 antd / 主题 provider，样式写死也能看 */
+.wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 32px 20px;
+  background: @bg-page;
+}
+
+.card {
+  width: 100%;
+  max-width: 520px;
+  padding: 28px 28px 20px;
+  border: 1px solid @border-color-light;
+  border-radius: @radius-lg;
+  background: @bg-base;
+  box-shadow: @shadow-md;
+}
+
+.title {
+  margin: 0 0 10px;
+  font-size: @font-size-xl;
+  font-weight: 600;
+  color: @text-primary;
+}
+
+.desc {
+  margin: 0 0 20px;
+  font-size: @font-size-base;
+  line-height: @line-height-relaxed;
+  color: @text-secondary;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.primary,
+.ghost {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: @radius-md;
+  font-size: @font-size-base;
+  font-family: inherit;
+  text-decoration: none;
+  cursor: var(--cursor-pointer, pointer);
+  transition:
+    background 0.15s,
+    color 0.15s;
+}
+
+.primary {
+  border: 1px solid transparent;
+  background: @color-primary;
+  color: #fff;
+
+  &:hover {
+    opacity: 0.9;
+  }
+}
+
+.ghost {
+  border: 1px solid @border-color;
+  background: transparent;
+  color: @text-secondary;
+
+  &:hover {
+    border-color: @color-primary;
+    color: @color-primary;
+  }
+}
+
+.detail {
+  margin-top: 22px;
+  font-size: @font-size-sm;
+  color: @text-tertiary;
+
+  summary {
+    cursor: var(--cursor-pointer, pointer);
+  }
+}
+
+.pre {
+  max-height: 220px;
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  overflow: auto;
+  border-radius: @radius-md;
+  background: @bg-subtle;
+  font-size: @font-size-xs;
+  line-height: 1.6;
+  color: @text-secondary;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
